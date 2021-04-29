@@ -46,6 +46,33 @@
 	mt6360pd,intr_gpio = <&pio 11 0x0>;
 };
 
+
+&i2c6 {
+	aw869x_haptic@5A {
+		compatible = "awinic,aw869x_haptic";
+		reg = <0x5A>;
+		reset-gpio = <&pio 132 0>;
+		irq-gpio = <&pio 6 0>;
+		vib_mode = < 0 >;   /*mode:   RAM mode->0; CONT mode -> 1*/
+		vib_f0_pre = < 1700 >;
+		vib_f0_cali_percen = < 7 >;
+		vib_cont_drv_lev = < 105 >;
+		vib_cont_drv_lvl_ov = < 125 >;
+		vib_cont_td = < 0x009A >;
+		vib_cont_zc_thr = < 0x0FF1 >;
+		vib_cont_num_brk = < 3 >;
+		vib_f0_coeff = < 260 >; /*Don't modify it    2.604167*/
+		vib_duration_time = < 20 30 60 >;
+		vib_f0_trace_parameter = < 0x05 0x03 0x02 0x0f >;
+		vib_bemf_config = < 0x10 0x08 0x03 0xf8 >;
+		vib_sw_brake = < 0x2c >;
+		vib_tset = < 0x12 >;
+		vib_r_spare = < 0x68 >;
+		vib_bstdbg = < 0x30 0xeb 0xd4 0 0 0 >;
+		status = "okay";
+	};
+};
+
 #ifndef CONFIG_FPGA_EARLY_PORTING
 &pio {
 	mtkfb_pins_lcd_bias_enp1: lcd_bias_enp1_gpio {
