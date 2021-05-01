@@ -131,9 +131,10 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	panel1@0 {
-		compatible = "nt35695b,auo,vdo";
+		compatible = "wt,nt36672c_fhdp_wt_dsi_vdo_cphy_90hz_tianma";
 		reg = <0>;
 		pm-enable-gpios = <&pio 136 0>;
+	    lcm-bl-enable-gpios = <&pio 87 0>;
 		reset-gpios = <&pio 86 0>;
 		bias-gpios = <&pio 137 0>,
 			<&pio 138 0>;

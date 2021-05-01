@@ -66,3 +66,5 @@ obj-$(CONFIG_DRM_PANEL_TRULY_NT35595_VDO) += panel-truly-nt35595-vdo.o
 obj-$(CONFIG_DRM_PANEL_TRULY_ILI9881H_VDO) += panel-truly-ili9881h-rt4801-vdo.o
 obj-$(CONFIG_DRM_PANEL_TRULY_ILI9882N_VDO_90HZ) += panel-truly-ili9882n-rt4801-vdo-90hz.o
 obj-$(CONFIG_DRM_PANEL_BOE_NT35625B3_VDO) += k6833v1_64_alpha/panel-k6833v1-boe-nt35625b3-vdo.o
+obj-$(CONFIG_DRM_PANEL_WT_TIANMA_NT36672_CPHY_VDO_90HZ) += panel-wt-tianma-nt36672c-cphy-vdo-90hz.o
+obj-$(CONFIG_DRM_PANEL_LCM_CUST_COMMON) += lcm_cust_common.o

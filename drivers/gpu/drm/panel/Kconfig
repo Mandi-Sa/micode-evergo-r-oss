@@ -725,6 +725,22 @@ config DRM_PANEL_SAMSUNG_S68FC01_VDO_AOD
 	  and uses 24-bits RGB per pixel. It provides a MIPI DSI
 	  interface to host.
 
+config DRM_PANEL_WT_TIANMA_NT36672_CPHY_VDO_90HZ
+    tristate "wt tianma module nt36672 fhdp vdo panel"
+    depends on OF
+    depends on DRM_MIPI_DSI
+    depends on BACKLIGHT_CLASS_DEVICE
+    help
+      Say Y here if you want to enable support for wt tiamma nt36672
+      fhdp vdo panel. The panel has a 1080x2400 resolution
+      and uses 24-bits RGB per pixel. It provides a MIPI DSI
+      interface to host.
+
+config DRM_PANEL_LCM_CUST_COMMON
+    tristate "wt lcm cust common funtion"
+    help
+      wt lcm cust common funtion.
+
 config DRM_RT4831A_I2C
 	tristate "rt4831a use i2c control"
 	depends on OF
