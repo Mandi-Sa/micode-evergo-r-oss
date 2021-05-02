@@ -1496,6 +1496,8 @@ page_owner=on loop.max_part=7";
 	accdet: accdet {
 		compatible = "mediatek,pmic-accdet";
 	};
+	msdc1_ins:msdc1_ins{
+	};
 
 	md_ccif0@1020a000 {
 		compatible = "mediatek,md_ccif0";
