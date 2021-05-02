@@ -52,7 +52,7 @@
 #define INT_TRIGGER_TYPE IRQ_TYPE_EDGE_RISING
 
 //---GPIO pin mode---
-#define PINCTRL_STATE_SPI_DEFAULT   "gt9896s_spi_mode"
+#define PINCTRL_STATE_SPI_DEFAULT   "nt36672c_spi_mode"
 
 //---SPI driver info.---
 #define NVT_SPI_NAME "novatek,NVT-ts-spi"

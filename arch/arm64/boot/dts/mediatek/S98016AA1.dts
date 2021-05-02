@@ -183,7 +183,7 @@
 };
 #endif
 
-#include "mediatek/cust_mt6833_touch_1080x2300.dtsi"
+#include "mediatek/cust_mt6833_touch_nt36672c_1080x2400.dtsi"
 /* accdet start */
 &accdet {
 	/* accdet micbias voltage: 0x09:2.85v 0x08:2.8v 0x07,

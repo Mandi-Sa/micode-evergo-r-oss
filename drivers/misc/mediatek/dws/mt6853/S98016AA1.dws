@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--dct_version="2.5" buid_sn="161102" dws_modification_time="04.26.2021.16:09:39"-->
+<!--dct_version="2.5" buid_sn="161102" dws_modification_time="05.02.2021.13:11:01"-->
 <dct_cfg>
     <general chip="MT6833">
         <proj>P21_Phone1</proj>
@@ -363,6 +363,7 @@
                 <inpull_selhigh>false</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
+                <varName0>GPIO_SPI1_CK_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio27>
@@ -373,6 +374,7 @@
                 <inpull_selhigh>false</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
+                <varName0>GPIO_SPI1_CS_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio28>
@@ -383,6 +385,7 @@
                 <inpull_selhigh>false</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
+                <varName0>GPIO_SPI1_MOSI_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio29>
@@ -393,6 +396,7 @@
                 <inpull_selhigh>false</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
+                <varName0>GPIO_SPI_MISO_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio30>
@@ -997,7 +1001,7 @@
             <gpio87>
                 <eint_mode>false</eint_mode>
                 <def_mode>0</def_mode>
-                <inpull_en>false</inpull_en>
+                <inpull_en>true</inpull_en>
                 <inpull_selhigh>false</inpull_selhigh>
                 <def_dir>OUT</def_dir>
                 <out_high>true</out_high>
