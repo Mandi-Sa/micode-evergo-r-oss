@@ -42,8 +42,8 @@
 };
 
 &mt6360_typec {
-	mt6360pd,intr_gpio_num = <11>; /* direct defined GPIO num */
-	mt6360pd,intr_gpio = <&pio 11 0x0>;
+	mt6360pd,intr_gpio_num = <9>; /* direct defined GPIO num */
+	mt6360pd,intr_gpio = <&pio 9 0x0>;
 };
 
 #ifndef CONFIG_FPGA_EARLY_PORTING
