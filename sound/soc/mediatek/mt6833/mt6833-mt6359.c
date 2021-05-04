@@ -22,7 +22,8 @@
 #endif
 
 #ifdef CONFIG_SND_SOC_SIA8109
-#include "sia81xx_common.h"
+#include "../../codecs/sia81xx/sia81xx_common.h"
+#include "../../codecs/sia81xx/sia81xx_aux_dev_if.h"
 #endif
 
 /*
@@ -99,7 +100,7 @@ static int mt6833_mt6359_spk_amp_event(struct snd_soc_dapm_widget *w,
 #endif
 
 #ifdef CONFIG_SND_SOC_SIA8109
-		sia81xx_start();
+//		sia81xx_start();
 #endif
 		break;
 	case SND_SOC_DAPM_PRE_PMD:
@@ -109,7 +110,7 @@ static int mt6833_mt6359_spk_amp_event(struct snd_soc_dapm_widget *w,
 #endif
 
 #ifdef CONFIG_SND_SOC_SIA8109
-		sia81xx_stop();
+//		sia81xx_stop();
 #endif
 		break;
 	default:
@@ -1085,6 +1086,8 @@ static int mt6833_mt6359_dev_probe(struct platform_device *pdev)
 	}
 
 	card->dev = &pdev->dev;
+
+	ret = soc_aux_init_only_sia81xx(pdev, card);
 
 	dev_info(&pdev->dev, "%s(), devm_snd_soc_register_card\n", __func__);
 
