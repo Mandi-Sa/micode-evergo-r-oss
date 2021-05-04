@@ -2401,10 +2401,10 @@ static int mt_mic_bias_0_event(struct snd_soc_dapm_widget *w,
 			break;
 		}
 
-		/* MISBIAS0 = 1P9V */
+		/* MISBIAS0 = 2P5V */
 		regmap_update_bits(priv->regmap, MT6359_AUDENC_ANA_CON15,
 				   RG_AUDMICBIAS0VREF_MASK_SFT,
-				   MIC_BIAS_1P9 << RG_AUDMICBIAS0VREF_SFT);
+				   MIC_BIAS_2P5 << RG_AUDMICBIAS0VREF_SFT);
 		/* vow low power select */
 		regmap_update_bits(priv->regmap, MT6359_AUDENC_ANA_CON15,
 				   RG_AUDMICBIAS0LOWPEN_MASK_SFT,
@@ -2489,10 +2489,10 @@ static int mt_mic_bias_2_event(struct snd_soc_dapm_widget *w,
 			break;
 		}
 
-		/* MISBIAS2 = 1P9V */
+		/* MISBIAS2 = 2P5V */
 		regmap_update_bits(priv->regmap, MT6359_AUDENC_ANA_CON17,
 				   RG_AUDMICBIAS2VREF_MASK_SFT,
-				   MIC_BIAS_1P9 << RG_AUDMICBIAS2VREF_SFT);
+				   MIC_BIAS_2P5 << RG_AUDMICBIAS2VREF_SFT);
 		/* vow low power select */
 		regmap_update_bits(priv->regmap, MT6359_AUDENC_ANA_CON17,
 				   RG_AUDMICBIAS2LOWPEN_MASK_SFT,

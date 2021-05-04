@@ -327,6 +327,6 @@
 // #include "mediatek/cust_mt6833_camera.dtsi"
 #include "mediatek/cust_S98016AA1_camera.dtsi"
 #include <S98016AA1/cust.dtsi>
-
+#include "mediatek/sia81xx.dtsi"
 
 /*End of this file, DO NOT ADD ANYTHING HERE*/

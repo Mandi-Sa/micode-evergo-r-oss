@@ -34,5 +34,5 @@ subdir-ccflags-y += -I$(srctree)/sound/soc/codecs/aw87339/$(MTK_PROJECT)/
 endif
 
 ifeq ($(CONFIG_SND_SOC_SIA8109),y)
-subdir-ccflags-y += -I$(srctree)/sound/soc/codecs/sia81xx/$(MTK_PROJECT)/
+subdir-ccflags-y += -I$(srctree)/sound/soc/codecs/sia81xx/
 endif
