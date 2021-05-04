@@ -343,6 +343,8 @@
 #define T8EV5_SENSOR_ID                         0x1011
 
 #define S5KGD1SP_SENSOR_ID                      0x0841
+#define S5KJN1SUNNY_SENSOR_ID                   0x38e1
+#define OV50C40OFILM_SENSOR_ID                  0x565043
 #define HI846_SENSOR_ID                         0x0846
 #define OV02A10_MONO_SENSOR_ID                  0x2509
 #define IMX686_SENSOR_ID                        0X0686
@@ -563,6 +565,8 @@
 #define SENSOR_DRVNAME_OV13870_MIPI_RAW_5MP     "ov13870_mipi_raw_5mp"
 #define SENSOR_DRVNAME_OV8856_MIPI_RAW_5MP      "ov8856_mipi_raw_5mp"
 #define SENSOR_DRVNAME_S5KGD1SP_MIPI_RAW        "s5kgd1sp_mipi_raw"
+#define SENSOR_DRVNAME_S5KJN1SUNNY_MIPI_RAW     "s5kjn1sunny_mipi_raw"
+#define SENSOR_DRVNAME_OV50C40OFILM_MIPI_RAW     "ov50c40ofilm_mipi_raw"
 #define SENSOR_DRVNAME_HI846_MIPI_RAW           "hi846_mipi_raw"
 #define SENSOR_DRVNAME_GC02M0_MIPI_RAW          "gc02m0_mipi_raw"
 #define SENSOR_DRVNAME_OV02A10_MIPI_MONO        "ov02a10_mipi_mono"

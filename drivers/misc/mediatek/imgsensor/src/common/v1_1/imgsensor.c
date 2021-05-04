@@ -2270,6 +2270,7 @@ static void __exit imgsensor_exit(void)
 {
 	platform_driver_unregister(&gimgsensor_platform_driver);
 }
+#define NEED_LATE_INITCALL
 #ifdef NEED_LATE_INITCALL
 	late_initcall(imgsensor_init);
 #else
