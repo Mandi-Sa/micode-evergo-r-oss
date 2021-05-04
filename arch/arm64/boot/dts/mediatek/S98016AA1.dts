@@ -271,18 +271,18 @@
 
 	gps_l1_lna_pins_ol: gps_l1_lna@0 {
 		pins_cmd_dat {
-			pinmux = <PINMUX_GPIO87__FUNC_GPIO87>;
+			pinmux = <PINMUX_GPIO140__FUNC_GPIO140>;
 			output-low;
 		};
 	};
 	gps_l1_lna_pins_dsp_ctrl: gps_l1_lna@1 {
 		pins_cmd_dat {
-			pinmux = <PINMUX_GPIO87__FUNC_GPS_L1_ELNA_EN>;
+			pinmux = <PINMUX_GPIO140__FUNC_GPS_L1_ELNA_EN>;
 		};
 	};
 	gps_l1_lna_pins_oh: gps_l1_lna@2 {
 		pins_cmd_dat {
-			pinmux = <PINMUX_GPIO87__FUNC_GPIO87>;
+			pinmux = <PINMUX_GPIO140__FUNC_GPIO140>;
 			output-high;
 		};
 	};
