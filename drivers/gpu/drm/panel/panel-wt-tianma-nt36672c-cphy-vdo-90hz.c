@@ -474,8 +474,8 @@ static int tianma_setbacklight_cmdq(void *dsi, dcs_write_gce cb, void *handle,
 	    level = 255;
 
 	level = level * 2047 / 255;
-	int LSB_tmp = (level >> 8) & 0x7;
-	int MSB_tmp = level & 0xFF;
+	int LSB_tmp = level & 0x7;
+	int MSB_tmp = (level >> 3) & 0xFF;
 	_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, LSB_tmp);
 	_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, MSB_tmp);
 	pr_info("%s backlight = -%d\n", __func__, level);
