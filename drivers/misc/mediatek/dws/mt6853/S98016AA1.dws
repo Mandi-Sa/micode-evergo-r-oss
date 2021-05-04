@@ -2281,8 +2281,8 @@
             </device19>
             <device24>
                 <varName>CAMERA_MAIN</varName>
-                <channel>I2C_CHANNEL_8</channel>
-                <address>0x1A</address>
+                <channel>I2C_CHANNEL_2</channel>
+                <address>0x5A</address>
             </device24>
             <device26>
                 <varName>CAMERA_MAIN_AF</varName>
