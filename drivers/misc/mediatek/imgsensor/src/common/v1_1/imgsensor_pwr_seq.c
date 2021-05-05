@@ -72,6 +72,9 @@ struct IMGSENSOR_HW_POWER_SEQ sensor_power_sequence[] = {
 	{
 		SENSOR_DRVNAME_S5K3M5SX_MIPI_RAW,
 		{
+#ifdef CONFIG_REGULATOR_RT5133
+			{RST, Vol_High, 10},
+#endif
 			{RST, Vol_Low, 1},
 			{DVDD, Vol_1100, 0},
 			{AVDD, Vol_2800, 0},
@@ -163,6 +166,10 @@ struct IMGSENSOR_HW_POWER_SEQ sensor_power_sequence[] = {
 	{
 		SENSOR_DRVNAME_IMX576_MIPI_RAW,
 		{
+#ifdef CONFIG_REGULATOR_RT5133
+			{PDN, Vol_High, 0},
+			{RST, Vol_High, 10},
+#endif
 			{PDN, Vol_Low, 0},
 			{RST, Vol_Low, 0},
 			{AVDD, Vol_2800, 0},
