@@ -48,6 +48,7 @@ int _lcm_i2c_write_bytes(unsigned char addr, unsigned char value)
 
 struct lm36273_reg lm36273_regs_conf[] = {
 	{ LP36273_DISP_BC1, 0x48 },/* disable pwm*/
+	{LP36273_DISP_BC2, 0xcd},
 	{ LP36273_DISP_BB_LSB, 0x07 },
 	{ LP36273_DISP_BB_MSB, 0xff },
 	{ LP36273_DISP_BIAS_VPOS, 0x1e },/* set vsp to +5.5V*/
