@@ -4650,6 +4650,8 @@
 		reg = <0 0x1a004000 0 0x1000>;
 		clocks =<&scpsys SCP_SYS_CSI>,
 			<&scpsys SCP_SYS_CAM>,
+			<&scpsys SCP_SYS_CAM_RAWA>,
+			<&scpsys SCP_SYS_CAM_RAWB>,
 			<&camsys_main_clk CLK_CAM_M_SENINF>,
 			<&topckgen_clk CLK_TOP_SENINF_SEL>,
 			<&topckgen_clk CLK_TOP_SENINF1_SEL>,
@@ -4671,6 +4673,8 @@
 			<&topckgen_clk CLK_TOP_UNIVPLL_D5>;
 		clock-names = "SCP_SYS_CSI",
 			"SCP_SYS_CAM",
+			"ISP_SCP_SYS_RAWA",
+			"ISP_SCP_SYS_RAWB",
 			"CAMSYS_SENINF_CGPDN",
 			"TOP_MUX_SENINF",
 			"TOP_MUX_SENINF1",
