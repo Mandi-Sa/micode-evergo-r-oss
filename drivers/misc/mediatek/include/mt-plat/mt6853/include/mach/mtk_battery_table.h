@@ -196,8 +196,10 @@ int g_temperature[MAX_TABLE] = {
 };
 
 
-#define BAT_NTC_10 1
+#define BAT_NTC_10 0
 #define BAT_NTC_47 0
+//bug651594,wangbin wt. 20210505,add 100k ntc para
+#define BAT_NTC_100 1
 
 #if (BAT_NTC_10 == 1)
 #define RBAT_PULL_UP_R             24000
@@ -206,10 +208,44 @@ int g_temperature[MAX_TABLE] = {
 #if (BAT_NTC_47 == 1)
 #define RBAT_PULL_UP_R             61900
 #endif
+/*+bug651594,wangbin wt. 20210505,add 100k ntc para*/
+#if (BAT_NTC_100 == 1)
+#define RBAT_PULL_UP_R             24000
+#endif
+/*-bug651594,wangbin wt. 20210505,add 100k ntc para*/
 
 #define RBAT_PULL_UP_VOLT          2800
 
 #define BIF_NTC_R 16000
+/*+bug651594,wangbin wt. 20210505,add 100k ntc para*/
+#if (BAT_NTC_100 == 1)
+struct FUELGAUGE_TEMPERATURE Fg_Temperature_Table[23] = {
+		{-40, 4397119},
+		{-35, 3088598},
+		{-30, 2197225},
+		{-25, 1581880},
+		{-20, 1151036},
+		{-15, 846578},
+		{-10, 628988},
+		{-5, 471632},
+		{0, 357011},
+		{5, 272499},
+		{10, 209709},
+		{15, 162650},
+		{20, 127080},
+		{25, 100000},
+		{30, 79221},
+		{35, 63167},
+		{40, 50676},
+		{45, 40903},
+		{50, 33194},
+		{55, 27090},
+		{60, 22224},
+		{65, 18322},
+		{70, 15184}
+};
+#endif
+/*-bug651594,wangbin wt. 20210505,add 100k ntc para*/
 
 #if (BAT_NTC_10 == 1)
 struct FUELGAUGE_TEMPERATURE Fg_Temperature_Table[21] = {
