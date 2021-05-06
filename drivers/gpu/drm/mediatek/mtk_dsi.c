@@ -307,6 +307,20 @@ struct t_condition_wq {
 	wait_queue_head_t wq;
 	atomic_t condition;
 };
+struct LCM_setting_table {
+	unsigned cmd;
+	unsigned char count;
+	unsigned char para_list[64];
+};
+
+struct LCM_mipi_read_write {
+	unsigned int read_enable;
+	unsigned int read_count;
+	unsigned char read_buffer[64];
+	struct LCM_setting_table lcm_setting_table;
+};
+static struct LCM_mipi_read_write lcm_mipi_read_write ={0};
+
 
 struct mtk_dsi {
 	struct mtk_ddp_comp ddp_comp;
@@ -377,6 +391,195 @@ enum DSI_MODE_CON {
 	MODE_CON_SYNC_EVENT_VDO,
 	MODE_CON_BURST_VDO,
 };
+ static char string_to_hex(const char *str)
+{
+	char val_l = 0;
+	char val_h = 0;
+
+	if (str[0] >= '0' && str[0] <= '9')
+		val_h = str[0] - '0';
+	else if (str[0] <= 'f' && str[0] >= 'a')
+		val_h = 10 + str[0] - 'a';
+	else if (str[0] <= 'F' && str[0] >= 'A')
+		val_h = 10 + str[0] - 'A';
+
+	if (str[1] >= '0' && str[1] <= '9')
+		val_l = str[1]-'0';
+	else if (str[1] <= 'f' && str[1] >= 'a')
+		val_l = 10 + str[1] - 'a';
+	else if (str[1] <= 'F' && str[1] >= 'A')
+		val_l = 10 + str[1] - 'A';
+
+	return (val_h << 4) | val_l;
+}
+
+static int string_merge_into_buf(const char *str, int len, char *buf)
+{
+	int buf_size = 0;
+	int i = 0;
+	const char *p = str;
+
+	while (i < len) {
+		if (((p[0] >= '0' && p[0] <= '9') ||
+			(p[0] <= 'f' && p[0] >= 'a') ||
+			(p[0] <= 'F' && p[0] >= 'A'))
+			&& ((i + 1) < len)) {
+			buf[buf_size] = string_to_hex(p);
+			pr_debug("0x%02x ", buf[buf_size]);
+			buf_size++;
+			i += 2;
+			p += 2;
+		} else {
+			i++;
+			p++;
+		}
+	}
+	return buf_size;
+}
+
+long lcm_mipi_reg_write(char *buf, size_t count)
+{
+	int retval = 0;
+	int dlen = 0;
+	unsigned int read_enable = 0;
+	unsigned int packet_count = 0;
+	unsigned int register_value = 0;
+	char *input = NULL;
+	char *data = NULL;
+	unsigned char pbuf[3] = {0};
+	u8 tx[10] = {0};
+	unsigned int  i = 0, j = 0;
+	struct mtk_ddic_dsi_msg *cmd_msg =
+		vmalloc(sizeof(struct mtk_ddic_dsi_msg));
+	pr_info("[%s]: mipi_write_date source: count = %d,buf = %s ", __func__, (int)count, buf);
+
+	input = buf;
+	memcpy(pbuf, input, 2);
+	pbuf[2] = '\0';
+	retval = kstrtou32(pbuf, 10, &read_enable);
+	if (retval)
+		goto exit;
+	lcm_mipi_read_write.read_enable = !!read_enable;
+	input = input + 3;
+	memcpy(pbuf, input, 2);
+	pbuf[2] = '\0';
+	packet_count = (unsigned int)string_to_hex(pbuf);
+	if (lcm_mipi_read_write.read_enable && !packet_count) {
+		retval = -EINVAL;
+		goto exit;
+	}
+	input = input + 3;
+	memcpy(pbuf, input, 2);
+	pbuf[2] = '\0';
+	register_value = (unsigned int)string_to_hex(pbuf);
+	lcm_mipi_read_write.lcm_setting_table.cmd = register_value;
+
+	if(lcm_mipi_read_write.read_enable) {
+		lcm_mipi_read_write.read_count = packet_count;
+
+		cmd_msg->channel = 0;
+		cmd_msg->tx_cmd_num = 1;
+		cmd_msg->type[0] = 0x06;
+		tx[0] = lcm_mipi_read_write.lcm_setting_table.cmd;
+		cmd_msg->tx_buf[0] = tx;
+		cmd_msg->tx_len[0] = 1;
+
+		cmd_msg->rx_cmd_num = 1;
+		cmd_msg->rx_buf[0] = lcm_mipi_read_write.read_buffer;
+		memset(cmd_msg->rx_buf[0], 0, lcm_mipi_read_write.read_count);
+		cmd_msg->rx_len[0] = lcm_mipi_read_write.read_count;
+		retval = mtk_ddic_dsi_read_cmd(cmd_msg);
+		if (retval != 0) {
+			pr_err("%s error\n", __func__);
+		}
+
+		pr_info("read lcm addr:%pad--dlen:%d\n",
+			&(*(char *)(cmd_msg->tx_buf[0])), (int)cmd_msg->rx_len[0]);
+		for (j = 0; j < cmd_msg->rx_len[0]; j++) {
+			pr_info("read lcm addr:%pad--byte:%d,val:%pad\n",
+				&(*(char *)(cmd_msg->tx_buf[0])), j,
+				&(*(char *)(cmd_msg->rx_buf[0] + j)));
+		}
+		goto exit;
+	} else {
+		lcm_mipi_read_write.lcm_setting_table.count = (unsigned char)packet_count;
+		memcpy(lcm_mipi_read_write.lcm_setting_table.para_list, "",64);
+		if(count > 8)
+		{
+			data = kzalloc(count - 6, GFP_KERNEL);
+			if (!data) {
+				retval = -ENOMEM;
+				goto exit;
+			}
+			data[count-6-1] = '\0';
+			//input = input + 3;
+			dlen = string_merge_into_buf(input,count -6,data);
+			memcpy(lcm_mipi_read_write.lcm_setting_table.para_list, data,dlen);
+
+			cmd_msg->channel = packet_count;
+			cmd_msg->flags = MIPI_DSI_MSG_USE_LPM;
+			cmd_msg->tx_cmd_num = 1;
+			cmd_msg->type[0] = 0x39;
+
+			if (2 == dlen) {
+				cmd_msg->type[0] = 0x15;
+			} else if (1 == dlen) {
+				cmd_msg->type[0] = 0x05;
+			}
+
+			cmd_msg->tx_buf[0] = data;
+			cmd_msg->tx_len[0] = dlen;
+			for (i = 0; i < (int)cmd_msg->tx_cmd_num; i++) {
+				pr_debug("send lcm tx_len[%d]=%d\n",
+					i, (int)cmd_msg->tx_len[i]);
+				for (j = 0; j < (int)cmd_msg->tx_len[i]; j++) {
+					pr_debug(
+						"send lcm type[%d]=0x%x, tx_buf[%d]--byte:%d,val:%pad\n",
+						i, cmd_msg->type[i], i, j,
+						&(*(char *)(cmd_msg->tx_buf[i] + j)));
+				}
+			}
+
+			mtk_ddic_dsi_send_cmd(cmd_msg, true);
+		}
+	}
+
+	pr_debug("[%s]: mipi_write done!\n", __func__);
+	pr_debug("[%s]: write cmd = %d,len = %d\n", __func__,lcm_mipi_read_write.lcm_setting_table.cmd,lcm_mipi_read_write.lcm_setting_table.count);
+	pr_debug("[%s]: mipi_write data: ", __func__);
+	for(i=0; i<count-3; i++)
+	{
+		pr_debug("0x%x ", lcm_mipi_read_write.lcm_setting_table.para_list[i]);
+	}
+	pr_debug("\n ");
+
+	if(count > 8)
+	{
+		kfree(data);
+	}
+exit:
+	retval = count;
+	vfree(cmd_msg);
+	return retval;
+}
+long  lcm_mipi_reg_read(char *buf)
+{
+	int i = 0;
+	ssize_t count = 0;
+
+	if (lcm_mipi_read_write.read_enable) {
+		for (i = 0; i < lcm_mipi_read_write.read_count; i++) {
+			if (i ==  lcm_mipi_read_write.read_count - 1) {
+				count += snprintf(buf + count, PAGE_SIZE - count, "0x%02x\n",
+				     lcm_mipi_read_write.read_buffer[i]);
+			} else {
+				count += snprintf(buf + count, PAGE_SIZE - count, "0x%02x ",
+				     lcm_mipi_read_write.read_buffer[i]);
+			}
+		}
+	}
+	return count;
+}
 
 struct mtk_panel_ext *mtk_dsi_get_panel_ext(struct mtk_ddp_comp *comp);
 
