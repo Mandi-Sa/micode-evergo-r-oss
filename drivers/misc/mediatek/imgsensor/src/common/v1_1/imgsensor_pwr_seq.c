@@ -36,12 +36,25 @@ struct IMGSENSOR_HW_POWER_SEQ sensor_power_sequence[] = {
 	{
 		SENSOR_DRVNAME_OV50C40OFILM_MIPI_RAW,
 		{
-            {SensorMCLK, Vol_High, 0},
+                        {SensorMCLK, Vol_High, 0},
 			{RST, Vol_Low, 1},
 			{AVDD, Vol_2800, 1},
 			{DOVDD, Vol_1800, 1},
 			{DVDD, Vol_1200, 1},
 			{RST, Vol_High, 5},
+		},
+	},
+#endif
+#if defined(GC02M1OFILM_MIPI_RAW)
+	{
+		SENSOR_DRVNAME_GC02M1OFILM_MIPI_RAW,
+        {
+			{IMGSENSOR_HW_PIN_MIPI_SWITCH_SEL, Vol_High, 1},
+			{RST, Vol_Low, 1},
+			{DOVDD, Vol_1800, 0},
+			{AVDD, Vol_2800, 1},
+			{SensorMCLK, Vol_High, 1},
+			{RST, Vol_High, 1}
 		},
 	},
 #endif

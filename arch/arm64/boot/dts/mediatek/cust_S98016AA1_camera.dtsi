@@ -262,10 +262,16 @@
 	pinctrl-30 = <&camera_pins_cam_mipi_switch_sel_0>;
 
 	cam0_vcamd-supply = <&wl2866d_dvdd1>;
-    cam0_vcama-supply = <&wl2866d_avdd1>;
+        cam0_vcama-supply = <&wl2866d_avdd1>;
 	cam0_vcamio-supply = <&mt_pmic_vtp_ldo_reg>;
+
 	cam1_vcamio-supply = <&mt_pmic_vcamio_ldo_reg>;
 	cam2_vcamio-supply = <&mt_pmic_vcamio_ldo_reg>;
+
+	cam2_vcamswitch-supply = <&mt_pmic_vcamio_ldo_reg>;
+	cam3_vcamswitch-supply = <&mt_pmic_vcamio_ldo_reg>;
+
+    cam3_vcama-supply = <&wl2866d_avdd1>;
 	cam3_vcamio-supply = <&mt_pmic_vcamio_ldo_reg>;
 
 	status = "okay";
@@ -275,6 +281,10 @@
 /* CAMERA specify sensor */
 &kd_camera_hw1 {
 	cam0_enable_sensor = "s5kjn1sunny_mipi_raw ov50c40ofilm_mipi_raw";
+	cam1_enable_sensor = "";
+	cam2_enable_sensor = "";
+	cam3_enable_sensor = "gc02m1ofilm_mipi_raw";
+	cam4_enable_sensor = "";
 };
 /* CAMERA specify sensor end */
 
