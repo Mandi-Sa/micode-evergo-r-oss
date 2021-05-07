@@ -352,7 +352,7 @@
 #define OV48C_SENSOR_ID                         0x564843
 #define IMX355_SENSOR_ID                        0x0355
 #define OV13B10_SENSOR_ID                       0x560d42
-#define OV02B10_SENSOR_ID                       0x002b
+#define OV02B10AAC_SENSOR_ID                    0x002b
 
 
 #define OV48B_SENSOR_ID                         0x564842
@@ -364,7 +364,7 @@
 #define GC02K0_SENSOR_ID                        0x2385
 #define OV16A10_SENSOR_ID                       0x561641
 #define GC02M1B_SENSOR_ID                       0x02e0
-#define GC02M1OFILM_SENSOR_ID                       0x02e0
+#define GC02M1OFILM_SENSOR_ID                   0x02e0
 #define OV64B_SENSOR_ID                         0x5664
 #define IMX615_SENSOR_ID                        0x0615
 
@@ -586,7 +586,7 @@
 #define SENSOR_DRVNAME_OV48C_MIPI_RAW           "ov48c_mipi_raw"
 #define SENSOR_DRVNAME_IMX355_MIPI_RAW          "imx355_mipi_raw"
 #define SENSOR_DRVNAME_OV13B10_MIPI_RAW         "ov13b10_mipi_raw"
-#define SENSOR_DRVNAME_OV02B10_MIPI_RAW         "ov02b10_mipi_raw"
+#define SENSOR_DRVNAME_OV02B10AAC_MIPI_RAW      "ov02b10aac_mipi_raw"
 #define SENSOR_DRVNAME_OV64B_MIPI_RAW           "ov64b_mipi_raw"
 #define SENSOR_DRVNAME_IMX615_MIPI_RAW          "imx615_mipi_raw"
 
