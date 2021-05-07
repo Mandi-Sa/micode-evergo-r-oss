@@ -283,7 +283,7 @@
 	cam0_enable_sensor = "s5kjn1sunny_mipi_raw ov50c40ofilm_mipi_raw";
 	cam1_enable_sensor = "";
 	cam2_enable_sensor = "";
-	cam3_enable_sensor = "gc02m1ofilm_mipi_raw";
+	cam3_enable_sensor = "ov02b10aac_mipi_raw gc02m1ofilm_mipi_raw";
 	cam4_enable_sensor = "";
 };
 /* CAMERA specify sensor end */
