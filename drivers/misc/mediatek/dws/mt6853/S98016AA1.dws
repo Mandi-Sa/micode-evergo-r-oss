@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--dct_version="2.5" buid_sn="161102" dws_modification_time="05.06.2021.20:16:31"-->
+<!--dct_version="2.5" buid_sn="161102" dws_modification_time="05.07.2021.17:00:19"-->
 <dct_cfg>
     <general chip="MT6833">
         <proj>P21_Phone1</proj>
@@ -2251,7 +2251,7 @@
             <device11>
                 <varName>CAMERA_SUB</varName>
                 <channel>I2C_CHANNEL_4</channel>
-                <address>0x1A</address>
+                <address>0x12</address>
             </device11>
             <device14>
                 <varName>SUBPMIC</varName>
@@ -2288,11 +2288,6 @@
                 <channel>I2C_CHANNEL_8</channel>
                 <address>0x72</address>
             </device26>
-            <device27>
-                <varName>CAMERA_MAIN_TWO_AF</varName>
-                <channel>I2C_CHANNEL_4</channel>
-                <address>0x0C</address>
-            </device27>
             <device28>
                 <varName>CAMERA_SUB_TWO</varName>
                 <channel>I2C_CHANNEL_8</channel>

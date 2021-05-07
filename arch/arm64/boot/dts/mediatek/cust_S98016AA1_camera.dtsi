@@ -207,6 +207,21 @@
 			output-low;
 		};
 	};
+	// camera1 GPIO supply
+        camera_pins_cam1_dvdd_off: ldo_vcamd@0{
+                pins_cmd_dat {
+                        pinmux = <PINMUX_GPIO93__FUNC_GPIO93>;
+                        slew-rate = <1>;
+                        output-low;
+                };
+        };
+        camera_pins_cam1_dvdd_on: ldo_vcamd@1{
+                pins_cmd_dat {
+                        pinmux = <PINMUX_GPIO93__FUNC_GPIO93>;
+                        slew-rate = <1>;
+                        output-high;
+                };
+        };
 	camera_pins_default: camdefault {
 	};
 };
@@ -228,7 +243,8 @@
 			"cam3_mclk_off",
 			"cam3_mclk_2mA", "cam3_mclk_4mA",
 			"cam3_mclk_6mA", "cam3_mclk_8mA",
-			"cam_mipi_switch_sel_1", "cam_mipi_switch_sel_0";
+			"cam_mipi_switch_sel_1", "cam_mipi_switch_sel_0",
+			"cam1_ldo_vcamd_0", "cam1_ldo_vcamd_1";
 	pinctrl-0 = <&camera_pins_default>;
 	pinctrl-1 = <&camera_pins_cam0_rst_0>;
 	pinctrl-2 = <&camera_pins_cam0_rst_1>;
@@ -260,18 +276,20 @@
 	pinctrl-28 = <&camera_pins_cam3_mclk_8ma>;
 	pinctrl-29 = <&camera_pins_cam_mipi_switch_sel_1>;
 	pinctrl-30 = <&camera_pins_cam_mipi_switch_sel_0>;
+	pinctrl-31 = <&camera_pins_cam1_dvdd_off>;
+	pinctrl-32 = <&camera_pins_cam1_dvdd_on>;
 
 	cam0_vcamd-supply = <&wl2866d_dvdd1>;
         cam0_vcama-supply = <&wl2866d_avdd1>;
 	cam0_vcamio-supply = <&mt_pmic_vtp_ldo_reg>;
-
+        cam1_vcama-supply = <&wl2866d_avdd2>;
 	cam1_vcamio-supply = <&mt_pmic_vcamio_ldo_reg>;
 	cam2_vcamio-supply = <&mt_pmic_vcamio_ldo_reg>;
 
 	cam2_vcamswitch-supply = <&mt_pmic_vcamio_ldo_reg>;
 	cam3_vcamswitch-supply = <&mt_pmic_vcamio_ldo_reg>;
 
-    cam3_vcama-supply = <&wl2866d_avdd1>;
+        cam3_vcama-supply = <&wl2866d_avdd1>;
 	cam3_vcamio-supply = <&mt_pmic_vcamio_ldo_reg>;
 
 	status = "okay";
@@ -281,7 +299,7 @@
 /* CAMERA specify sensor */
 &kd_camera_hw1 {
 	cam0_enable_sensor = "s5kjn1sunny_mipi_raw ov50c40ofilm_mipi_raw";
-	cam1_enable_sensor = "";
+	cam1_enable_sensor = "ov16a1qofilm_mipi_raw ov16a1qqtech_mipi_raw";
 	cam2_enable_sensor = "";
 	cam3_enable_sensor = "ov02b10aac_mipi_raw gc02m1ofilm_mipi_raw";
 	cam4_enable_sensor = "";

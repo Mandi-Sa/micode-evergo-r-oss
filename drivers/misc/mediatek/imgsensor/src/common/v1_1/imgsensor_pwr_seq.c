@@ -45,6 +45,32 @@ struct IMGSENSOR_HW_POWER_SEQ sensor_power_sequence[] = {
 		},
 	},
 #endif
+#if defined(OV16A1QOFILM_MIPI_RAW)
+       {
+               SENSOR_DRVNAME_OV16A1QOFILM_MIPI_RAW,
+               {
+                       {RST, Vol_Low, 2},
+                       {DOVDD, Vol_1800, 0},
+                       {DVDD, Vol_1200, 0},
+                       {AVDD, Vol_2800, 2},
+                       {SensorMCLK, Vol_High, 2},
+                       {RST, Vol_High, 5},
+               },
+       },
+#endif
+#if defined(OV16A1QQTECH_MIPI_RAW)
+       {
+               SENSOR_DRVNAME_OV16A1QQTECH_MIPI_RAW,
+               {
+                       {RST, Vol_Low, 2},
+                       {DOVDD, Vol_1800, 0},
+                       {DVDD, Vol_1200, 0},
+                       {AVDD, Vol_2800, 2},
+                       {SensorMCLK, Vol_High, 2},
+                       {RST, Vol_High, 5},
+               },
+       },
+#endif
 #if defined(OV02B10AAC_MIPI_RAW)
 	{
 		SENSOR_DRVNAME_OV02B10AAC_MIPI_RAW,
