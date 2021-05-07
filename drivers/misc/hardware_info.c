@@ -94,12 +94,12 @@ static char* hwid_get(void)
 	char* s2="not found";
 	char *ptr =NULL;
 
-	s1 = strstr(saved_command_line, "hardware_name=");
+	s1 = strstr(saved_command_line, "hw_id=");
 	if(!s1) {
-		printk("hardware_name not found in cmdline\n");
+		printk("hw_id not found in cmdline\n");
 		return s2;
 	}
-	s1 += strlen("hardware_name=");
+	s1 += strlen("hw_id=");
 	ptr=s1;
 	while(*ptr != ' ' && *ptr != '\0') {
 		ptr++;
