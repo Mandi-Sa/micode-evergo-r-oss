@@ -122,6 +122,8 @@
  ************************************************************************/
 /* SENSOR CHIP VERSION */
 /*IMX*/
+#define IMX355OFILM_SENSOR_ID                   0x355
+#define IMX355SUNNY_SENSOR_ID                   0x356
 #define IMX499_SENSOR_ID                        0x0499
 #define IMX481_SENSOR_ID                        0x0481
 #define IMX486_SENSOR_ID                        0x0486
@@ -374,6 +376,8 @@
 #define CAMERA_HW_DEVNAME                       "kd_camera_hw"
 /* SENSOR DEVICE DRIVER NAME */
 /*IMX*/
+#define SENSOR_DRVNAME_IMX355OFILM_MIPI_RAW     "imx355ofilm_mipi_raw"
+#define SENSOR_DRVNAME_IMX355SUNNY_MIPI_RAW     "imx355sunny_mipi_raw"
 #define SENSOR_DRVNAME_IMX499_MIPI_RAW          "imx499_mipi_raw"
 #define SENSOR_DRVNAME_IMX499_MIPI_RAW_13M      "imx499_mipi_raw_13m"
 #define SENSOR_DRVNAME_IMX481_MIPI_RAW          "imx481_mipi_raw"

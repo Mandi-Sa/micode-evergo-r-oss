@@ -97,6 +97,32 @@ struct IMGSENSOR_HW_POWER_SEQ sensor_power_sequence[] = {
 		},
 	},
 #endif
+#if defined(IMX355OFILM_MIPI_RAW)
+	{
+		SENSOR_DRVNAME_IMX355OFILM_MIPI_RAW,
+		{
+			{RST, Vol_Low, 1},
+			{DOVDD, Vol_1800, 0},
+			{DVDD, Vol_1200, 0},
+			{AVDD, Vol_2700, 0},
+			{SensorMCLK, Vol_High, 1},
+			{RST, Vol_High, 1}
+		},
+	},
+#endif
+#if defined(IMX355SUNNY_MIPI_RAW)
+	{
+		SENSOR_DRVNAME_IMX355SUNNY_MIPI_RAW,
+		{
+			{RST, Vol_Low, 1},
+			{DOVDD, Vol_1800, 0},
+			{DVDD, Vol_1200, 0},
+			{AVDD, Vol_2700, 0},
+			{SensorMCLK, Vol_High, 1},
+			{RST, Vol_High, 1}
+		},
+	},
+#endif
 	/* add new sensor before this line */
 	{NULL,},
 };

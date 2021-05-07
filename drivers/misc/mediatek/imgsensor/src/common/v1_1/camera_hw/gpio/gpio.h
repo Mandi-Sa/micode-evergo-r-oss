@@ -14,7 +14,6 @@
 #ifndef __IMGSENSOR_HW_GPIO_H__
 #define __IMGSENSOR_HW_GPIO_H__
 
-
 #include <linux/of.h>
 #include <linux/of_fdt.h>
 #include <linux/mutex.h>
