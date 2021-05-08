@@ -265,6 +265,12 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(precharge_current),
 	POWER_SUPPLY_ATTR(charge_term_current),
 	POWER_SUPPLY_ATTR(calibrate),
+	/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+	POWER_SUPPLY_ATTR(batt_vol),
+	POWER_SUPPLY_ATTR(batt_temp),
+	POWER_SUPPLY_ATTR(typec_cc_orientation),
+	POWER_SUPPLY_ATTR(resistance_id),
+	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
 	/* Local extensions */
 	POWER_SUPPLY_ATTR(usb_hc),
 	POWER_SUPPLY_ATTR(usb_otg),

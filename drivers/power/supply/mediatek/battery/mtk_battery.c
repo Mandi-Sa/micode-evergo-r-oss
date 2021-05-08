@@ -130,6 +130,12 @@ static enum power_supply_property battery_props[] = {
 	POWER_SUPPLY_PROP_CAPACITY_LEVEL,
 	POWER_SUPPLY_PROP_TIME_TO_FULL_NOW,
 	POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN,
+	/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+	POWER_SUPPLY_PROP_BATTERY_VOLTAGE,
+	POWER_SUPPLY_PROP_BATTERY_TEMP,
+	POWER_SUPPLY_PROP_RESISTANCE_ID,
+	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+
 };
 
 /* weak function */
@@ -529,7 +535,17 @@ static int battery_get_property(struct power_supply *psy,
 			val->intval = q_max_uah;
 		}
 		break;
-
+	/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+	case POWER_SUPPLY_PROP_BATTERY_VOLTAGE:
+		val->intval = data->BAT_batt_vol * 1000;
+		break;
+	case POWER_SUPPLY_PROP_BATTERY_TEMP:
+		val->intval = gm.tbat_precise;
+		break;
+	case POWER_SUPPLY_PROP_RESISTANCE_ID:
+		val->intval = 0;
+		break;
+	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
 
 	default:
 		ret = -EINVAL;

@@ -92,6 +92,9 @@ struct chg_type_info {
 	struct work_struct chg_in_work;
 	bool ignore_usb;
 	bool plugin;
+	/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+	int polarity_state;
+	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
 };
 
 #ifdef CONFIG_FPGA_EARLY_PORTING
@@ -323,6 +326,11 @@ static int mt_usb_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX:
 		val->intval = 5000000;
 		break;
+	/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+	case POWER_SUPPLY_PROP_TYPEC_POLARITY:
+		val->intval = mtk_chg->cti->polarity_state;
+		break;
+	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
 	default:
 		return -EINVAL;
 	}
@@ -342,6 +350,9 @@ static enum power_supply_property mt_usb_properties[] = {
 	POWER_SUPPLY_PROP_ONLINE,
 	POWER_SUPPLY_PROP_CURRENT_MAX,
 	POWER_SUPPLY_PROP_VOLTAGE_MAX,
+	/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+	POWER_SUPPLY_PROP_TYPEC_POLARITY,
+	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
 };
 
 static void tcpc_power_off_work_handler(struct work_struct *work)
@@ -409,6 +420,13 @@ static int pd_tcp_notifier_call(struct notifier_block *pnb,
 			pr_info("%s Sink_to_Source\n", __func__);
 			plug_in_out_handler(cti, false, true);
 		}
+		/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+		if (noti->typec_state.new_state != TYPEC_UNATTACHED)
+			cti->polarity_state = noti->typec_state.polarity + 1;
+		else
+			cti->polarity_state = 0;
+		/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+
 		break;
 	}
 	return NOTIFY_OK;
