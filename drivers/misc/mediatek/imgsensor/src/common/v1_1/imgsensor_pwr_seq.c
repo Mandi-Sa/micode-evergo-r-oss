@@ -23,12 +23,12 @@ struct IMGSENSOR_HW_POWER_SEQ sensor_power_sequence[] = {
 	{
 		SENSOR_DRVNAME_S5KJN1SUNNY_MIPI_RAW,
 		{
+			{SensorMCLK, Vol_High, 3},
 			{RST, Vol_Low, 1},
 			{DOVDD, Vol_1800, 1},
 			{DVDD, Vol_1100, 1},
-			{AVDD, Vol_2800, 1},
+			{AVDD, Vol_2800, 5},
 			{RST, Vol_High, 5},
-			{SensorMCLK, Vol_High, 0},
 		},
 	},
 #endif

@@ -5654,10 +5654,10 @@ get_info(enum MSDK_SCENARIO_ID_ENUM scenario_id,
 {
 	LOG_INF("scenario_id = %d\n", scenario_id);
 
-	sensor_info->SensorClockPolarity = SENSOR_CLOCK_POLARITY_HIGH;
-	sensor_info->SensorClockFallingPolarity = SENSOR_CLOCK_POLARITY_HIGH;
-	sensor_info->SensorHsyncPolarity = SENSOR_CLOCK_POLARITY_HIGH;
-	sensor_info->SensorVsyncPolarity = SENSOR_CLOCK_POLARITY_HIGH;
+	sensor_info->SensorClockPolarity = SENSOR_CLOCK_POLARITY_LOW;
+	sensor_info->SensorClockFallingPolarity = SENSOR_CLOCK_POLARITY_LOW;
+	sensor_info->SensorHsyncPolarity = SENSOR_CLOCK_POLARITY_LOW;
+	sensor_info->SensorVsyncPolarity = SENSOR_CLOCK_POLARITY_LOW;
 	sensor_info->SensorInterruptDelayLines = 4;
 	sensor_info->SensorResetActiveHigh = FALSE;
 	sensor_info->SensorResetDelayCount = 5;
