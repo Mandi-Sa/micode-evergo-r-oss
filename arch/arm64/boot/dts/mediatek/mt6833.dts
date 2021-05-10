@@ -5142,6 +5142,10 @@ page_owner=on loop.max_part=7";
 		clock-names = "parent-clk", "sel-clk", "spi-clk";
 	};
 
+	fpsensor_fp_eint:fpsensor_fp_eint{
+		compatible = "mediatek,fpsensor_fp_eint";
+	};
+
 	spi6: spi6@1101d000 {
 		compatible = "mediatek,mt6765-spi";
 		mediatek,pad-select = <0>;
