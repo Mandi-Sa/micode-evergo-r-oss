@@ -72,6 +72,8 @@ struct tianma {
 		tianma_dcs_write(ctx, d, ARRAY_SIZE(d));                          \
 	})
 
+extern int lm36273_brightness_set(int level);
+
 static inline struct tianma *panel_to_tianma(struct drm_panel *panel)
 {
 	return container_of(panel, struct tianma, panel);
@@ -469,16 +471,7 @@ static int panel_ata_check(struct drm_panel *panel)
 static int tianma_setbacklight_cmdq(void *dsi, dcs_write_gce cb, void *handle,
 				 unsigned int level)
 {
-
-    if (level > 255)
-	    level = 255;
-
-	level = level * 2047 / 255;
-	int LSB_tmp = level & 0x7;
-	int MSB_tmp = (level >> 3) & 0xFF;
-	_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, LSB_tmp);
-	_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, MSB_tmp);
-	pr_info("%s backlight = -%d\n", __func__, level);
+	lm36273_brightness_set(level);
 	return 0;
 }
 
