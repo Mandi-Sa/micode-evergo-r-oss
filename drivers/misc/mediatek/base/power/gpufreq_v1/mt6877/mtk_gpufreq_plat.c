@@ -325,6 +325,9 @@ unsigned int mt_gpufreq_get_shader_present(void)
 	case MT6877_SEGMENT:
 		shader_present = MT_GPU_SHADER_PRESENT_4;
 		break;
+	case MT6877T_SEGMENT:
+		shader_present = MT_GPU_SHADER_PRESENT_4;
+		break;
 	default:
 		shader_present = MT_GPU_SHADER_PRESENT_4;
 		gpufreq_pr_info("@%s: invalid segment_id(%d)\n",
@@ -1447,6 +1450,7 @@ static void __mt_gpufreq_update_table_by_asensor(void)
 	bool error_bit = false;
 	int adiff, adiff1, adiff2;
 	int i;
+	int leak_power;
 
 	if (g_aging_table_id != -1)
 		return;
@@ -1494,12 +1498,19 @@ static void __mt_gpufreq_update_table_by_asensor(void)
 	adiff2 = a_t0_ulvt_rt + tj - a_tn_ulvt_cnt;
 	adiff = MAX(adiff1, adiff2);
 
+	/* apply volt=0.8V, temp=30C to get leakage information.
+	 * For leakage < 16 (mW), DISABLE aging reduction.
+	 */
+	leak_power = mt_spower_get_leakage(MTK_SPOWER_GPU, (80000 / 100), 30);
+
 	/* 5. Deside aging_table_id */
 	if (efuse_val1 == 0 || efuse_val2 == 0)
 		aging_table_id = 3;
 	else if (MIN(tj1, tj2) < 25)
 		aging_table_id = 3;
 	else if (error_bit)
+		aging_table_id = 3;
+	else if (leak_power < 16)
 		aging_table_id = 3;
 	else if (adiff < MT_GPUFREQ_AGING_GAP0)
 		aging_table_id = 3;
@@ -1540,15 +1551,16 @@ static void __mt_gpufreq_update_table_by_asensor(void)
 	g_asensor.tj2 = tj2;
 	g_asensor.adiff1 = adiff1;
 	g_asensor.adiff2 = adiff2;
+	g_asensor.leak_power = leak_power;
 
 	/* 8. Update aginge value */
 	for (i = 0; i < NUM_OF_OPP_IDX; i++)
 		g_opp_table[i].gpufreq_aging_margin =
 		g_aging_table[aging_table_id][i];
 
-	gpufreq_pr_info("@%s: efuse_val1 = 0x%08x, efuse_val2 = 0x%08x, error_bit = %d, a_t0_lvt_rt = %d, a_t0_ulvt_rt = %d, a_tn_lvt_cnt = %d, a_tn_ulvt_cnt = %d\n",
+	gpufreq_pr_info("@%s: efuse_val1 = 0x%08x, efuse_val2 = 0x%08x, error_bit = %d, leak_power = %d, a_t0_lvt_rt = %d, a_t0_ulvt_rt = %d, a_tn_lvt_cnt = %d, a_tn_ulvt_cnt = %d\n",
 				__func__,
-				efuse_val1, efuse_val2, error_bit,
+				efuse_val1, efuse_val2, error_bit, leak_power,
 				a_t0_lvt_rt, a_t0_ulvt_rt,
 				a_tn_lvt_cnt, a_tn_ulvt_cnt);
 
@@ -2127,12 +2139,14 @@ static unsigned int __mt_gpufreq_get_segment_id(void)
 	if (segment_id != -1)
 		return segment_id;
 
-	efuse_id = (get_devinfo_with_index(30) & 0xFF);
+	efuse_id = (get_devinfo_with_index(7) & 0xFF);
 
 	switch (efuse_id) {
 	case 0x01:
-	case 0x02:
 		segment_id = MT6877_SEGMENT;    /* 5G-5 */
+		break;
+	case 0x02:
+		segment_id = MT6877T_SEGMENT;    /* 5G-5+ */
 		break;
 	default:
 		segment_id = MT6877_SEGMENT;
@@ -2371,7 +2385,7 @@ static int mt_gpufreq_aging_enable_proc_show(struct seq_file *m, void *v)
 					"a_t0_lvt_rt = %d, a_t0_ulvt_rt = %d\n"
 					"a_tn_lvt_cnt = %d, a_tn_ulvt_cnt = %d\n"
 					"tj1 = %d, tj2 = %d\n"
-					"adiff1 = %d, adiff2 = %d\n",
+					"adiff1 = %d, adiff2 = %d, leak_power = %d\n",
 					g_asensor.efuse_val1,
 					g_asensor.efuse_val2,
 					g_asensor.a_t0_lvt_rt,
@@ -2381,7 +2395,8 @@ static int mt_gpufreq_aging_enable_proc_show(struct seq_file *m, void *v)
 					g_asensor.tj1,
 					g_asensor.tj2,
 					g_asensor.adiff1,
-					g_asensor.adiff2);
+					g_asensor.adiff2,
+					g_asensor.leak_power);
 
 	return 0;
 }
@@ -3444,8 +3459,10 @@ static void __mt_gpufreq_init_table(void)
 	/* determine max_opp/num/segment_table... by segment  */
 	if (segment_id == MT6877_SEGMENT)
 		g_segment_max_opp_idx = 4;
-	else
+	else if (segment_id == MT6877T_SEGMENT)
 		g_segment_max_opp_idx = 0;
+	else
+		g_segment_max_opp_idx = 4;
 
 	g_segment_min_opp_idx = NUM_OF_OPP_IDX - 1;
 

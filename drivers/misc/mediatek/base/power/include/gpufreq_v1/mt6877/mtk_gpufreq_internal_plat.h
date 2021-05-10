@@ -110,9 +110,9 @@
 /**************************************************
  * Reference Power Setting
  **************************************************/
-#define GPU_ACT_REF_POWER               (1285)                /* mW  */
-#define GPU_ACT_REF_FREQ                (900000)              /* KHz */
-#define GPU_ACT_REF_VOLT                (90000)               /* mV x 100 */
+#define GPU_ACT_REF_POWER               (1223)                /* mW  */
+#define GPU_ACT_REF_FREQ                (950000)              /* KHz */
+#define GPU_ACT_REF_VOLT                (78125)               /* mV x 100 */
 
 /**************************************************
  * Battery Over Current Protect
@@ -256,6 +256,7 @@ static int ceil(float a)
  **************************************************/
 enum g_segment_id_enum {
 	MT6877_SEGMENT = 1,
+	MT6877T_SEGMENT,
 };
 
 enum g_posdiv_power_enum  {
@@ -514,6 +515,7 @@ struct g_asensor_info {
 	u32 a_tn_lvt_cnt, a_tn_ulvt_cnt;
 	int tj1, tj2;
 	int adiff1, adiff2;
+	int leak_power;
 };
 unsigned int g_aging_table[][NUM_OF_OPP_IDX] = {
 	/* Aging Table 0 */

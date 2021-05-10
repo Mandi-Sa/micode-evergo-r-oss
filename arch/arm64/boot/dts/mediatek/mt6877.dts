@@ -42,7 +42,7 @@
 			vmalloc=400M slub_debug=OFZPU swiotlb=noforce \
 			initcall_debug=1 \
 			firmware_class.path=/vendor/firmware \
-			page_owner=on";
+			page_owner=on loop.max_part=7";
 			kaslr-seed = <0 0>;
 	};
 
@@ -1803,6 +1803,8 @@
 			     "mediatek,common-emicen";
 		reg = <0 0x10219000 0 0x1000>;
 		mediatek,emi-reg = <&emichn>;
+		a2d_hash = <11>;
+		a2d_disph = <0>;
 	};
 
 	emiisu {
@@ -4648,6 +4650,8 @@
 		reg = <0 0x1a004000 0 0x1000>;
 		clocks =<&scpsys SCP_SYS_CSI>,
 			<&scpsys SCP_SYS_CAM>,
+			<&scpsys SCP_SYS_CAM_RAWA>,
+			<&scpsys SCP_SYS_CAM_RAWB>,
 			<&camsys_main_clk CLK_CAM_M_SENINF>,
 			<&topckgen_clk CLK_TOP_SENINF_SEL>,
 			<&topckgen_clk CLK_TOP_SENINF1_SEL>,
@@ -4669,6 +4673,8 @@
 			<&topckgen_clk CLK_TOP_UNIVPLL_D5>;
 		clock-names = "SCP_SYS_CSI",
 			"SCP_SYS_CAM",
+			"ISP_SCP_SYS_RAWA",
+			"ISP_SCP_SYS_RAWB",
 			"CAMSYS_SENINF_CGPDN",
 			"TOP_MUX_SENINF",
 			"TOP_MUX_SENINF1",
@@ -5291,11 +5297,27 @@
 		vsram_apu-supply = <&mt_pmic_vsram_others_ldo_reg>;
 		vcore-supply = <&mt_pmic_vgpu11_buck_reg>;
 		clocks = <&scpsys SCP_SYS_APU>,
+			 <&topckgen_clk CLK_TOP_DSP>,
+			 <&topckgen_clk CLK_TOP_DSP1>,
+			 <&topckgen_clk CLK_TOP_DSP2>,
+			 <&topckgen_clk CLK_TOP_DSP4>,
+			 <&topckgen_clk CLK_TOP_DSP7>,
+			 <&topckgen_clk CLK_TOP_MAINPLL_D4_D2>,
+			 <&topckgen_clk CLK_TOP_UNIVPLL_D4_D2>,
+			 <&topckgen_clk CLK_TOP_UNIVPLL_D6_D2>,
 			 <&apu_pll_ctrl_clk CLK_APU_AO_APUPLL>,
 			 <&apu_pll_ctrl_clk CLK_APU_AO_NPUPLL>,
 			 <&apu_pll_ctrl_clk CLK_APU_AO_APUPLL1>,
 			 <&apu_pll_ctrl_clk CLK_APU_AO_APUPLL2>;
 		clock-names = "mtcmos_scp_sys_vpu",
+			      "clk_top_dsp_sel",
+			      "clk_top_dsp1_sel",
+			      "clk_top_dsp2_sel",
+			      "clk_top_dsp5_sel",
+			      "clk_top_ipu_if_sel",
+			      "clk_top_mainpll_d4_d2",
+			      "clk_top_univpll_d4_d2",
+			      "clk_top_univpll_d6_d2",
 			      "clk_apupll_apupll",
 			      "clk_apupll_npupll",
 			      "clk_apupll_apupll1",
@@ -6127,6 +6149,12 @@
 	fusb340: fusb340 {
 		compatible = "mediatek,fusb340";
 		status = "disabled";
+	};
+
+	ssusb_ip_sleep: ssusb_ip_sleep {
+		compatible = "mediatek,usb_ipsleep";
+		interrupt-parent = <&pio>;
+		interrupts = <119 IRQ_TYPE_LEVEL_LOW 217 0>;
 	};
 };
 

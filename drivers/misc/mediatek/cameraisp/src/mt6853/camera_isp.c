@@ -408,6 +408,7 @@ static int nr_isp_devs;
 static unsigned int m_CurrentPPB;
 static struct isp_sec_dapc_reg lock_reg;
 static unsigned int sec_on;
+static unsigned int cq_recovery[ISP_IRQ_TYPE_AMOUNT];
 
 #ifdef CONFIG_PM_SLEEP
 struct wakeup_source isp_wake_lock;
@@ -4446,6 +4447,11 @@ static long ISP_ioctl(struct file *pFile, unsigned int Cmd, unsigned long Param)
 					ISP_WR32(CAM_REG_DBG_SET(ISP_CAM_C_IDX), 0x007c0000);
 				}
 
+				/*SCQ does not support CQ covery */
+				cq_recovery[module] = (((ISP_RD32(CAM_REG_CAMCQ_CQ_EN(
+						DebugFlag[1])) >> 20)
+						& 0x1) ? 0 : 1);
+
 #if (TIMESTAMP_QUEUE_EN == 1)
 				memset((void *)&(IspInfo.TstpQInfo[module]), 0,
 				       sizeof(struct ISP_TIMESTPQ_INFO_STRUCT));
@@ -4485,6 +4491,7 @@ static long ISP_ioctl(struct file *pFile, unsigned int Cmd, unsigned long Param)
 					ISP_WR32(
 						CAM_REG_TG_VF_CON(DebugFlag[1]),
 						(vf - 0x1));
+					cq_recovery[module] = 0;
 				} else {
 					LOG_NOTICE(
 						"CAM_%d: vf already disabled\n",
@@ -7843,16 +7850,48 @@ static int __init ISP_Init(void)
 
 	SV_SetPMQOS(E_CLK_ADD, ISP_IRQ_TYPE_INT_CAMSV_START_ST, NULL);
 
+	/* for IMGO debug usage */
+	mtk_iommu_register_fault_callback(M4U_PORT_L16_CAM_IMGO_R1_A,
+		isp_m4u_fault_callback,
+		NULL);
+	mtk_iommu_register_fault_callback(M4U_PORT_L17_CAM_IMGO_R1_B,
+		isp_m4u_fault_callback,
+		NULL);
+	/* for YUVO debug usage */
+	mtk_iommu_register_fault_callback(M4U_PORT_L16_CAM_YUVO_R1_A,
+		isp_m4u_fault_callback,
+		NULL);
+	mtk_iommu_register_fault_callback(M4U_PORT_L17_CAM_YUVO_R1_B,
+		isp_m4u_fault_callback,
+		NULL);
 	/* for CRZO debug usage */
 	mtk_iommu_register_fault_callback(M4U_PORT_L16_CAM_CRZO_R1_A,
-			isp_m4u_fault_callback,
-			NULL);
+		isp_m4u_fault_callback,
+		NULL);
 	mtk_iommu_register_fault_callback(M4U_PORT_L17_CAM_CRZO_R1_B,
-			isp_m4u_fault_callback,
-			NULL);
-	mtk_iommu_register_fault_callback(M4U_PORT_L18_CAM_CRZO_R1_C,
-			isp_m4u_fault_callback,
-			NULL);
+		isp_m4u_fault_callback,
+		NULL);
+	/* for AFO debug usage */
+	mtk_iommu_register_fault_callback(M4U_PORT_L16_CAM_AFO_R1_A,
+		isp_m4u_fault_callback,
+		NULL);
+	mtk_iommu_register_fault_callback(M4U_PORT_L17_CAM_AFO_R1_B,
+		isp_m4u_fault_callback,
+		NULL);
+	/* for FLKO debug usage */
+	mtk_iommu_register_fault_callback(M4U_PORT_L16_CAM_FLKO_R1_A,
+		isp_m4u_fault_callback,
+		NULL);
+	mtk_iommu_register_fault_callback(M4U_PORT_L17_CAM_FLKO_R1_B,
+		isp_m4u_fault_callback,
+		NULL);
+	/* for CQI debug usage */
+	mtk_iommu_register_fault_callback(M4U_PORT_L16_CAM_CQI_R1_A,
+		isp_m4u_fault_callback,
+		NULL);
+	mtk_iommu_register_fault_callback(M4U_PORT_L17_CAM_CQI_R1_B,
+		isp_m4u_fault_callback,
+		NULL);
 
 	LOG_DBG("- E. Ret: %d.", Ret);
 	return Ret;
@@ -10903,6 +10942,7 @@ irqreturn_t ISP_Irq_CAM(enum ISP_IRQ_TYPE_ENUM irq_module)
 	static unsigned int usec_sof[ISP_IRQ_TYPE_INT_CAMSV_START_ST] = {0};
 	ktime_t time;
 	unsigned int IrqEnableOrig, IrqEnableNew;
+	unsigned int isStagger = 0;
 
 	/* Avoid touch hwmodule when clock is disable. */
 	/* DEVAPC will moniter this kind of err */
@@ -10939,6 +10979,9 @@ irqreturn_t ISP_Irq_CAM(enum ISP_IRQ_TYPE_ENUM irq_module)
 		return IRQ_HANDLED;
 	}
 
+	isStagger = ((ISP_RD32(CAM_REG_TG_SEN_MODE(reg_module)) &
+				0x00400000)) >> 22;
+
 	spin_lock(&(IspInfo.SpinLockIrq[module]));
 	IrqStatus = ISP_RD32(CAM_REG_CTL_RAW_INT_STATUS(reg_module));
 	DmaStatus = ISP_RD32(CAM_REG_CTL_RAW_INT2_STATUS(reg_module));
@@ -10958,8 +11001,9 @@ irqreturn_t ISP_Irq_CAM(enum ISP_IRQ_TYPE_ENUM irq_module)
 
 	ErrStatus = IrqStatus & IspInfo.IrqInfo.ErrMask[module][SIGNAL_INT];
 
-	if (((IrqStatus & SOF_INT_ST) == 0) &&
-		(IrqStatus & VS_INT_ST)) {
+#if Lafi_WAM_CQ_ERR
+	if (((IrqStatus & SOF_INT_ST) == 0) && (IrqStatus & VS_INT_ST)
+				&& (cq_recovery[module] == 1)) {
 		if ((ISP_RD32(CAMX_REG_TG_VF_CON(reg_module)) == 0x1) &&
 		    (g1stSof[module] == MFALSE)) {
 			IRQ_LOG_KEEPER(module, m_CurrentPPB, _LOG_ERR,
@@ -10967,6 +11011,8 @@ irqreturn_t ISP_Irq_CAM(enum ISP_IRQ_TYPE_ENUM irq_module)
 			ErrStatus |= CQ_VS_ERR_ST;
 		}
 	}
+#endif
+
 	WarnStatus_2 =
 		IrqStatus & IspInfo.IrqInfo.Warn2Mask[module][SIGNAL_INT];
 
@@ -11185,7 +11231,12 @@ irqreturn_t ISP_Irq_CAM(enum ISP_IRQ_TYPE_ENUM irq_module)
 		}
 	}
 
-	if (IrqStatus & SOF_INT_ST) {
+	if ((IrqStatus & SOF_INT_ST) && isStagger == 1)
+		IRQ_LOG_KEEPER(module, m_CurrentPPB, _LOG_ERR, "CAM%c DCIF_SOF", 'A' + cardinalNum);
+
+	if (((IrqStatus & SOF_INT_ST) && isStagger == 0) ||
+		((IrqStatus & VS_INT_ST) && isStagger == 1 &&
+		(ISP_RD32(CAMX_REG_TG_VF_CON(reg_module)) == 0x1))) {
 		unsigned int frmPeriod =
 			((ISP_RD32(CAM_REG_TG_SUB_PERIOD(reg_module)) >> 8) &
 			 0x1F) +
@@ -11197,6 +11248,13 @@ irqreturn_t ISP_Irq_CAM(enum ISP_IRQ_TYPE_ENUM irq_module)
 		sec = time;
 		do_div(sec, 1000);	   /* usec */
 		usec = do_div(sec, 1000000); /* sec and usec */
+
+		cur_v_cnt = ISP_RD32_TG_CAMX_FRM_CNT(module, reg_module);
+
+#if (Lafi_WAM_CQ_ERR == 1)
+		if (!(ErrStatus & CQ_VS_ERR_ST))
+			ISP_RecordCQAddr(reg_module);
+#endif
 
 		if (frmPeriod == 0) {
 			IRQ_LOG_KEEPER(module, m_CurrentPPB, _LOG_ERR,
@@ -11599,7 +11657,7 @@ irqreturn_t ISP_Irq_CAM(enum ISP_IRQ_TYPE_ENUM irq_module)
 			else
 				IRQ_LOG_KEEPER(
 				module, m_CurrentPPB, _LOG_INF,
-				"%s,%s,CAM_%c P1_SOF_%d_%d(0x%08x_0x%08x,0x%08x_0x%08x,0x%08x,0x%08x,0x%x),int_us:%d,cq:0x%08x_0x%08x_0x%08x,DMA(0x%x_0x%x,0x%x_0x%x,0x%x_0x%x,0x%x_0x%x),FLKO(0x%x_0x%x,0x%x_0x%x)\n",
+				"%s,%s,CAM_%c P1_SOF_%d_%d(0x%08x_0x%08x,0x%08x_0x%08x,0x%08x,0x%08x,0x%x),int_us:%d,cq:0x%08x_0x%08x_0x%08x,DMA(0x%x_0x%x,0x%x_0x%x,0x%x_0x%x,0x%x_0x%x),FLKO(0x%x_0x%x,0x%x_0x%x)(0x%x_0x%x)\n",
 				gPass1doneLog[module]._str,
 				gLostPass1doneLog[module]._str,
 				'A' + cardinalNum, sof_count[module], cur_v_cnt,
@@ -11625,27 +11683,27 @@ irqreturn_t ISP_Irq_CAM(enum ISP_IRQ_TYPE_ENUM irq_module)
 					CAM_REG_CQ_THR0_BASEADDR(
 						ISP_CAM_C_IDX)),
 				(unsigned int)ISP_RD32(
+					CAM_REG_CTL_DMA_EN(ISP_CAM_A_IDX)),
+				(unsigned int)ISP_RD32(
+					CAM_REG_CTL_DMA_EN(
+						ISP_CAM_A_INNER_IDX)),
+				(unsigned int)ISP_RD32(
 					CAM_REG_CTL_DMA_EN(ISP_CAM_B_IDX)),
 				(unsigned int)ISP_RD32(
 					CAM_REG_CTL_DMA_EN(
 						ISP_CAM_B_INNER_IDX)),
 				(unsigned int)ISP_RD32(
-					CAM_REG_CTL_DMA_EN(ISP_CAM_C_IDX)),
+					CAM_REG_DMA_FRAME_HEADER_EN1(
+						ISP_CAM_A_IDX)),
 				(unsigned int)ISP_RD32(
-					CAM_REG_CTL_DMA_EN(
-						ISP_CAM_C_INNER_IDX)),
+					CAM_REG_DMA_FRAME_HEADER_EN1(
+						ISP_CAM_A_INNER_IDX)),
 				(unsigned int)ISP_RD32(
 					CAM_REG_DMA_FRAME_HEADER_EN1(
 						ISP_CAM_B_IDX)),
 				(unsigned int)ISP_RD32(
 					CAM_REG_DMA_FRAME_HEADER_EN1(
 						ISP_CAM_B_INNER_IDX)),
-				(unsigned int)ISP_RD32(
-					CAM_REG_DMA_FRAME_HEADER_EN1(
-						ISP_CAM_C_IDX)),
-				(unsigned int)ISP_RD32(
-					CAM_REG_DMA_FRAME_HEADER_EN1(
-						ISP_CAM_C_INNER_IDX)),
 				(unsigned int)ISP_RD32(
 					CAM_REG_FLKO_BASE_ADDR(ISP_CAM_A_IDX)),
 				(unsigned int)ISP_RD32(
@@ -11655,7 +11713,11 @@ irqreturn_t ISP_Irq_CAM(enum ISP_IRQ_TYPE_ENUM irq_module)
 					CAM_REG_FLKO_BASE_ADDR(ISP_CAM_B_IDX)),
 				(unsigned int)ISP_RD32(
 					CAM_REG_FLKO_BASE_ADDR(
-						ISP_CAM_B_INNER_IDX)));
+					ISP_CAM_B_INNER_IDX)),
+				(unsigned int)ISP_RD32(CAM_REG_FBC_LCESO_CTL2(
+					ISP_CAM_A_IDX)),
+				(unsigned int)ISP_RD32(CAM_REG_FBC_LCESO_CTL2(
+					ISP_CAM_A_INNER_IDX)));
 		snprintf(gPass1doneLog[module]._str, P1DONE_STR_LEN, "\\");
 		snprintf(gLostPass1doneLog[module]._str, P1DONE_STR_LEN, "\\");
 
@@ -11719,9 +11781,7 @@ irqreturn_t ISP_Irq_CAM(enum ISP_IRQ_TYPE_ENUM irq_module)
 					"SW ISR right on next hw p1_done\n");
 			}
 		}
-#if (Lafi_WAM_CQ_ERR == 1)
-		ISP_RecordCQAddr(reg_module);
-#endif
+
 		/* update SOF time stamp for eis user */
 		/* (need match with the time stamp in image header) */
 		IspInfo.IrqInfo.LastestSigTime_usec[module][12] =
