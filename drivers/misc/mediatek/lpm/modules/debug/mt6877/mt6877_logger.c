@@ -229,7 +229,7 @@ int mt6877_get_wakeup_status(struct mt6877_log_helper *help)
 	help->wakesrc->timer_out = plat_mmio_read(SPM_BK_PCM_TIMER);
 
 	/* get other SYS and co-clock status */
-	help->wakesrc->r13 = plat_mmio_read(MD32PCM_STA);
+	help->wakesrc->r13 = plat_mmio_read(MD32PCM_SCU_STA0);
 	help->wakesrc->idle_sta = plat_mmio_read(SUBSYS_IDLE_STA);
 	help->wakesrc->req_sta0 = plat_mmio_read(SPM_REQ_STA_0);
 	help->wakesrc->req_sta1 = plat_mmio_read(SPM_REQ_STA_1);
@@ -417,7 +417,7 @@ static u32 is_blocked_cnt;
 	req_sta_0 = plat_mmio_read(SPM_REQ_STA_0);
 	req_sta_1 = plat_mmio_read(SPM_REQ_STA_1);
 	req_sta_2 = plat_mmio_read(SPM_REQ_STA_2);
-	req_sta_1 = plat_mmio_read(SPM_REQ_STA_3);
+	req_sta_3 = plat_mmio_read(SPM_REQ_STA_3);
 	req_sta_4 = plat_mmio_read(SPM_REQ_STA_4);
 	req_sta_5 = plat_mmio_read(SPM_REQ_STA_5);
 
@@ -809,8 +809,9 @@ static ssize_t mt6877_logger_debugfs_read(char *ToUserBuf,
 	}
 #ifdef CONFIG_MTK_LPM_GS_DUMP_SUPPORT
 	else if (priv == ((void *)&mt6877_log_gs_info)) {
-		len = scnprintf(p, sz, "golden_type:u\n",
+		len = scnprintf(p, sz, "golden_type: %u\n",
 				mt6877_log_gs_info.dump_type);
+		p += len;
 	}
 #endif
 	return (p - ToUserBuf);
@@ -836,7 +837,7 @@ static ssize_t mt6877_logger_debugfs_write(char *FromUserBuf,
 		unsigned int param;
 
 		memset(cmd, 0, sizeof(cmd));
-		if (sscanf(FromUserBuf, "%127s %u", cmd, &param) == 2) {
+		if (sscanf(FromUserBuf, "%20s %u", cmd, &param) == 2) {
 			if (!strcmp(cmd, "golden_dump")) {
 				if (param)
 					mt6877_log_gs_info.limit_set += 1;

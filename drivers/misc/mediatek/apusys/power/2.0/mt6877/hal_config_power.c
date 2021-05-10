@@ -21,6 +21,7 @@
 #include "apusys_power_reg.h"
 #include "apu_log.h"
 #include "apusys_power_rule_check.h"
+#include "apusys_power_debug.h"
 
 #define CREATE_TRACE_POINTS
 #include "apu_power_events.h"
@@ -103,6 +104,9 @@ static void aging_support_check(int opp, enum DVFS_VOLTAGE_DOMAIN bk_dmn)
 	int seg_volt = 0;
 	int ag_volt = 0;
 	int ag_opp_idx = 0;
+	struct apusys_dvfs_constraint *dvfs_ctrn = NULL;
+	int idx = 0;
+	enum DVFS_BUCK buck;
 
 	/* only support VPU for aging */
 	if (bk_dmn > V_VCORE)
@@ -111,6 +115,7 @@ static void aging_support_check(int opp, enum DVFS_VOLTAGE_DOMAIN bk_dmn)
 
 	seg_freq = apusys_opps.opps[opp][bk_dmn].freq;
 	seg_volt = apusys_opps.opps[opp][bk_dmn].voltage;
+	buck = apusys_buck_domain_to_buck[bk_dmn];
 
 	/*
 	 * Brute-force searching whether seg_freq meet
@@ -130,6 +135,26 @@ static void aging_support_check(int opp, enum DVFS_VOLTAGE_DOMAIN bk_dmn)
 				__func__, buck_domain_str[bk_dmn], opp,
 				seg_freq, seg_volt, ag_freq, ag_volt,
 				apusys_opps.opps[opp][bk_dmn].voltage);
+
+			for (idx = 0; idx < APUSYS_DVFS_CONSTRAINT_NUM; idx++) {
+				dvfs_ctrn = &dvfs_constraint_table[idx];
+				if (dvfs_ctrn->buck0 == buck) {
+					/* minus aging volt */
+					if (dvfs_ctrn->voltage0 == seg_volt) {
+						dvfs_ctrn->voltage0 -= ag_volt;
+						LOG_DBG("%s, idx%d@domain%d, ctrn_vol:%d\n",
+							__func__, idx, buck, dvfs_ctrn->voltage0);
+					}
+				}
+				if (dvfs_ctrn->buck1 == buck) {
+					/* minus aging volt */
+					if (dvfs_ctrn->voltage1 == seg_volt) {
+						dvfs_ctrn->voltage1 -= ag_volt;
+						LOG_DBG("%s, idx%d@domain%d, ctrn_vol:%d\n",
+							__func__, idx, buck, dvfs_ctrn->voltage1);
+					}
+				}
+			}
 			break;
 		}
 	}
@@ -271,6 +296,10 @@ enum vcore_opp volt_to_vcore_opp(int target_volt)
 			break;
 
 	if (opp >= VCORE_OPP_NUM) {
+		if (is_power_debug_lock) {
+			LOG_ERR("%s failed, force to set minOPP\n", __func__);
+			return VCORE_OPP_NUM - 1;
+		}
 		LOG_ERR("%s failed, force to set opp 0\n", __func__);
 		return VCORE_OPP_1;
 	}
@@ -619,6 +648,50 @@ static enum DVFS_VOLTAGE cal_suitable_bin_volt(
 }
 
 /**
+ * change_constrain_volt() - change constrains voltage upper/lower bound
+ * @bk_domain: which buck's opp need to modify
+ * @bin_mv: upper bound voltage
+ * @raise_mv: lower bound voltage
+ *
+ * Modify upper/lower voltage bound of constrain's opp.
+ */
+static void change_constrain_volt(enum DVFS_BUCK buck,
+				  enum DVFS_VOLTAGE *bin_mv,
+				  enum DVFS_VOLTAGE *raise_mv)
+{
+	int idx = 0;
+	struct apusys_dvfs_constraint *dvfs_ctrn = NULL;
+
+	for (idx = 0; idx < APUSYS_DVFS_CONSTRAINT_NUM; idx++) {
+		dvfs_ctrn = &dvfs_constraint_table[idx];
+		if (dvfs_ctrn->buck0 == buck) {
+			/* set upper bound as binning voltage */
+			if (dvfs_ctrn->voltage0 > *bin_mv)
+				dvfs_ctrn->voltage0 = *bin_mv;
+
+			/* set lower bound as raising voltage */
+			if (dvfs_ctrn->voltage0 < *raise_mv) {
+				dvfs_ctrn->voltage0 = *raise_mv;
+				LOG_DBG("%s, idx%d@domain%d, ctrn_vol:%d\n",
+				__func__, idx, buck, dvfs_ctrn->voltage0);
+			}
+		}
+		if (dvfs_ctrn->buck1 == buck) {
+			/* set upper bound as binning voltage */
+			if (dvfs_ctrn->voltage1 > *bin_mv)
+				dvfs_ctrn->voltage1 = *bin_mv;
+
+			/* set lower bound as raising voltage */
+			if (dvfs_ctrn->voltage1 < *raise_mv) {
+				dvfs_ctrn->voltage1 = *raise_mv;
+				LOG_DBG("%s, idx%d@domain%d, ctrn_vol:%d\n",
+				__func__, idx, buck, dvfs_ctrn->voltage1);
+			}
+		}
+	}
+}
+
+/**
  * change_opp_voltage() - change opp's voltage upper/lower bound
  * @buck: which buck need to modify
  * @bin_highv_mv:  HV binning voltage
@@ -635,6 +708,11 @@ static void change_opp_voltage(enum DVFS_BUCK buck,
 	uint8_t opp_index = 0;
 	int idx = 0;
 	int tmp1 = 0, tmp2 = 0, final_min_volt = 0;
+
+#ifdef AGING_MARGIN
+	if (*raise_mv == DVFS_VOLT_00_575000_V)
+		*raise_mv += MARGIN_VOLT_8;
+#endif
 
 	// LV rising ceiling limited by MV
 	if (*raise_mv > *bin_midv_mv) {
@@ -728,7 +806,11 @@ static void change_opp_voltage(enum DVFS_BUCK buck,
 				buck_domain_index, tmp1, tmp2);
 
 				// Bypass compare w/ signoff vol while LV raising
+#ifdef AGING_MARGIN
+				if (*raise_mv == DVFS_VOLT_00_575000_V + MARGIN_VOLT_8)
+#else
 				if (*raise_mv == DVFS_VOLT_00_575000_V)
+#endif
 					final_min_volt = MIN(tmp1, tmp2);
 				else
 					final_min_volt = tmp2;
@@ -764,17 +846,17 @@ static int binning_support_check(void)
 
 #if BINNING_VOLTAGE_SUPPORT || VOLTAGE_RAISE_UP
 	vpu_efuse_bin_highv =
-		GET_BITS_VAL(25:27, get_devinfo_with_index(EFUSE_BIN));
+		GET_BITS_VAL(27:25, get_devinfo_with_index(EFUSE_BIN));
 	LOG_DBG("Vol bin: vpu_efuse_hv=%d, efuse: 0x%x\n",
 			vpu_efuse_bin_highv, get_devinfo_with_index(EFUSE_BIN));
 
 	vpu_efuse_bin_midv =
-		GET_BITS_VAL(22:24, get_devinfo_with_index(EFUSE_BIN));
+		GET_BITS_VAL(24:22, get_devinfo_with_index(EFUSE_BIN));
 	LOG_DBG("Vol bin: vpu_efuse_mv=%d, efuse: 0x%x\n",
 			vpu_efuse_bin_midv, get_devinfo_with_index(EFUSE_BIN));
 
 	vpu_efuse_raise =
-		GET_BITS_VAL(20:21, get_devinfo_with_index(EFUSE_BIN));
+		GET_BITS_VAL(21:20, get_devinfo_with_index(EFUSE_BIN));
 	LOG_DBG("Raise bin: vpu_efuse=%d, efuse: 0x%x\n",
 			vpu_efuse_raise, get_devinfo_with_index(EFUSE_BIN));
 
@@ -800,6 +882,8 @@ static int binning_support_check(void)
 			LOG_WRN("Raise bin: vpu_efuse=%d\n", vpu_efuse_raise);
 
 		change_opp_voltage(VPU_BUCK, &bin_highv_mv, &bin_midv_mv, &raise_mv);
+		/* binning and raise constrain VPU buck */
+		change_constrain_volt(VPU_BUCK, &bin_highv_mv, &raise_mv);
 	}
 
 #endif
@@ -1092,21 +1176,21 @@ static int set_domain_to_default_clk(int domain_idx)
 	int ret = 0;
 
 	if (domain_idx == 2)
-		ret = set_apu_clock_source(DVFS_FREQ_ACC_PARKING,
+		ret = set_apu_clock_source(DVFS_FREQ_ACC_SOC,
 								V_VPU0);
 	else if (domain_idx == 3)
-		ret = set_apu_clock_source(DVFS_FREQ_ACC_PARKING,
+		ret = set_apu_clock_source(DVFS_FREQ_ACC_SOC,
 								V_VPU1);
 	else if (domain_idx == 6)
-		ret = set_apu_clock_source(DVFS_FREQ_ACC_PARKING,
+		ret = set_apu_clock_source(DVFS_FREQ_ACC_SOC,
 								V_MDLA0);
 	else {
-		ret = set_apu_clock_source(DVFS_FREQ_ACC_PARKING,
+		ret = set_apu_clock_source(DVFS_FREQ_ACC_SOC,
 								V_APU_CONN);
 		if (ret)
 			goto exit;
 
-		ret = set_apu_clock_source(DVFS_FREQ_ACC_PARKING,
+		ret = set_apu_clock_source(DVFS_FREQ_ACC_SOC,
 								V_TOP_IOMMU);
 	}
 
