@@ -39,6 +39,8 @@
 #include <linux/mutex.h>
 #include <linux/types.h>
 
+/* BSP.Memory - 2020.12.5 - define ufs feature - start*/
+#define MAX_QUERY_IDN	0x12
 #define MAX_CDB_SIZE	16
 #define GENERAL_UPIU_REQUEST_SIZE 32
 #define QUERY_DESC_MAX_SIZE       255
@@ -283,6 +285,15 @@ enum device_desc_param {
 	DEVICE_DESC_PARAM_RTT_CAP		= 0x1C,
 	DEVICE_DESC_PARAM_FRQ_RTC		= 0x1D,
 	DEVICE_DESC_PARAM_FEAT_SUP		= 0x1F,
+
+	/*memory feature*/
+	DEVICE_DESC_PARAM_FFU_TMT		= 0x20,
+	DEVICE_DESC_PARAM_Q_DPTH		= 0x21,
+	DEVICE_DESC_PARAM_DEV_VER		= 0x22,
+	DEVICE_DESC_PARAM_NUM_SEC_WPA		= 0x24,
+	DEVICE_DESC_PARAM_PSA_MAX_DATA		= 0x25,
+	DEVICE_DESC_PARAM_PSA_TMT		= 0x29,
+	DEVICE_DESC_PARAM_EXT_UFS_FEATURE_SUP	= 0x4F,
 	/* MTK PATCH: Product Revision Level index in String Descriptor */
 	DEVICE_DESC_PARAM_PRDCT_REV		= 0x2A,
 #if defined(CONFIG_UFSHPB) || defined(CONFIG_SCSI_SKHPB)
@@ -300,7 +311,8 @@ enum device_desc_param {
 };
 
 enum geometry_desc_param {
-	GEOMETRY_DESC_SEGMENT_SIZE = 0x0D,
+	GEOMETRY_DESC_SEGMENT_SIZE			= 0x0D,
+	GEOMETRY_DESC_PARAM_DEV_CAP			= 0x4,
 #if defined(CONFIG_UFSHPB) || defined(CONFIG_SCSI_SKHPB)
 	GEOMETRY_DESC_HPB_REGION_SIZE			= 0x48,
 	GEOMETRY_DESC_HPB_NUMBER_LU			= 0x49,
@@ -391,7 +403,9 @@ enum query_opcode {
 	UPIU_QUERY_OPCODE_SET_FLAG	= 0x6,
 	UPIU_QUERY_OPCODE_CLEAR_FLAG	= 0x7,
 	UPIU_QUERY_OPCODE_TOGGLE_FLAG	= 0x8,
+	UPIU_QUERY_OPCODE_MAX,
 };
+/* BSP.Memory - 2020.12.5 - define ufs feature - end */
 
 /* Query response result code */
 enum {
