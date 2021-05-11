@@ -89,6 +89,40 @@ static void ufshcd_update_error_stats(struct ufs_hba *hba, int type)
 		hba->ufs_stats.err_stats[type]++;
 }
 
+static int ufshcd_init_statistics(struct ufs_hba *hba)
+{
+	struct ufs_stats *stats = &hba->ufs_stats;
+	int ret = 0;
+	int i;
+
+	stats->enabled = false;
+	stats->req_stats_enabled = false;
+	stats->tag_stats = kcalloc(hba->nutrs, sizeof(*stats->tag_stats),
+			GFP_KERNEL);
+	if (!hba->ufs_stats.tag_stats)
+		goto no_mem;
+
+	stats->tag_stats[0] = kzalloc(sizeof(**stats->tag_stats) *
+			TS_NUM_STATS * hba->nutrs, GFP_KERNEL);
+	if (!stats->tag_stats[0])
+		goto no_mem;
+
+	for (i = 1; i < hba->nutrs; i++)
+		stats->tag_stats[i] = &stats->tag_stats[0][i * TS_NUM_STATS];
+
+	memset(stats->err_stats, 0, sizeof(hba->ufs_stats.err_stats));
+
+	memset(stats->req_stats, 0, sizeof(struct ufshcd_req_stat) * TS_NUM_STATS);
+
+	goto exit;
+
+no_mem:
+	dev_err(hba->dev, "%s: Unable to allocate UFS tag_stats\n", __func__);
+	ret = -ENOMEM;
+exit:
+	return ret;
+}
+
 static void ufshcd_update_tag_stats(struct ufs_hba *hba, int tag)
 {
 	struct request *rq =
@@ -124,6 +158,9 @@ static void update_req_stats(struct ufs_hba *hba, struct ufshcd_lrb *lrbp)
 	struct request *rq = lrbp->cmd ? lrbp->cmd->request : NULL;
 	s64 delta = ktime_us_delta(lrbp->compl_time_stamp,
 		lrbp->issue_time_stamp);
+
+	if (!hba->ufs_stats.req_stats_enabled)
+		return;
 
 	/* update general request statistics */
 	if (hba->ufs_stats.req_stats[TS_TAG].count == 0)
@@ -182,28 +219,6 @@ static void ufshcd_update_uic_error_cnt(struct ufs_hba *hba, u32 reg, int type)
 	default:
 		break;
 	}
-}
-
-/*
- * err injection operation
- *
- *
- */
-enum mi_ufshcd_err_inject_scenario {
-	ERR_INJECT_INTR,
-	ERR_INJECT_PWR_CHANGE,
-	ERR_INJECT_UIC,
-	ERR_INJECT_DME_ATTR,
-	ERR_INJECT_QUERY,
-	ERR_INJECT_HIBERN8_ENTER,
-	ERR_INJECT_HIBERN8_EXIT,
-	ERR_INJECT_MAX_ERR_SCENARIOS,
-};
-
-__attribute__((weak)) void ufsdbg_error_inject_dispatcher(struct ufs_hba *hba,
-					int a, int b, int *ret)
-{
-
 }
 
 #define CREATE_TRACE_POINTS
@@ -2640,11 +2655,6 @@ ufshcd_send_uic_cmd(struct ufs_hba *hba, struct uic_command *uic_cmd)
 
 	ufshcd_release(hba);
 
-#if 0
-	ufsdbg_error_inject_dispatcher(hba,
-		ERR_INJECT_UIC, 0, &ret);
-
-#endif
 	return ret;
 }
 
@@ -3520,8 +3530,6 @@ static inline void ufshcd_init_query(struct ufs_hba *hba,
 {
 	int idn_t = (int)idn;
 
-	ufsdbg_error_inject_dispatcher(hba,
-		ERR_INJECT_QUERY, idn_t, (int *)&idn_t);
 	idn = idn_t;
 
 	*request = &hba->dev_cmd.query.request;
@@ -4028,25 +4036,6 @@ int ufshcd_read_health_desc(struct ufs_hba *hba, u8 *buf, u32 size)
 {
 	return ufshcd_read_desc(hba, QUERY_DESC_IDN_HEALTH, 0, buf, size);
 }
-
-/**
- * struct uc_string_id - unicode string
- *
- * @len: size of this descriptor inclusive
- * @type: descriptor type
- * @uc: unicode string character
- */
-struct uc_string_id {
-	u8 len;
-	u8 type;
-	wchar_t uc[0];
-} __packed;
-
-/* replace non-printable or non-ASCII characters with spaces */
-static inline char ufshcd_remove_non_printable_mi(u8 ch)
-{
-	return (ch >= 0x20 && ch <= 0x7e) ? ch : ' ';
-}
 EXPORT_SYMBOL(ufshcd_read_health_desc);
 
 /**
@@ -4063,19 +4052,10 @@ EXPORT_SYMBOL(ufshcd_read_health_desc);
 int ufshcd_read_string_desc(struct ufs_hba *hba, int desc_index,
 				   u8 *buf, u32 size, bool ascii)
 {
-	struct uc_string_id *uc_str;
-	u8 *str;
-	int ret, err = 0;
-
-	if (!buf)
-		return -EINVAL;
-
-	uc_str = kzalloc(QUERY_DESC_MAX_SIZE, GFP_KERNEL);
-	if (!uc_str)
-		return -ENOMEM;
+	int err = 0;
 
 	err = ufshcd_read_desc(hba,
-				QUERY_DESC_IDN_STRING, desc_index, (u8 *)uc_str, size);
+				QUERY_DESC_IDN_STRING, desc_index, buf, size);
 
 	if (err) {
 		dev_err(hba->dev, "%s: reading String Desc failed after %d retries. err = %d\n",
@@ -4083,22 +4063,26 @@ int ufshcd_read_string_desc(struct ufs_hba *hba, int desc_index,
 		goto out;
 	}
 
-	if (uc_str->len <= QUERY_DESC_HDR_SIZE) {
-		dev_dbg(hba->dev, "String Desc is of zero length\n");
-		str = NULL;
-		ret = 0;
-		goto out;
-	}
-
-
 	if (ascii) {
-		ssize_t ascii_len;
+		int desc_len;
+		int ascii_len;
 		int i;
+		char *buff_ascii;
+
+		desc_len = buf[0];
+
 		/* remove header and divide by 2 to move from UTF16 to UTF8 */
-		ascii_len = (uc_str->len - QUERY_DESC_HDR_SIZE) / 2 + 1;
-		str = kzalloc(ascii_len, GFP_KERNEL);
-		if (!str) {
-			ret = -ENOMEM;
+		ascii_len = (desc_len - QUERY_DESC_HDR_SIZE) / 2 + 1;
+		if (size < ascii_len + QUERY_DESC_HDR_SIZE) {
+			dev_err(hba->dev, "%s: buffer allocated size is too small\n",
+					__func__);
+			err = -ENOMEM;
+			goto out;
+		}
+
+		buff_ascii = kzalloc(ascii_len, GFP_KERNEL);
+		if (!buff_ascii) {
+			err = -ENOMEM;
 			goto out;
 		}
 
@@ -4106,29 +4090,21 @@ int ufshcd_read_string_desc(struct ufs_hba *hba, int desc_index,
 		 * the descriptor contains string in UTF16 format
 		 * we need to convert to utf-8 so it can be displayed
 		 */
-		ret = utf16s_to_utf8s(uc_str->uc,
-				      uc_str->len - QUERY_DESC_HDR_SIZE,
-				      UTF16_BIG_ENDIAN, str, ascii_len);
+		utf16s_to_utf8s((wchar_t *)&buf[QUERY_DESC_HDR_SIZE],
+				desc_len - QUERY_DESC_HDR_SIZE,
+				UTF16_BIG_ENDIAN, buff_ascii, ascii_len);
 
 		/* replace non-printable or non-ASCII characters with spaces */
-		for (i = 0; i < ret; i++)
-			str[i] = ufshcd_remove_non_printable_mi(str[i]);
+		for (i = 0; i < ascii_len; i++)
+			ufshcd_remove_non_printable(&buff_ascii[i]);
 
-		str[ret++] = '\0';
-	} else {
-		str = kmemdup(uc_str, uc_str->len, GFP_KERNEL);
-		if (!str) {
-			ret = -ENOMEM;
-			goto out;
-		}
-		ret = uc_str->len;
+		memset(buf + QUERY_DESC_HDR_SIZE, 0,
+				size - QUERY_DESC_HDR_SIZE);
+		memcpy(buf + QUERY_DESC_HDR_SIZE, buff_ascii, ascii_len);
+		buf[QUERY_DESC_LENGTH_OFFSET] = ascii_len + QUERY_DESC_HDR_SIZE;
+		kfree(buff_ascii);
 	}
 out:
-	if (str) {
-		memcpy(buf, str, uc_str->len);
-		kfree(str);
-	}
-	kfree(uc_str);
 	return err;
 }
 
@@ -4410,9 +4386,6 @@ int ufshcd_dme_set_attr(struct ufs_hba *hba, u32 attr_sel,
 	int ret;
 	int retries = UFS_UIC_COMMAND_RETRIES;
 
-	ufsdbg_error_inject_dispatcher(hba,
-		ERR_INJECT_DME_ATTR, attr_sel, &attr_sel);
-
 	uic_cmd.command = peer ?
 		UIC_CMD_DME_PEER_SET : UIC_CMD_DME_SET;
 	uic_cmd.argument1 = attr_sel;
@@ -4484,9 +4457,6 @@ int ufshcd_dme_get_attr(struct ufs_hba *hba, u32 attr_sel,
 
 	uic_cmd.command = peer ?
 		UIC_CMD_DME_PEER_GET : UIC_CMD_DME_GET;
-
-	ufsdbg_error_inject_dispatcher(hba,
-		ERR_INJECT_DME_ATTR, attr_sel, &attr_sel);
 
 	uic_cmd.argument1 = attr_sel;
 
@@ -4720,8 +4690,6 @@ static int __ufshcd_uic_hibern8_enter(struct ufs_hba *hba)
 	trace_ufshcd_profile_hibern8(dev_name(hba->dev), "enter",
 			     ktime_to_us(ktime_sub(ktime_get(), start)), ret);
 
-	ufsdbg_error_inject_dispatcher(hba, ERR_INJECT_HIBERN8_ENTER, 0, &ret);
-
 	/*
 	 * Do full reinit if enter failed or if LINERESET was detected during
 	 * Hibern8 operation. After LINERESET, link moves to default PWM-G1
@@ -4784,8 +4752,6 @@ int ufshcd_uic_hibern8_exit(struct ufs_hba *hba)
 	ret = ufshcd_uic_pwr_ctrl(hba, &uic_cmd);
 	trace_ufshcd_profile_hibern8(dev_name(hba->dev), "exit",
 			     ktime_to_us(ktime_sub(ktime_get(), start)), ret);
-
-	ufsdbg_error_inject_dispatcher(hba, ERR_INJECT_HIBERN8_EXIT, 0, &ret);
 
 	/* Do full reinit if exit failed */
 	if (ret) {
@@ -4917,9 +4883,6 @@ static int ufshcd_change_power_mode(struct ufs_hba *hba,
 	dev_info(hba->dev, "%s: data lanes: connected tx(%d),rx(%d)\n",
 		__func__, cnt_txlanes, cnt_rxlanes);
 
-	ufsdbg_error_inject_dispatcher(hba, ERR_INJECT_PWR_CHANGE, 0, &ret);
-	if (ret)
-		return ret;
 	/*
 	 * Configure attributes for power mode change with below.
 	 * - PA_RXGEAR, PA_ACTIVERXDATALANES, PA_RXTERMINATION,
@@ -5554,6 +5517,8 @@ static int ufshcd_change_queue_depth(struct scsi_device *sdev, int depth)
 	return scsi_change_queue_depth(sdev, depth);
 }
 
+#define UFS_GET_INFO_LUN 		2
+extern void set_ufs_hba_data(struct scsi_device *sdev);
 /**
  * ufshcd_slave_configure - adjust SCSI device configurations
  * @sdev: pointer to SCSI device
@@ -5590,6 +5555,8 @@ static int ufshcd_slave_configure(struct scsi_device *sdev)
 
 	ufshcd_crypto_setup_rq_keyslot_manager(hba, q);
 
+	if (sdev->lun == UFS_GET_INFO_LUN)
+		set_ufs_hba_data(sdev);
 	return 0;
 }
 
@@ -5971,11 +5938,11 @@ static int __ufshcd_transfer_req_compl(struct ufs_hba *hba,
 						__LINE__, DB_OPT_FS_IO_LOG,
 						"ufs_mtk_di", "crc16 fail");
 					#endif
-					update_req_stats(hba, lrbp);
 				}
 			}
 #endif
 			lrbp->complete_time_stamp = sched_clock();
+			update_req_stats(hba, lrbp);
 			ufshcd_complete_lrbp_crypto(hba, cmd, lrbp);
 			/* Mark completed command as NULL in LRB */
 			lrbp->cmd = NULL;
@@ -8329,6 +8296,7 @@ static void ufshcd_clear_dbg_ufs_stats(struct ufs_hba *hba)
 	hba->ufs_stats.hibern8_exit_cnt = 0;
 	hba->ufs_stats.last_hibern8_exit_tstamp = ktime_set(0, 0);
 	hba->req_abort_count = 0;
+	hba->ufs_stats.err_state = false;
 }
 
 static void ufshcd_init_desc_sizes(struct ufs_hba *hba)
@@ -8399,6 +8367,7 @@ _link_retry:
 
 	/* Debug counters initialization */
 	ufshcd_clear_dbg_ufs_stats(hba);
+	ufshcd_init_statistics(hba);
 
 	/* UniPro link is active now */
 	ufshcd_set_link_active(hba);
@@ -10270,9 +10239,6 @@ out_error:
 }
 EXPORT_SYMBOL(ufshcd_alloc_host);
 
-extern void get_ufs_hba_data(struct ufs_hba *mi_hba);
-
-
 /**
  * ufshcd_init - Driver initialization routine
  * @hba: per-adapter instance
@@ -10495,9 +10461,6 @@ int ufshcd_init(struct ufs_hba *hba, void __iomem *mmio_base, unsigned int irq)
 	 * Initialize rpmb mutex.
 	 */
 	mutex_init(&hba->rpmb_lock);
-
-	get_ufs_hba_data(hba);
-	/* BSP.Memory - 2020.12.5 - err state - end */
 
 	return 0;
 

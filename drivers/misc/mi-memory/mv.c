@@ -19,10 +19,11 @@ static void mv_ufs_init(void)
 	u64 raw_device_capacity = 0;
 	u16 ufs_id = 0;
 
-	ufs_get_string_desc(mvufs.product_name, sizeof(mvufs.product_name),
+	/*sizeof-1 only to string can end of \0*/
+	ufs_get_string_desc(mvufs.product_name, sizeof(mvufs.product_name) - 1,
 		DEVICE_DESC_PARAM_PRDCT_NAME, SD_ASCII_STD);
 	ufs_get_string_desc(mvufs.product_revision,
-			sizeof(mvufs.product_revision),
+			sizeof(mvufs.product_revision) - 1,
 			DEVICE_DESC_PARAM_PRDCT_REV, SD_ASCII_STD);
 
 	ufs_read_desc_param(QUERY_DESC_IDN_DEVICE, 0,

@@ -2,6 +2,7 @@
 #include <linux/string.h>
 #include <linux/device.h>
 #include <linux/slab.h>
+#include <asm/unaligned.h>
 
 #include <scsi/scsi.h>
 #include "mi_memory_sysfs.h"
@@ -28,12 +29,16 @@ u16 get_ufs_id(void)
 	return ufs_id;
 }
 
-struct seq_file *file;
-
 static ssize_t dump_health_desc_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-	u8 value = 0;
+	u32 value = 0;
 	int count = 0, i = 0;
+	int buff_len = 0;
+	u8 *buff_desc = NULL;
+	struct ufs_hba *hba = NULL;
+	struct scsi_device *sdev = NULL;
+
+	send_ufs_hba_data(&hba, &sdev);
 
 	struct desc_field_offset health_desc_field_name[] = {
 		{"bLength", HEALTH_DESC_PARAM_LEN, BYTE},
@@ -43,12 +48,41 @@ static ssize_t dump_health_desc_show(struct device *dev, struct device_attribute
 		{"bDeviceLifeTimeEstB", HEALTH_DESC_PARAM_LIFE_TIME_EST_B, BYTE},
 	};
 
-	struct desc_field_offset *tmp = NULL;
+	/*obtain the length of health report*/
+	ufs_read_desc_param(QUERY_DESC_IDN_HEALTH, 0, HEALTH_DESC_PARAM_LEN, &buff_len, BYTE);
+
+	buff_desc = kzalloc(buff_len, GFP_KERNEL);
+	if (!buff_desc) {
+		count += snprintf((buf + count), PAGE_SIZE, "get health info fail\n");
+		return count;
+	}
+
+	ufshcd_read_desc_mi(hba, QUERY_DESC_IDN_HEALTH, 0, buff_desc, buff_len);
+
 
 	for (i = 0; i < ARRAY_SIZE(health_desc_field_name); ++i) {
-		tmp = &health_desc_field_name[i];
+		void *ptr = NULL;
+		struct desc_field_offset *tmp = NULL;
 
-		ufs_read_desc_param(QUERY_DESC_IDN_HEALTH, 0, tmp->offset, &value, tmp->width_byte);
+		tmp = &health_desc_field_name[i];
+		ptr = buff_desc + tmp->offset;
+
+		switch (tmp->width_byte) {
+		case BYTE:
+			value = *((u8 *)ptr);
+			break;
+		case WORD:
+			value = *((u16 *)ptr);
+			break;
+		case DWORD:
+			value = *((u32 *)ptr);
+			break;
+		default:
+			count += snprintf((buf + count), PAGE_SIZE,
+				"Device Descriptor[Byte offset 0x%x]: length of %s data is out of range.\n",
+				tmp->offset, tmp->name);
+			break;
+		}
 
 		count += snprintf((buf + count), PAGE_SIZE,
 			"Device Descriptor[Byte offset 0x%x]: %s = 0x%x\n",
@@ -84,6 +118,12 @@ static ssize_t dump_device_desc_show(struct device *dev, struct device_attribute
 {
 	int i = 0, count = 0;
 	u32 value = 0;
+	u8 buff_len = 0;
+	u8 *buff_desc = NULL;
+	struct ufs_hba *hba = NULL;
+	struct scsi_device *sdev = NULL;
+
+	send_ufs_hba_data(&hba, &sdev);
 
 	struct desc_field_offset device_desc_field_name[] = {
 		{"bLength",			DEVICE_DESC_PARAM_LEN,			BYTE},
@@ -123,36 +163,44 @@ static ssize_t dump_device_desc_show(struct device *dev, struct device_attribute
 		{"iProductRevisionLevel",	DEVICE_DESC_PARAM_PRDCT_REV,		BYTE},
 	};
 
-	struct desc_field_offset *tmp = NULL;
-	u8 *p = (u8 *)&value;
+	ufs_read_desc_param(QUERY_DESC_IDN_DEVICE, 0, DEVICE_DESC_PARAM_LEN, &buff_len, BYTE);
+
+	buff_desc = kzalloc(buff_len, GFP_KERNEL);
+	if (!buff_desc) {
+		count += snprintf((buf + count), PAGE_SIZE, "get desc info fail\n");
+		return count;
+	}
+
+	ufshcd_read_desc_mi(hba, QUERY_DESC_IDN_DEVICE, 0, buff_desc, buff_len);
 
 	for (i = 0; i < ARRAY_SIZE(device_desc_field_name); ++i) {
+		u8 *ptr = NULL;
+		struct desc_field_offset *tmp = NULL;
+
 		tmp = &device_desc_field_name[i];
 
-		ufs_read_desc_param(QUERY_DESC_IDN_DEVICE, 0, tmp->offset, p, tmp->width_byte);
+		ptr = buff_desc + tmp->offset;
+
 		switch (tmp->width_byte) {
 		case BYTE:
-			count += snprintf((buf + count), PAGE_SIZE,
-			"Device Descriptor[Byte offset 0x%x]: %s = 0x%x\n",
-				tmp->offset, tmp->name, (u8)*p);
-			break;
+				value = (u32)(*ptr);
+				break;
 		case WORD:
-			count += snprintf((buf + count), PAGE_SIZE,
-			"Device Descriptor[Byte offset 0x%x]: %s = 0x%x\n",
-				tmp->offset, tmp->name, (u16)*p);
-			break;
+				value = (u32)get_unaligned_be16(ptr);
+				break;
 		case DWORD:
-			count += snprintf((buf + count), PAGE_SIZE,
-			"Device Descriptor[Byte offset 0x%x]: %s = 0x%x\n",
-				tmp->offset, tmp->name, (u32)*p);
-			break;
+				value = (u32)get_unaligned_be32(ptr);
+				break;
 		default:
-			count += snprintf((buf + count), PAGE_SIZE,
-			"Device Descriptor[Byte offset 0x%x]: %s = 0x%x\n",
-				tmp->offset, tmp->name, (u8)*p);
-			break;
+				value = (u32)(*ptr);
+				break;
 		}
+
+		count += snprintf((buf + count), PAGE_SIZE, "Device Descriptor[Byte offset 0x%x]: %s = 0x%x\n",
+					tmp->offset, tmp->name, value);
 	}
+
+	kfree(buff_desc);
 
 	return count;
 }
@@ -162,9 +210,10 @@ static ssize_t show_hba_show(struct device *dev, struct device_attribute *attr,
 			char *buf)
 {
 	struct ufs_hba *hba = NULL;
+	struct scsi_device *sdev = NULL;
 	uint32_t count = 0;
 
-	send_ufs_hba_data(&hba);
+	send_ufs_hba_data(&hba, &sdev);
 
 	count += snprintf((buf + count), PAGE_SIZE,
 		"hba->outstanding_tasks = 0x%x\n", (u32)hba->outstanding_tasks);
@@ -408,6 +457,136 @@ static int mi_scsi_osv(struct scsi_device *sdev, char *osv, int len)
 	return 0;
 }
 
+static int scsi_ss_set_pwd(struct scsi_device *sdev)
+{
+	int result;
+	unsigned char cmd[16] = {0};
+
+	cmd[0] = 0xc0; /*VENDOR_SPECIFIC_CDB;*/
+	cmd[1] = 0x03;
+
+	/*password*/
+	cmd[2] = 'g';
+	cmd[3] = 'h';
+	cmd[4] = 'r';
+	cmd[5] = 0;
+
+	result = scsi_execute_req(sdev, cmd, DMA_NONE, 0,
+				  0, NULL, 30 * HZ, 3, NULL);
+	if (result) {
+		pr_err("ufs: scsi_ss_set_pwd error\n");
+	}
+	return result;
+}
+
+
+static int scsi_ss_enter_vendor_mode(struct scsi_device *sdev)
+{
+	int result;
+	unsigned char cmd[16] = {0};
+
+	cmd[0] = 0xc0; /*VENDOR_SPECIFIC_CDB;*/
+	cmd[1] = 0;
+
+	cmd[2] = 0x5C;
+	cmd[3] = 0x38;
+	cmd[4] = 0x23;
+	cmd[5] = 0xAE;
+
+	/*password*/
+	cmd[6] = 'g';
+	cmd[7] = 'h';
+	cmd[8] = 'r';
+	cmd[9] = 0;
+
+	result = scsi_execute_req(sdev, cmd, DMA_NONE, 0,
+				  0, NULL, 30 * HZ, 3, NULL);
+	if (result) {
+		pr_err("ufs: scsi_ss_enter_vendor_mode error\n");
+	}
+	return result;
+}
+
+static int scsi_ss_exit_vendor_mode(struct scsi_device *sdev)
+{
+	int result;
+	unsigned char cmd[16] = {0};
+
+	cmd[0] = 0xc0; /*VENDOR_SPECIFIC_CDB;*/
+	cmd[1] = 0x01;
+
+	result = scsi_execute_req(sdev, cmd, DMA_NONE, 0,
+				  0, NULL, 30 * HZ, 3, NULL);
+	if (result) {
+		pr_err("ufs: scsi_ss_enter_vendor_mode error\n");
+	}
+	return result;
+}
+
+
+static int scsi_ss_nandinfo(struct scsi_device *sdev, char *osv, int len)
+{
+	int result;
+	unsigned char cmd[16] = {0};
+
+	if (!osv)
+		return -EINVAL;
+
+	cmd[0] = 0xc0; /*VENDOR_SPECIFIC_CDB;*/
+	cmd[1] = 0x40;
+
+	cmd[4] = 0x01;
+	cmd[5] = 0x0A;
+
+	cmd[15] = 0x4C;
+
+	len = 0x4C;
+	result = scsi_execute_req(sdev, cmd, DMA_FROM_DEVICE, osv,
+				  len, NULL, 30 * HZ, 3, NULL);
+	if (result) {
+		pr_err("ufs: get osv result error\n");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int scsi_ss_hr(struct scsi_device *sdev, char *osv, int len)
+{
+	int result = 0;
+
+	result = scsi_ss_enter_vendor_mode(sdev);
+	if (result) {
+		pr_err("ufs: enter vendor mode fail, program key and try again\n");
+
+		result = scsi_ss_set_pwd(sdev);
+		if (result) {
+			pr_err("ufs: set pwd fail\n");
+			goto out;
+		} else {
+			result = scsi_ss_enter_vendor_mode(sdev);
+			if (result) {
+				pr_err("ufs: enter vendor mode fail\n");
+				goto out;
+			}
+		}
+	}
+
+	result = scsi_ss_nandinfo(sdev, osv, len);
+	if (result) {
+		pr_err("ufs: ger hr fail fail\n");
+	}
+
+	result = scsi_ss_exit_vendor_mode(sdev);
+	if (result) {
+		pr_err("ufs: exit vendor mode fail\n");
+	}
+
+out:
+	return result;
+}
+
+
 static int ufs_get_hynix_hr(struct ufs_hba *hba, u8 *buf, u32 size)
 {
 	size = QUERY_DESC_HEALTH_MAX_SIZE;
@@ -423,9 +602,7 @@ static ssize_t hr_show(struct device *dev, struct device_attribute *attr, char *
 	uint32_t count = 0;
 	struct scsi_device *sdev;
 
-	send_ufs_hba_data(&hba);
-
-	sdev = hba->sdev_ufs_device;
+	send_ufs_hba_data(&hba, &sdev);
 
 	hr =  kzalloc(len, GFP_KERNEL);
 	if (!hr) {
@@ -456,6 +633,16 @@ static ssize_t hr_show(struct device *dev, struct device_attribute *attr, char *
 		count += snprintf((buf + count), PAGE_SIZE, "\n");
 	}
 
+	if (!strncmp(sdev->vendor, "SAMSUNG", 7)) {
+		memset(hr, 0, 512);
+		err = scsi_ss_hr(sdev, hr, 0x4c);
+		if (!err) {
+			for (i = 0; i < 0x4c; i++)
+				snprintf(buf + 128*2 + i*2, PAGE_SIZE, "%02x", hr[i]);
+		}
+	}
+
+
 out:
 	kfree(hr);
 	return count;
@@ -471,6 +658,7 @@ static DEVICE_ATTR_RO(hr);
 static ssize_t tag_stats_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	struct ufs_hba *hba = NULL;
+	struct scsi_device *sdev = NULL;
 	struct ufs_stats *ufs_stats;
 	int i, j;
 	int max_depth;
@@ -480,7 +668,7 @@ static ssize_t tag_stats_show(struct device *dev, struct device_attribute *attr,
 	char *sep = " | * | ";
 
 
-	send_ufs_hba_data(&hba);
+	send_ufs_hba_data(&hba, &sdev);
 	if (!hba)
 		goto exit;
 
@@ -537,28 +725,68 @@ static ssize_t tag_stats_show(struct device *dev, struct device_attribute *attr,
 	if (is_tag_empty)
 		count += snprintf((buf + count), PAGE_SIZE,
 			"%s: All tags statistics are empty\n", __func__);
-
 exit:
-	return 0;
+	return count;
 }
-static DEVICE_ATTR_RO(tag_stats);
+
+static ssize_t tag_stats_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+
+	struct ufs_stats *ufs_stats = NULL;
+	struct ufs_hba *hba = NULL;
+	struct scsi_device *sdev = NULL;
+	unsigned long val = 0;
+	int ret = -1, bit = 0;
+	unsigned long flags;
+
+	send_ufs_hba_data(&hba, &sdev);
+	if (!hba)
+		return ret;
+
+	ufs_stats = &hba->ufs_stats;
+
+	ret = kstrtoul(buf, 0, &val);
+	if (ret) {
+		dev_err(hba->dev, "%s: Invalid argument\n", __func__);
+		return ret;
+	}
+
+	spin_lock_irqsave(hba->host->host_lock, flags);
+
+	if (val == 0) {
+		ufs_stats->enabled = false;
+		dev_info(hba->dev, "%s: Disabling UFS tag statistics\n", __func__);
+	} else if (val == 1) {
+		ufs_stats->enabled = true;
+		dev_info(hba->dev, "%s: Enabling & Resetting UFS tag statistics\n", __func__);
+		memset(hba->ufs_stats.tag_stats[0], 0, sizeof(**hba->ufs_stats.tag_stats) * TS_NUM_STATS * hba->nutrs);
+
+		/* initialize current queue depth */
+		ufs_stats->q_depth = 0;
+		for_each_set_bit_from(bit, &hba->outstanding_reqs, hba->nutrs)
+			ufs_stats->q_depth++;
+		dev_info(hba->dev, "%s: Enabled UFS tag statistics\n", __func__);
+	}
+	spin_unlock_irqrestore(hba->host->host_lock, flags);
+
+	return count;
+}
+static DEVICE_ATTR_RW(tag_stats);
 
 /*
  * export err_state information
  */
 static ssize_t err_state_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-	struct ufs_hba *hba;
+	struct ufs_hba *hba = NULL;
+	struct scsi_device *sdev = NULL;
 	int count = 0;
 
-	send_ufs_hba_data(&hba);
-	if (!hba)
-		goto exit;
+	send_ufs_hba_data(&hba, &sdev);
 
 	count += snprintf(buf + count, PAGE_SIZE, "%d\n", hba->ufs_stats.err_state);
 
-exit:
-	return 0;
+	return count;
 }
 static DEVICE_ATTR_RO(err_state);
 
@@ -567,12 +795,20 @@ static ssize_t req_stats_show(struct device *dev,
 {
 	int i;
 	unsigned long flags;
-	struct ufs_hba *hba;
+	struct ufs_hba *hba = NULL;
+	struct scsi_device *sdev = NULL;
+	struct ufs_stats *ufs_stats = NULL;
 	int count = 0;
 
-	send_ufs_hba_data(&hba);
+	send_ufs_hba_data(&hba, &sdev);
 	if (!hba)
 		goto exit;
+
+	ufs_stats = &hba->ufs_stats;
+	if (!ufs_stats->req_stats_enabled) {
+		count += snprintf((buf + count), PAGE_SIZE, "req stats disabled.\n");
+		return count;
+	}
 
 	/* Header */
 	count += snprintf((buf + count), PAGE_SIZE,
@@ -609,9 +845,46 @@ static ssize_t req_stats_show(struct device *dev,
 	spin_unlock_irqrestore(hba->host->host_lock, flags);
 
 exit:
-	return 0;
+	return count;
 }
-static DEVICE_ATTR_RO(req_stats);
+
+static ssize_t req_stats_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+{
+
+	struct ufs_stats *ufs_stats = NULL;
+	struct ufs_hba *hba = NULL;
+	struct scsi_device *sdev = NULL;
+	unsigned long val = 0;
+	int ret = -1, bit = 0;
+	unsigned long flags;
+
+	send_ufs_hba_data(&hba, &sdev);
+	if (!hba)
+		return ret;
+
+	ufs_stats = &hba->ufs_stats;
+
+	ret = kstrtoul(buf, 0, &val);
+	if (ret) {
+		dev_err(hba->dev, "%s: Invalid argument\n", __func__);
+		return ret;
+	}
+
+	spin_lock_irqsave(hba->host->host_lock, flags);
+
+	if (val == 0) {
+		ufs_stats->req_stats_enabled = false;
+		dev_info(hba->dev, "%s: Disabling UFS req stats", __func__);
+	} else if (val == 1) {
+		dev_info(hba->dev, "%s: Enabling & Resetting UFS req stats\n", __func__);
+		memset(&(hba->ufs_stats.req_stats[0]), 0, sizeof(struct ufshcd_req_stat) * TS_NUM_STATS);
+		ufs_stats->req_stats_enabled = true;
+	}
+	spin_unlock_irqrestore(hba->host->host_lock, flags);
+
+	return count;
+}
+static DEVICE_ATTR_RW(req_stats);
 
 static struct attribute *ufshcd_sysfs[] = {
 	&dev_attr_dump_health_desc.attr,

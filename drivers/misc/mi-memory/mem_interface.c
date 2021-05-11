@@ -8,17 +8,32 @@
 #include "mem_interface.h"
 
 static struct ufs_hba *hba;
+static struct ufs_data *ufs_data_ptr;
 
-void get_ufs_hba_data(struct ufs_hba *mi_hba)
+void set_ufs_hba_data(struct scsi_device *sdev)
 {
-	hba = mi_hba;
-}
+	if (!ufs_data_ptr) {
+		ufs_data_ptr = kzalloc(sizeof(struct ufs_data), GFP_KERNEL);
 
-void send_ufs_hba_data(struct ufs_hba **mi_hba)
-{
-	*mi_hba = hba;
+		if (!ufs_data_ptr)
+			return;
+
+		ufs_data_ptr->sdev = sdev;
+		ufs_data_ptr->hba = shost_priv(sdev->host);
+		hba = shost_priv(sdev->host);
+	}
 }
-EXPORT_SYMBOL(send_ufs_hba_data);
+EXPORT_SYMBOL(set_ufs_hba_data);
+
+void send_ufs_hba_data(struct ufs_hba **mi_hba, struct scsi_device **mi_sdev)
+{
+	if (!ufs_data_ptr) {
+		mi_ufs_log(UFS_LOG_ERR, "ufs_data is NULL.\n");
+		return;
+	}
+	*mi_hba = ufs_data_ptr->hba;
+	*mi_sdev = ufs_data_ptr->sdev;
+}
 
 /*obtain ddr size*/
 u8 memblock_mem_size_in_gb(void)
@@ -66,7 +81,11 @@ int ufs_get_string_desc(void *buf, int size, enum device_desc_param pname, bool 
 	ret = ufshcd_read_string_desc(hba, index, desc_buf, desc_len, ascii_std);
 	if (ret < 0)
 		goto out;
-	memcpy(buf, desc_buf, size);
+
+	if (ascii_std)
+		memcpy(buf, desc_buf + QUERY_DESC_HDR_SIZE, size);
+	else
+		memcpy(buf, desc_buf, size);
 out:
 	pm_runtime_put_sync(hba->dev);
 	kfree(desc_buf);
