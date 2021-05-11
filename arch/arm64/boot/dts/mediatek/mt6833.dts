@@ -5410,6 +5410,12 @@ page_owner=on loop.max_part=7";
 		mediatek,fifo_only;
 	};
 
+        irtx_pwm:irtx_pwm {
+                compatible = "mediatek,irtx-pwm";
+                pwm_ch = <0>;
+                pwm_data_invert = <0>;
+        };
+
 	/* ATF logger */
 	atf_logger {
 		compatible = "mediatek,atf_logger";
