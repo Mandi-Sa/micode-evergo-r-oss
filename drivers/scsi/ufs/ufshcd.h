@@ -625,6 +625,7 @@ struct ufs_stats {
 	int q_depth;
 	int err_stats[UFS_ERR_MAX];
 	struct ufshcd_req_stat req_stats[TS_NUM_STATS];
+	bool req_stats_enabled;
 	int query_stats_arr[UPIU_QUERY_OPCODE_MAX][MAX_QUERY_IDN];
 	u32 hibern8_exit_cnt;
 	ktime_t last_hibern8_exit_tstamp;

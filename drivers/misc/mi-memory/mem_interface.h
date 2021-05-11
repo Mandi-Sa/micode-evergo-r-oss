@@ -6,6 +6,21 @@
 #define SD_ASCII_STD true
 #define SD_RAW false
 
+enum {
+	UFS_LOG_ERR,
+	UFS_LOG_INFO,
+	UFS_LOG_DEBUG,
+};
+
+#define mi_ufs_log(lvl, fmt, ...) 						\
+{										\
+	do {									\
+		if (lvl == UFS_LOG_ERR)						\
+			printk(KERN_ERR "[MI-MEMORY]:"fmt, ##__VA_ARGS__);	\
+		else if (lvl == UFS_LOG_INFO)					\
+			printk(KERN_INFO "[MI-MEMORY]:"fmt, ##__VA_ARGS__);	\
+	} while (0);								\
+}
 /* Health descriptor parameters offsets in bytes*/
 enum health_desc_param {
 	HEALTH_DESC_PARAM_LEN			= 0x0,
@@ -15,11 +30,15 @@ enum health_desc_param {
 	HEALTH_DESC_PARAM_LIFE_TIME_EST_B	= 0x4,
 };
 
+struct ufs_data {
+	struct ufs_hba *hba;
+	struct scsi_device *sdev;
+};
+
 u8 memblock_mem_size_in_gb(void);
 
-void get_ufs_hba_data(struct ufs_hba *mi_hba);
-
-void send_ufs_hba_data(struct ufs_hba **mi_hba);
+void set_ufs_hba_data(struct scsi_device *sdev);
+void send_ufs_hba_data(struct ufs_hba **mi_hba, struct scsi_device **sdev);
 
 int ufs_get_string_desc(void *buf, int size, enum device_desc_param pname,
 	bool ascii_std);
