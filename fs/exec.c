@@ -967,10 +967,11 @@ int kernel_read_file_from_path(const char *path, void **buf, loff_t *size,
 		return -EINVAL;
 
 	file = filp_open(path, O_RDONLY, 0);
-	if (IS_ERR(file))
+	if (IS_ERR(file)){
 		return PTR_ERR(file);
-
+	}
 	ret = kernel_read_file(file, buf, size, max_size, id);
+	printk("%s ++++++nvt+++++5++++++++t: ", __func__);
 	fput(file);
 	return ret;
 }

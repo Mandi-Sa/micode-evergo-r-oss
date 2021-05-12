@@ -42,7 +42,6 @@
 #if HFP_SUPPORT
 static int current_fps = 60;
 #endif
-
 //static char bl_tb0[] = { 0x51, 0xff };
 
 struct tianma {
@@ -224,11 +223,21 @@ static int tianma_unprepare(struct drm_panel *panel)
 	struct tianma *ctx = panel_to_tianma(panel);
 	int ret = 0;
 	int retval = 0;
+	struct drm_panel_notifier notifier_data;
+	int power_status;
 
-	pr_info("%s++\n", __func__);
+	pr_info("nvt : %s++\n", __func__);
 
 	if (!ctx->prepared)
 		return 0;
+
+	power_status = DRM_PANEL_BLANK_POWERDOWN;
+	notifier_data.data = &power_status;
+	notifier_data.refresh_rate = 60;
+	notifier_data.id = 1;
+
+	drm_panel_notifier_call_chain(panel, DRM_PANEL_EARLY_EVENT_BLANK, &notifier_data);
+	pr_err("nvt : %s ++++ drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data)++++", __func__);
 
 	tianma_dcs_write_seq_static(ctx, 0x28);
 	msleep(40);
@@ -275,7 +284,10 @@ static int tianma_prepare(struct drm_panel *panel)
 	int ret;
 	int retval = 0;
 
-	pr_info("%s+\n", __func__);
+	int power_status;
+	struct drm_panel_notifier notifier_data;
+
+	pr_info("nvt: %s+\n", __func__);
 	if (ctx->prepared)
 		return 0;
 
@@ -319,17 +331,27 @@ static int tianma_prepare(struct drm_panel *panel)
 	ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
 	gpiod_set_value(ctx->bias_neg, 1);
 	devm_gpiod_put(ctx->dev, ctx->bias_neg);
-    
+
 	tianma_panel_init(ctx);
 
 	ret = ctx->error;
-	if (ret < 0)
+	if (ret < 0){
 		tianma_unprepare(panel);
-
+		ctx->prepared = false;
+		return ret;
+	}
 	ctx->prepared = true;
 #ifdef PANEL_SUPPORT_READBACK
 	tianma_panel_get_data(ctx);
 #endif
+
+	power_status = DRM_PANEL_BLANK_UNBLANK;
+	notifier_data.data = &power_status;
+	notifier_data.refresh_rate = 60;
+	notifier_data.id = 1;
+
+	drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data);
+	pr_err("nvt : %s ++++drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data); ++++", __func__);
 
 	pr_info("%s-\n", __func__);
 	return ret;
@@ -709,6 +731,7 @@ static int tianma_probe(struct mipi_dsi_device *dsi)
 		return -ENODEV;
 	}
 
+	pr_err("nvt: %s, dev->of_node->full_name = %s\n",__func__,(dev->of_node)->full_name);
 	pr_info("%s+\n", __func__);
 	ctx = devm_kzalloc(dev, sizeof(struct tianma), GFP_KERNEL);
 	if (!ctx)
@@ -797,7 +820,6 @@ static int tianma_probe(struct mipi_dsi_device *dsi)
 	lcd_dvdd_ldo = devm_regulator_get_optional(dev, "lcd_dvdd");
 
 	pr_info("%s- wt,tianma,nt36672c,cphy,vdo,90hz\n", __func__);
-
 	return ret;
 }
 
