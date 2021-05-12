@@ -2471,6 +2471,13 @@ page_owner=on loop.max_part=7";
 		io-channels = <&auxadc 2>;
 		io-channel-names = "thermistor-ch2";
 	};
+/* +bug 651594, xuxinyu, ADD, 20210512, S98016AA1 add new NTC configs. */
+	tboard_thermistor6: thermal-sensor6 {
+		compatible = "mediatek,mtboard-thermistor6";
+		io-channels = <&auxadc 5>;
+		io-channel-names = "thermistor-ch5";
+	};
+/* +bug 651594, xuxinyu, ADD, 20210512, S98016AA1 add new NTC configs. */
 	usb0@11200000 {
 		compatible = "mediatek,mt6833-usb20";
 		reg = <0 0x11200000 0 0x10000>,
