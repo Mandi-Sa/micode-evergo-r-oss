@@ -3923,6 +3923,39 @@ static ssize_t store_Power_Off_Voltage(
 	return size;
 }
 
+/* +Extb HONGMI-84891,chenrui1.wt,20210512,ADD,add input_suspend API for running test*/
+static ssize_t show_input_suspend(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	return -1;
+}
+
+static ssize_t store_input_suspend(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
+{
+	unsigned long val = 0;
+	int ret;
+
+	bm_err("[%s]\n", __func__);
+	if (buf != NULL && size != 0) {
+		bm_err("[%s] buf is %s\n", __func__, buf);
+		ret = kstrtoul(buf, 10, &val);
+		if (val < 0) {
+			bm_err(	"[%s] val is %d ??\n", __func__, (int)val);
+			val = 0;
+		}
+		val = (val > 0) ? 0 : 1;
+		if (gm.pbat_consumer != NULL) {
+			charger_manager_enable_charging(gm.pbat_consumer,0, val);
+			charger_manager_enable_charging(gm.pbat_consumer,1, val);
+		}
+		bm_err(	"%s=%d\n", __func__, val);
+	}
+	return size;
+}
+static DEVICE_ATTR(input_suspend, 0664, show_input_suspend, store_input_suspend);
+/* -Extb HONGMI-84891,chenrui1.wt,20210512,ADD,add input_suspend API for running test */
+
 static DEVICE_ATTR(
 	Power_Off_Voltage, 0664,
 	show_Power_Off_Voltage, store_Power_Off_Voltage);
@@ -4508,7 +4541,8 @@ static int __init battery_probe(struct platform_device *dev)
 		gm.bat_nb.notifier_call = battery_callback;
 		register_charger_manager_notifier(gm.pbat_consumer, &gm.bat_nb);
 	}
-
+	//Extb HONGMI-84891,chenrui1.wt,20210512,ADD,add input_suspend API for running test
+	ret = device_create_file(&battery_main.psy->dev, &dev_attr_input_suspend);
 	battery_debug_init();
 
 	__pm_relax(&battery_lock);
