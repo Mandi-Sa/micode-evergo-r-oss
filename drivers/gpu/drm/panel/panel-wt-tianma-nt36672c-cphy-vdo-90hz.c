@@ -18,6 +18,7 @@
 #include <linux/delay.h>
 
 #include <linux/gpio/consumer.h>
+#include <linux/regulator/consumer.h>
 
 #include <video/mipi_display.h>
 #include <video/of_videomode.h>
@@ -57,6 +58,8 @@ struct tianma {
 	bool enabled;
 	int error;
 };
+
+struct regulator *lcd_dvdd_ldo;
 
 #define tianma_dcs_write_seq(ctx, seq...)                                         \
 	({                                                                     \
@@ -170,13 +173,13 @@ static void tianma_panel_init(struct tianma *ctx)
 	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
 	tianma_dcs_write_seq_static(ctx, 0x35, 0x82);
 
-    tianma_dcs_write_seq_static(ctx, 0xFF, 0xF0);
+	tianma_dcs_write_seq_static(ctx, 0xFF, 0xF0);
 	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
 	tianma_dcs_write_seq_static(ctx, 0x1C, 0x01);
 	tianma_dcs_write_seq_static(ctx, 0x33, 0x01);
 	tianma_dcs_write_seq_static(ctx, 0x5A, 0x00);
 
-    tianma_dcs_write_seq_static(ctx, 0xFF, 0xD0);
+	tianma_dcs_write_seq_static(ctx, 0xFF, 0xD0);
 	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
 	tianma_dcs_write_seq_static(ctx, 0x53, 0x22);
 	tianma_dcs_write_seq_static(ctx, 0x54, 0x02);
@@ -219,6 +222,8 @@ static int tianma_unprepare(struct drm_panel *panel)
 {
 
 	struct tianma *ctx = panel_to_tianma(panel);
+	int ret = 0;
+	int retval = 0;
 
 	pr_info("%s++\n", __func__);
 
@@ -230,11 +235,11 @@ static int tianma_unprepare(struct drm_panel *panel)
 	tianma_dcs_write_seq_static(ctx, 0x10);
 	msleep(100);
 	
-    ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
+	ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
 	gpiod_set_value(ctx->reset_gpio, 0);
 	devm_gpiod_put(ctx->dev, ctx->reset_gpio);
 
-    usleep_range(2000, 2001);
+	usleep_range(2000, 2001);
     
 	ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
 	gpiod_set_value(ctx->bias_neg, 0);
@@ -246,9 +251,15 @@ static int tianma_unprepare(struct drm_panel *panel)
 	gpiod_set_value(ctx->bias_pos, 0);
 	devm_gpiod_put(ctx->dev, ctx->bias_pos);
 
-    usleep_range(2000, 2001);
+	usleep_range(2000, 2001);
 
-    ctx->pm_gpio = devm_gpiod_get(ctx->dev, "pm-enable", GPIOD_OUT_HIGH);
+	ret = regulator_disable(lcd_dvdd_ldo);
+	if (ret < 0)
+		pr_err("disable regulator lcd_dvdd_ldo fail, ret = %d\n", ret);
+	retval |= ret;
+	usleep_range(2000, 2001);
+
+	ctx->pm_gpio = devm_gpiod_get(ctx->dev, "pm-enable", GPIOD_OUT_HIGH);
 	gpiod_set_value(ctx->pm_gpio, 0);
 	devm_gpiod_put(ctx->dev, ctx->pm_gpio);
 
@@ -262,6 +273,7 @@ static int tianma_prepare(struct drm_panel *panel)
 {
 	struct tianma *ctx = panel_to_tianma(panel);
 	int ret;
+	int retval = 0;
 
 	pr_info("%s+\n", __func__);
 	if (ctx->prepared)
@@ -270,13 +282,26 @@ static int tianma_prepare(struct drm_panel *panel)
 	// reset  L
 	ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
 	gpiod_set_value(ctx->reset_gpio, 0);
-    devm_gpiod_put(ctx->dev, ctx->reset_gpio);
+	devm_gpiod_put(ctx->dev, ctx->reset_gpio);
 	usleep_range(10000, 10001);
 
 	ctx->pm_gpio = devm_gpiod_get(ctx->dev, "pm-enable", GPIOD_OUT_HIGH);
 	gpiod_set_value(ctx->pm_gpio, 1);
-    devm_gpiod_put(ctx->dev, ctx->pm_gpio);
+	devm_gpiod_put(ctx->dev, ctx->pm_gpio);
 	usleep_range(10000, 10001);
+
+	/* set voltage with min & max*/
+	ret = regulator_set_voltage(lcd_dvdd_ldo, 1300000, 1300000);
+	if (ret < 0)
+		pr_err("set voltage lcd_dvdd_ldo fail, ret = %d\n", ret);
+	retval |= ret;
+
+	/* enable regulator */
+	ret = regulator_enable(lcd_dvdd_ldo);
+	if (ret < 0)
+		pr_err("enable regulator lcd_dvdd_ldo fail, ret = %d\n", ret);
+	retval |= ret;
+	usleep_range(2000, 2001);
 
 	ctx->lcm_bl_en_gpio = devm_gpiod_get_index(ctx->dev, "lcm-bl-enable", 0, GPIOD_OUT_HIGH);
 	gpiod_set_value(ctx->lcm_bl_en_gpio, 1);
@@ -285,7 +310,7 @@ static int tianma_prepare(struct drm_panel *panel)
 
 	lm36273_bl_bias_conf();
 	lm36273_bias_enable(1, 3);
-    mdelay(10);
+	mdelay(10);
 	ctx->bias_pos = devm_gpiod_get_index(ctx->dev, "bias", 0, GPIOD_OUT_HIGH);
 	gpiod_set_value(ctx->bias_pos, 1);
 	devm_gpiod_put(ctx->dev, ctx->bias_pos);
@@ -769,6 +794,7 @@ static int tianma_probe(struct mipi_dsi_device *dsi)
 		return ret;
 
 #endif
+	lcd_dvdd_ldo = devm_regulator_get_optional(dev, "lcd_dvdd");
 
 	pr_info("%s- wt,tianma,nt36672c,cphy,vdo,90hz\n", __func__);
 
