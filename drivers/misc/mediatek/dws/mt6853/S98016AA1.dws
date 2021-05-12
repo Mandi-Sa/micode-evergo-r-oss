@@ -589,6 +589,7 @@
                 <inpull_selhigh>true</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
+                <varName0>GPIO_FDD_BAND_SUPPORT_DETECT_4TH_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio47>
@@ -599,6 +600,7 @@
                 <inpull_selhigh>true</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
+                <varName0>GPIO_FDD_BAND_SUPPORT_DETECT_5TH_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio48>
