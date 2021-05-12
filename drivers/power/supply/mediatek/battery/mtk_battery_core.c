@@ -81,7 +81,11 @@
 #include "simulator_kernel.h"
 #endif
 
+/* +Extb HONGMI-84911,wangbin.wt,ADD,20210512,add battery info.*/
+#include <linux/hardware_info.h>
 
+static char* battery_name[] = {"S98016_SWD_4V45_5000mAh","S98016_CMX_4V45_5000mAh"};
+/* -Extb HONGMI-84911,wangbin.wt,ADD,20210512,add battery info.*/
 
 /* ============================================================ */
 /* global variable */
@@ -684,6 +688,9 @@ void fg_custom_init_from_header(void)
 	int i, j;
 
 	fgauge_get_profile_id();
+
+	//Extb HONGMI-84911,wangbin.wt,ADD,20210512,add battery info.
+	hardwareinfo_set_prop(HARDWARE_BATTERY_ID, battery_name[gm.battery_id]);
 
 	fg_cust_data.versionID1 = FG_DAEMON_CMD_FROM_USER_NUMBER;
 	fg_cust_data.versionID2 = sizeof(fg_cust_data);
