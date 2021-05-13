@@ -200,6 +200,7 @@ static long hardwareinfo_ioctl(struct file *file, unsigned int cmd,unsigned long
 		break;
     /*bug 493726, add NFC info, dulinyu.wt, 20191018,begin*/
     case HARDWARE_NFC_GET:
+        hardwareinfo_set_prop(HARDWARE_NFC, "ST21NFCD");
 		hardwareinfo_num = HARDWARE_NFC;
 		break;
     /*bug 493726, add NFC info, dulinyu.wt, 20191018,end*/
