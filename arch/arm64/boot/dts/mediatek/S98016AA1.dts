@@ -157,7 +157,7 @@
 	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	panel1@0 {
+	panel1: panel1@0 {
 		compatible = "wt,nt36672c_fhdp_wt_dsi_vdo_cphy_90hz_tianma";
 		reg = <0>;
 		pm-enable-gpios = <&pio 136 0>;
@@ -173,7 +173,7 @@
 			};
 		};
 	};
-	panel2@0 {
+	panel2: panel2@0 {
 		compatible = "truly,td4330,vdo";
 		reg = <1>;
 		pm-enable-gpios = <&pio 136 0>;
@@ -187,7 +187,7 @@
 			};
 		};
 	};
-	panel3@0 {
+	panel3: panel3@0 {
 		compatible = "truly,ft8756,vdo";
 		reg = <2>;
 		pm-enable-gpios = <&pio 136 0>;

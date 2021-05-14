@@ -39,12 +39,13 @@
 		novatek,spi-rd-fast-addr = <0x03F310>;
 
 		/* MP */
-		//novatek,mp-support-dt;
+		novatek,mp-support-dt;
+		panel = <&panel1>;
 
-		novatek-mp-criteria-nvtpid@0 {
+		novatek-mp-criteria-595E@0 {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "novatek-mp-criteria-nvtpid";
+			compatible = "novatek-mp-criteria-595E";
 
 			/* MP Config */
 			IC_X_CFG_SIZE = <18>;
