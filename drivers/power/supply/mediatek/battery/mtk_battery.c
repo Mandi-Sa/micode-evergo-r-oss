@@ -4377,6 +4377,42 @@ static const struct file_operations adc_cali_fops = {
 	.release = adc_cali_release,
 };
 
+/* +Bug653766,wangbin.wt,add,20210514,add start/stop API for running test */
+static ssize_t show_StopCharging_Test(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	if (gm.pbat_consumer != NULL){
+//		charger_manager_enable_charging_new(gm.pbat_consumer,1);
+		charger_manager_enable_charging(gm.pbat_consumer,0, 0);
+		charger_manager_enable_charging(gm.pbat_consumer,1, 0);
+//		battery_capacity_limit = true;
+	}
+	bm_err("wt--show_StopCharging_Test\n");
+	return sprintf(buf, "chr=0\n");
+}
+
+static ssize_t store_StopCharging_Test(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+static DEVICE_ATTR(StopCharging_Test, 0664, show_StopCharging_Test, store_StopCharging_Test);
+
+static ssize_t show_StartCharging_Test(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	if (gm.pbat_consumer != NULL){
+//		charger_manager_enable_charging_new(gm.pbat_consumer,0);
+		charger_manager_enable_charging(gm.pbat_consumer,0, 1);
+		charger_manager_enable_charging(gm.pbat_consumer,1, 1);
+//		battery_capacity_limit = false;
+	}
+	bm_err("wt--show_StartCharging_Test\n");
+	return sprintf(buf, "chr=1\n");
+}
+static ssize_t store_StartCharging_Test(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	return -1;
+}
+static DEVICE_ATTR(StartCharging_Test, 0664, show_StartCharging_Test, store_StartCharging_Test);
+/* -Bug653766,wangbin.wt,add,20210514,add start/stop API for running test */
 
 /*************************************/
 static struct wakeup_source battery_lock;
@@ -4543,6 +4579,11 @@ static int __init battery_probe(struct platform_device *dev)
 	}
 	//Extb HONGMI-84891,chenrui1.wt,20210512,ADD,add input_suspend API for running test
 	ret = device_create_file(&battery_main.psy->dev, &dev_attr_input_suspend);
+	
+	/* +Bug653766,wangbin.wt,add,20210514,add start/stop API for running test */
+	ret = device_create_file(&battery_main.psy->dev, &dev_attr_StopCharging_Test);
+	ret = device_create_file(&battery_main.psy->dev, &dev_attr_StartCharging_Test);
+	/* -Bug653766,wangbin.wt,add,20210514,add start/stop API for running test */
 	battery_debug_init();
 
 	__pm_relax(&battery_lock);
