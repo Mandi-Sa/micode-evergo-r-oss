@@ -39,6 +39,8 @@
 /* switch USB config */
 #include <mt-plat/upmu_common.h>
 #include <mt-plat/mtk_boot.h>
+//Extb HONGMI-84911,wangbin,wt.ADD.20210514,add charger info.
+#include <linux/hardware_info.h>
 
 #define MT6360_PMU_CHG_DRV_VERSION	"1.0.7_MTK"
 
@@ -2907,6 +2909,8 @@ static int mt6360_pmu_chg_probe(struct platform_device *pdev)
 && !defined(CONFIG_TCPC_CLASS)
 	schedule_work(&mpci->chgdet_work);
 #endif /* CONFIG_MT6360_PMU_CHARGER_TYPE_DETECT && !CONFIG_TCPC_CLASS */
+	//Extb HONGMI-84911,wangbin,wt.ADD.20210514,add charger info.
+	hardwareinfo_set_prop(HARDWARE_CHARGER_IC_INFO, "MT6360_PMU_CHARGER");
 	dev_info(&pdev->dev, "%s: successfully probed\n", __func__);
 	return 0;
 err_shipping_mode_attr:

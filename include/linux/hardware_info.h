@@ -33,6 +33,7 @@ enum{
 	HARDWARE_HARDWARE_ID,
 	HARDWARE_SMART_PA_ID,
 	HARDWARE_BMS_GAUGE_ID, //Bug493560,lili5.wt,ADD,20191112,Add fuel gauge information in factory mode
+	HARDWARE_SUB_CHARGER_IC_INFO, //Extb HONGMI-84911,wangbin,wt.ADD.20210514,add sub charger info
 	HARDWARE_MAX_ITEM
 };
 
@@ -109,6 +110,8 @@ enum{
 
 #define HARDWARE_SECURE_INFO_GET                  _IOWR(HARDWARE_ID, 0x87, char[HARDWARE_MAX_ITEM_LONGTH])
 #define SOFTWARE_SECURE_INFO_GET                  _IOWR(HARDWARE_ID, 0x88, char[HARDWARE_MAX_ITEM_LONGTH])
+//Extb HONGMI-84911,wangbin,wt.ADD.20210514,add sub charger info.
+#define HARDWARE_SUB_CHARGER_IC_INFO_GET          _IOWR(HARDWARE_ID, 0x89, char[HARDWARE_MAX_ITEM_LONGTH])
 
 
 

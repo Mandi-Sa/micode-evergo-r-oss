@@ -2160,8 +2160,8 @@ static int sc8551_charger_probe(struct i2c_client *client,
 	sc_info("sc8551 probe successfully, Part Num:%d\n!",
 				sc->part_no);
 
-	//Extb HONGMI-84911,wangbin.wt,ADD,20210512,add hardware info
-	hardwareinfo_set_prop(HARDWARE_CHARGER_IC_INFO, "SC8551_CHARGER");
+	//Extb HONGMI-84911,wangbin.wt,MODIFY,20210512,add hardware info
+	hardwareinfo_set_prop(HARDWARE_SUB_CHARGER_IC_INFO, "SC8551_CHARGER");
 	return 0;
 
 err_1:
