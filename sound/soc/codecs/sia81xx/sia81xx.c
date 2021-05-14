@@ -68,7 +68,7 @@
 #define SIA81XX_NAME					"sia81xx"
 #define SIA81XX_I2C_NAME				SIA81XX_NAME
 
-#define DISTINGUISH_CHIP_TYPE
+//#define DISTINGUISH_CHIP_TYPE
 //#define ALGO_SWITCH_EN
 
 #define SIA81XX_CMD_POWER_ON			(1)
@@ -770,6 +770,7 @@ static int sia81xx_resume(
 				goto err_sia81xx_resume;
 
 			spin_lock_irqsave(&sia81xx->rst_lock, flags);
+			pr_info("%s:set rst_pin High\n",__func__);
 			gpio_set_value(sia81xx->rst_pin, SIA81XX_ENABLE_LEVEL);
 			mdelay(1);	/* wait chip power up, the time must be > 1ms */
 			spin_unlock_irqrestore(&sia81xx->rst_lock, flags);
@@ -821,7 +822,7 @@ static int sia81xx_suspend(
 
 		if (0 == sia81xx->disable_pin) {
 			spin_lock_irqsave(&sia81xx->rst_lock, flags);
-
+			pr_info("%s:set rst_pin low\n",__func__);
 			/* power off chip */
 			gpio_set_value(sia81xx->rst_pin, SIA81XX_DISABLE_LEVEL);
 			mdelay(1);	/* wait chip power off, the time must be > 1ms */
