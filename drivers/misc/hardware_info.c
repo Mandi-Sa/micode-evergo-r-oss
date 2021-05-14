@@ -196,6 +196,11 @@ static long hardwareinfo_ioctl(struct file *file, unsigned int cmd,unsigned long
 		hardwareinfo_num = HARDWARE_CHARGER_IC_INFO;
 		break;
 	//-bug 436809  modify getian.wt 20190403 Add charger IC model information in factory mode
+	/* +Extb HONGMI-84911,wangbin,wt.ADD.20210514,add sub charger info.*/
+	case HARDWARE_SUB_CHARGER_IC_INFO_GET:
+		hardwareinfo_num = HARDWARE_SUB_CHARGER_IC_INFO;
+		break;
+	/* -Extb HONGMI-84911,wangbin,wt.ADD.20210514,add sub charger info.*/
 	case HARDWARE_BACK_CAM_MOUDULE_ID_GET:
 		hardwareinfo_num = HARDWARE_BACK_CAM_MOUDULE_ID;
 		break;

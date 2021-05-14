@@ -34,6 +34,8 @@
 #include <mtk_battery_internal.h>
 #include <mt-plat/mtk_auxadc_intf.h>
 #include "aee.h"
+//Extb HONGMI-84911,wangbin,wt.ADD.20210514,add bms gauge info.
+#include <linux/hardware_info.h>
 
 /*********************** MT6359 setting *********************/
 #define UNIT_FGCURRENT     (610352)
@@ -3335,6 +3337,9 @@ static int mt6359_gauge_probe(struct platform_device *pdev)
 
 	alarm_init(&info->zcv_timer, ALARM_BOOTTIME,
 		zcv_timer_callback);
+
+	//Extb HONGMI-84911,wangbin,wt.ADD.20210514,add bms gauge info.
+	hardwareinfo_set_prop(HARDWARE_BMS_GAUGE_ID, "MT6360_GAUGE");
 
 	return 0;
 err_register_gauge_dev:
