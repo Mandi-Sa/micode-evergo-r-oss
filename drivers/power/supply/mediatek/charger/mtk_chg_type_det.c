@@ -159,6 +159,7 @@ struct mt_charger {
 	#endif
 	bool chg_online; /* Has charger in or not */
 	enum charger_type chg_type;
+	int apdo_max; // Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 };
 
 static int mt_charger_online(struct mt_charger *mtk_chg)
@@ -331,12 +332,36 @@ static int mt_usb_get_property(struct power_supply *psy,
 		val->intval = mtk_chg->cti->polarity_state;
 		break;
 	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+	// +Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
+	case POWER_SUPPLY_PROP_APDO_MAX:
+		val->intval = mtk_chg->apdo_max;
+		pr_info("wt_debug info: %s, apdo_max = %d, value = %d\n", __func__, mtk_chg->apdo_max, val->intval);
+		break;
+	// -Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 	default:
 		return -EINVAL;
 	}
 
 	return 0;
 }
+
+// +Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
+static int mt_usb_set_property(struct power_supply *psy,
+	enum power_supply_property psp, const union power_supply_propval *val)
+{
+	struct mt_charger *mtk_chg = power_supply_get_drvdata(psy);
+	switch (psp) {
+	case POWER_SUPPLY_PROP_APDO_MAX:
+		mtk_chg->apdo_max = val->intval;
+		pr_info("wt_debug info: %s, %d\n", __func__, mtk_chg->apdo_max);
+		break;
+	default:
+		pr_debug("set prop %d is not supported in usb\n", psp);
+		return -EINVAL;
+	}
+	return 0;
+}
+// +Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 
 static enum power_supply_property mt_charger_properties[] = {
 	POWER_SUPPLY_PROP_ONLINE,
@@ -353,6 +378,7 @@ static enum power_supply_property mt_usb_properties[] = {
 	/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
 	POWER_SUPPLY_PROP_TYPEC_POLARITY,
 	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+	POWER_SUPPLY_PROP_APDO_MAX,	// Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 };
 
 static void tcpc_power_off_work_handler(struct work_struct *work)
@@ -502,7 +528,6 @@ static int mt_charger_probe(struct platform_device *pdev)
 	#ifdef CONFIG_EXTCON_USB_CHG
 	struct usb_extcon_info *info;
 	#endif
-
 	pr_info("%s\n", __func__);
 
 	mt_chg = devm_kzalloc(&pdev->dev, sizeof(*mt_chg), GFP_KERNEL);
@@ -533,6 +558,8 @@ static int mt_charger_probe(struct platform_device *pdev)
 	mt_chg->usb_desc.properties = mt_usb_properties;
 	mt_chg->usb_desc.num_properties = ARRAY_SIZE(mt_usb_properties);
 	mt_chg->usb_desc.get_property = mt_usb_get_property;
+	//Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
+	mt_chg->usb_desc.set_property = mt_usb_set_property;
 	mt_chg->usb_cfg.drv_data = mt_chg;
 
 	mt_chg->chg_psy = power_supply_register(&pdev->dev,
@@ -618,7 +645,8 @@ static int mt_charger_probe(struct platform_device *pdev)
 	INIT_DELAYED_WORK(&mt_chg->extcon_work, init_extcon_work);
 	schedule_delayed_work(&mt_chg->extcon_work, 0);
 	#endif
-
+	// Extb HOMGMI-84843,chenrui1.wt,ADD,20210514, add adpo_max node
+	mt_chg->apdo_max = 0;
 	pr_info("%s done\n", __func__);
 	return 0;
 

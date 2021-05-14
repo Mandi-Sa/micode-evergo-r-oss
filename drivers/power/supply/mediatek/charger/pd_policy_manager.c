@@ -330,6 +330,18 @@ static void usbpd_check_charger_psy(struct usbpd_pm *pdpm)
 			pr_err("usb psy not found!\n");
 	}
 }
+
+//+ Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
+static void usbpd_check_apdo_psy(struct usbpd_pm *pdpm)
+{
+	if (!pdpm->apdo_psy) {
+		pdpm->apdo_psy = power_supply_get_by_name("usb");
+		if (!pdpm->apdo_psy)
+			pr_err("apdo psy not found!\n");
+	}
+}
+//-Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
+
 static void usbpd_check_cp_psy(struct usbpd_pm *pdpm)
 {
 	if (!pdpm->cp_psy) {
@@ -519,7 +531,6 @@ static int usbpd_pm_check_cp_enabled(struct usbpd_pm *pdpm)
 	if (!ret)
 		pdpm->cp.charge_enabled = !!val.intval;
 
-
 	return ret;
 }
 
@@ -537,7 +548,7 @@ static int usbpd_pm_check_cp_sec_enabled(struct usbpd_pm *pdpm)
 			POWER_SUPPLY_PROP_CHARGING_ENABLED, &val);
 	if (!ret)
 		pdpm->cp_sec.charge_enabled = !!val.intval;
-	
+
 	return ret;
 }
 
@@ -545,6 +556,8 @@ static int usbpd_pm_check_cp_sec_enabled(struct usbpd_pm *pdpm)
 static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 {
 	bool retValue;
+	// Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
+	union power_supply_propval pval = {0, };
 
 	retValue = usbpd_get_pps_status(pdpm);
 	if (retValue)
@@ -552,12 +565,17 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 	else
 		pdpm->pps_supported = false;
 
-	
-	if (pdpm->pps_supported)
+	if (pdpm->pps_supported) {
 		pr_notice("PPS supported, preferred APDO pos:%d, max volt:%d, current:%d\n",
 				pdpm->apdo_selected_pdo,
 				pdpm->apdo_max_volt,
 				pdpm->apdo_max_curr);
+		// +Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
+		pval.intval = (pdpm->apdo_max_volt / 1000) * (pdpm->apdo_max_curr / 1000);
+		power_supply_set_property(pdpm->apdo_psy,
+				POWER_SUPPLY_PROP_APDO_MAX, &pval);
+		// -Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
+		}
 	else
 		pr_notice("Not qualified PPS adapter\n");
 }
@@ -905,7 +923,7 @@ static void usbpd_pm_workfunc(struct work_struct *work)
 	usbpd_pm_update_sw_status(pdpm);
 	usbpd_pm_update_cp_status(pdpm);
 	usbpd_pm_update_cp_sec_status(pdpm);
-	
+
 	if (!usbpd_pm_sm(pdpm) && pdpm->pd_active)
 		schedule_delayed_work(&pdpm->pm_work,
 				msecs_to_jiffies(PM_WORK_RUN_INTERVAL));
@@ -913,6 +931,8 @@ static void usbpd_pm_workfunc(struct work_struct *work)
 
 static void usbpd_pm_disconnect(struct usbpd_pm *pdpm)
 {
+	//Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
+	union power_supply_propval pval = {0, };
 	usbpd_pm_enable_cp(pdpm, false);
     usbpd_pm_check_cp_enabled(pdpm);
     if (pm_config.cp_sec_enable) {
@@ -927,7 +947,11 @@ static void usbpd_pm_disconnect(struct usbpd_pm *pdpm)
 
     pdpm->pps_supported = false;
     pdpm->apdo_selected_pdo = 0;
-
+	//+Extb HOMGMI-84843,chenrui1.wt,ADD,20210514add adpo_max node
+	pval.intval = 0;
+	power_supply_set_property(pdpm->usb_psy,
+			POWER_SUPPLY_PROP_APDO_MAX, &pval);
+	//-Extb HOMGMI-84843,chenrui1.wt,ADD,20210514add adpo_max node
     usbpd_pm_move_state(pdpm, PD_PM_STATE_ENTRY);
 }
 
@@ -1066,7 +1090,8 @@ static int __init usbpd_pm_init(void)
 	if (pm_config.cp_sec_enable) {
 		usbpd_check_cp_sec_psy(pdpm);
 	}
-
+	//Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
+	usbpd_check_apdo_psy(pdpm);
 	usbpd_check_charger_psy(pdpm);
 	usbpd_check_tcpc(pdpm);
 	usbpd_check_pca_chg_swchg(pdpm);

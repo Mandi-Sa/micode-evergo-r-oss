@@ -165,6 +165,8 @@ struct usbpd_pm {
 	struct power_supply *cp_psy;
 	struct power_supply *cp_sec_psy;
 	struct power_supply *usb_psy;
+	//Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
+	struct power_supply *apdo_psy;
 };
 
 struct pdpm_config {
