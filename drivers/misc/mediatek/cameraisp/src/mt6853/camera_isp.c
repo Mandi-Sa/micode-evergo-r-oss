@@ -2544,6 +2544,12 @@ static void ISP_EnableClock(bool En)
 		}
 #endif
 #else /*CCF*/
+		/* Reset CSR */
+		ISP_WR32(CAMSYS_RAWA_REG_SW_RST, 0x8);
+		ISP_WR32(CAMSYS_RAWA_REG_SW_RST, 0x0);
+		ISP_WR32(CAMSYS_RAWB_REG_SW_RST, 0x8);
+		ISP_WR32(CAMSYS_RAWB_REG_SW_RST, 0x0);
+
 		/*LOG_INF("CCF:prepare_enable clk"); */
 		spin_lock(&(IspInfo.SpinLockClock));
 		G_u4EnableClockCount++;
