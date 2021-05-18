@@ -14,6 +14,7 @@ ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/dcm_v1/mt6833
 obj-y += mt6833/
 else ifeq ($(CONFIG_MACH_MT6877),y)
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/dcm_v1/mt6877/
+ccflags-y += -I$(srctree)/include/memory/mediatek/
 obj-y += mt6877/
 else
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include/dcm_v1/$(MTK_PLATFORM)/
