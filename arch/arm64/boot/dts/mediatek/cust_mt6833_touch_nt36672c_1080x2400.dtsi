@@ -42,18 +42,18 @@
 		novatek,mp-support-dt;
 		panel = <&panel1>;
 
-		novatek-mp-criteria-595E@0 {
+		novatek-mp-criteria-595E@0 { //PID 为595E ，TM
 			#address-cells = <1>;
 			#size-cells = <0>;
 			compatible = "novatek-mp-criteria-595E";
 
 			/* MP Config */
-			IC_X_CFG_SIZE = <18>;
+			IC_X_CFG_SIZE = <16>;
 			IC_Y_CFG_SIZE = <36>;
 			IC_KEY_CFG_SIZE = <4>;
-			X_Channel = <18>;
+			X_Channel = <16>;
 			Y_Channel = <36>;
-			AIN_X = <0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17>;
+			AIN_X = <0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 >;
 			AIN_Y = <0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17
 			18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35>;
 			AIN_KEY = <0 1 2 0xFF>;
