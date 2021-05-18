@@ -120,6 +120,8 @@ extern void nvt_read_get_num_mdata(uint32_t xdata_addr, int32_t *buffer, uint32_
 int32_t nvt_mp_parse_dt(struct device_node *root, const char *node_compatible);
 
 
+static char *lockdown_infor;
+
 #define WT_PROC_TOUCHSCREEN_FOLDER                   "touchscreen"
 #define WT_PROC_CTP_OPENSHORT_TEST_FILE            "ctp_openshort_test"
 #define WT_PROC_CTP_LOCKDOWN_INFO_FILE            "lockdown_info"
@@ -1558,7 +1560,10 @@ void print_selftest_result(struct seq_file *m, int32_t TestResult, uint8_t Recor
 static int32_t c_show_lockdown_info(struct seq_file *m, void *v)
 {
 	NVT_LOG("++++%s+++++\n", __func__);
-	seq_printf(m, "black color\n");
+	if(lockdown_infor != NULL)
+		seq_printf(m, lockdown_infor+"\n");
+	else
+		seq_printf(m, "can not access lockdown");
 	return 0;
 }
 
@@ -1677,6 +1682,12 @@ static int32_t c_show_selftest(struct seq_file *m, void *v)
 	} /* if (ts->pen_support) */
 
 	nvt_mp_test_result_printed = 1;
+
+	//Short Test , Open Test , Fw Rawdate Test , Noise Test
+	if((!TestResult_Short)&&(!TestResult_Open)&&(!TestResult_FW_Rawdata)&&(!TestResult_Noise))
+		nvt_mp_seq_printf(m, "result = 1!\n");
+	else
+		nvt_mp_seq_printf(m, "result = 0!\n");
 
 	NVT_LOG("--\n");
 
@@ -2410,3 +2421,10 @@ void nvt_mp_proc_deinit(void)
 	}
 }
 #endif /* #if NVT_TOUCH_MP */
+
+static int __init  lockdowninfo_setup(char *s)
+{
+	lockdown_infor = s;
+	return 1;
+}
+__setup("androidboot.lcm_tp_lockdowninfo=", lockdowninfo_setup);
