@@ -405,6 +405,23 @@
 		};
 	};
 };
+&pio {
+	fpsensor_goodix_rst_low: fpsensor_goodix_rst_low {
+		pins_cmd_dat {
+			pinmux = <PINMUX_GPIO17__FUNC_GPIO17>;
+			slew-rate = <1>;
+			output-low;
+		};
+	};
+
+	fpsensor_goodix_rst_high: fpsensor_goodix_rst_high {
+		pins_cmd_dat {
+			pinmux = <PINMUX_GPIO17__FUNC_GPIO17>;
+			slew-rate = <1>;
+			output-high;
+		};
+	};
+};
 &spi5 {
 	fpc_spi@0 {
 		compatible = "fpc,fpc_spi";
@@ -424,6 +441,9 @@
 	interrupt-parent = <&pio>;
 	interrupts = <18 IRQ_TYPE_EDGE_RISING 18 0>;
 	int-gpios = <&pio 18 0>;
+	pinctrl-names = "fpsensor_goodix_rst_low", "fpsensor_goodix_rst_high";
+	pinctrl-0 = <&fpsensor_goodix_rst_low>;
+	pinctrl-1 = <&fpsensor_goodix_rst_high>;
 	status = "okay";
 };
 /* GPS GPIO standardization end */
