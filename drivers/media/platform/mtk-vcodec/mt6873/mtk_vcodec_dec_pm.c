@@ -429,8 +429,8 @@ void mtk_vdec_hw_break(struct mtk_vcodec_dev *dev, int hw_id)
 void mtk_vdec_dump_addr_reg(
 	struct mtk_vcodec_dev *dev, int hw_id, enum mtk_dec_dump_addr_type type)
 {
-	struct mtk_vcodec_ctx *ctx = dev->curr_dec_ctx[hw_id];
-	u32 fourcc = ctx->q_data[MTK_Q_DATA_SRC].fmt->fourcc;
+	struct mtk_vcodec_ctx *ctx;
+	u32 fourcc;
 	void __iomem *vld_addr = dev->dec_reg_base[VDEC_VLD];
 	void __iomem *mc_addr = dev->dec_reg_base[VDEC_MC];
 	void __iomem *mv_addr = dev->dec_reg_base[VDEC_MV];
@@ -463,6 +463,16 @@ void mtk_vdec_dump_addr_reg(
 	#define UBE_CORE_VLD_NUM 3
 	const unsigned int ube_core_vld_reg[UBE_CORE_VLD_NUM] = {
 		0xB0, 0xB4, 0xB8};
+
+	if (hw_id != MTK_VDEC_CORE && hw_id != MTK_VDEC_LAT) {
+		mtk_v4l2_err("hw_id %d not support !!", hw_id);
+		return;
+	}
+	ctx = dev->curr_dec_ctx[hw_id];
+	if (ctx)
+		fourcc = ctx->q_data[MTK_Q_DATA_SRC].fmt->fourcc;
+	else
+		fourcc = 0;
 
 	if (hw_id == MTK_VDEC_CORE && fourcc != V4L2_PIX_FMT_AV1)
 		is_ufo = (readl(ufo_addr + 0x08C) & 0x1) == 0x1;
@@ -622,12 +632,18 @@ enum mtk_iommu_callback_ret_t mtk_vdec_translation_fault_callback(
 		hw_id = MTK_VDEC_CORE;
 
 	ctx = dev->curr_dec_ctx[hw_id];
-	fourcc = ctx->q_data[MTK_Q_DATA_SRC].fmt->fourcc;
-	mtk_v4l2_err("codec:0x%08x(%c%c%c%c) %s TF larb %d port %x mva 0x%lx",
-		fourcc, fourcc & 0xFF, (fourcc >> 8) & 0xFF,
-		(fourcc >> 16) & 0xFF, (fourcc >> 24) & 0xFF,
-		(hw_id == MTK_VDEC_LAT) ? "LAT" : "CORE",
-		port >> 5, port, mva);
+	if (ctx) {
+		fourcc = ctx->q_data[MTK_Q_DATA_SRC].fmt->fourcc;
+		mtk_v4l2_err("codec:0x%08x(%c%c%c%c) %s TF larb %d port %x mva 0x%lx",
+			fourcc, fourcc & 0xFF, (fourcc >> 8) & 0xFF,
+			(fourcc >> 16) & 0xFF, (fourcc >> 24) & 0xFF,
+			(hw_id == MTK_VDEC_LAT) ? "LAT" : "CORE",
+			port >> 5, port, mva);
+	} else {
+		mtk_v4l2_err("ctx NULL codec unknown, %s TF larb %d port %x mva 0x%lx",
+			(hw_id == MTK_VDEC_LAT) ? "LAT" : "CORE",
+			port >> 5, port, mva);
+	}
 
 	switch (port) {
 	case M4U_PORT_L5_VDEC_LAT0_VLD_EXT:
