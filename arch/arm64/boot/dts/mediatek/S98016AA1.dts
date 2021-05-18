@@ -174,13 +174,15 @@
 		};
 	};
 	panel2: panel2@0 {
-		compatible = "truly,td4330,vdo";
+		compatible = "wt,nt36672c_fhdp_wt_dsi_vdo_cphy_90hz_csot";
 		reg = <1>;
 		pm-enable-gpios = <&pio 136 0>;
+		lcm-bl-enable-gpios = <&pio 87 0>;
 		reset-gpios = <&pio 86 0>;
 		bias-gpios = <&pio 137 0>,
 			<&pio 138 0>;
 		pinctrl-names = "default";
+		lcd_dvdd-supply = <&mt_pmic_vcn13_ldo_reg>;
 		port {
 			panel_in2: endpoint {
 				remote-endpoint = <&dsi_out>;
