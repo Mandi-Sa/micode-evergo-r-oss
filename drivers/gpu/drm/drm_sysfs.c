@@ -247,11 +247,30 @@ static ssize_t mipi_reg_store(struct device *device,
 	return rc;
 }
 
+extern unsigned int panel_white_point_x;
+extern unsigned int panel_white_point_y;
+
+static ssize_t white_point_x_show(struct device *device,
+			    struct device_attribute *attr,
+			   char *buf)
+{
+	return sprintf(buf, "%u\n", panel_white_point_x);
+}
+
+static ssize_t white_point_y_show(struct device *device,
+			    struct device_attribute *attr,
+			   char *buf)
+{
+	return sprintf(buf, "%u\n", panel_white_point_y);
+}
+
 static DEVICE_ATTR_RW(status);
 static DEVICE_ATTR_RO(enabled);
 static DEVICE_ATTR_RO(dpms);
 static DEVICE_ATTR_RO(modes);
 static DEVICE_ATTR_RW(mipi_reg);
+static DEVICE_ATTR_RO(white_point_x);
+static DEVICE_ATTR_RO(white_point_y);
 
 static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_status.attr,
@@ -259,6 +278,8 @@ static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_dpms.attr,
 	&dev_attr_modes.attr,
 	&dev_attr_mipi_reg.attr,
+	&dev_attr_white_point_x.attr,
+	&dev_attr_white_point_y.attr,
 	NULL
 };
 
