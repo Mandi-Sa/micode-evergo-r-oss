@@ -430,6 +430,7 @@
 #include <S98016AA1/cust.dtsi>
 #include "mediatek/sia81xx.dtsi"
 #include "mediatek/sc8551.dtsi"
+#include "mediatek/ln8000.dtsi"
 #include "mediatek/irtx_led.dtsi"
 
 /*End of this file, DO NOT ADD ANYTHING HERE*/

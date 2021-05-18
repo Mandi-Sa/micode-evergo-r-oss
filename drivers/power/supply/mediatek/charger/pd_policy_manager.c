@@ -345,19 +345,32 @@ static void usbpd_check_apdo_psy(struct usbpd_pm *pdpm)
 static void usbpd_check_cp_psy(struct usbpd_pm *pdpm)
 {
 	if (!pdpm->cp_psy) {
-        if (pm_config.cp_sec_enable)
+		if (pm_config.cp_sec_enable)
 			pdpm->cp_psy = power_supply_get_by_name("sc8551-master");
-        else
-            pdpm->cp_psy = power_supply_get_by_name("sc8551-standalone");
-        if (!pdpm->cp_psy)
-            pr_err("cp_psy not found\n");
-    }
+		else
+			pdpm->cp_psy = power_supply_get_by_name("sc8551-standalone");
+		//+Bug651594, chenrui1.wt, ADD, 20210517, add ln8000 charger bringup
+		if (pdpm->cp_psy)
+			return;
+		if (pm_config.cp_sec_enable)
+			pdpm->cp_psy = power_supply_get_by_name("ln8000-master");
+		else
+			pdpm->cp_psy = power_supply_get_by_name("ln8000-standalone");
+		//-Bug651594, chenrui1.wt, ADD, 20210517, add ln8000 charger bringup
+		if (!pdpm->cp_psy)
+			pr_err("cp_psy not found\n");
+	}
 }
 
 static void usbpd_check_cp_sec_psy(struct usbpd_pm *pdpm)
 {
     if (!pdpm->cp_sec_psy) {
         pdpm->cp_sec_psy = power_supply_get_by_name("sc8551-slave");
+        //+Bug651594, chenrui1.wt, ADD, 20210517, add ln8000 charger bringup
+        if (pdpm->cp_psy)
+            return;
+        pdpm->cp_sec_psy = power_supply_get_by_name("ln8000-slave");
+        //-Bug651594, chenrui1.wt, ADD, 20210517, add ln8000 charger bringup
         if (!pdpm->cp_sec_psy)
             pr_err("cp_sec_psy not found\n");
     }
