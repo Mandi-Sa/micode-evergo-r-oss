@@ -745,12 +745,9 @@ static s32 cmdq_sec_session_init(struct cmdq_sec_context *context)
 
 		context->state = IWC_WSM_ALLOCATED;
 	case IWC_WSM_ALLOCATED:
-#ifdef CMDQ_GP_SUPPORT
-		err = cmdq_sec_open_session(&context->tee, context->iwc_msg);
-		if (err)
-			break;
-#endif
+#ifdef CMDQ_SECURE_MTEE_SUPPORT
 		context->state = IWC_SES_OPENED;
+#endif
 	default:
 		break;
 	}
@@ -1130,6 +1127,19 @@ cmdq_sec_task_submit(struct cmdq_sec *cmdq, struct cmdq_sec_task *task,
 		}
 
 #ifdef CMDQ_GP_SUPPORT
+		if (!context)
+			context = cmdq->context;
+
+		if (context->state == IWC_WSM_ALLOCATED) {
+			err = cmdq_sec_open_session(
+				&context->tee, context->iwc_msg);
+			if (err) {
+				err = -CMDQ_ERR_SEC_CTX_SETUP;
+				break;
+			}
+			context->state = IWC_SES_OPENED;
+		}
+
 		/* do m4u sec init */
 		if (atomic_cmpxchg(&m4u_init, 0, 1) == 0) {
 			m4u_sec_init();
