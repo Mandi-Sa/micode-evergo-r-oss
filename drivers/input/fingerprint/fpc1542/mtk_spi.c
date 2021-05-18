@@ -61,7 +61,8 @@ struct TEEC_UUID uuid_ta_fpc = { 0x7778c03f, 0xc30c, 0x4dd0,
 #define FPC_RESET_HIGH1_US 100
 #define FPC_RESET_HIGH2_US 5000
 #define FPC_TTW_HOLD_TIME 1000
-
+bool fpc1542_fp_exist = 0;
+struct spi_device *spi_fingerprint;
 static const char * const pctl_names[] = {
 	"fpsensor_fpc_rst_low",
 	"fpsensor_fpc_rst_high",
@@ -173,7 +174,19 @@ static int fpc_read_id(struct spi_device *spidev)
      status = spi_sync(spidev, &m);
      pr_info("%s, spi_sync = %d id = %2x %2x %2x\n", __func__, status, rx[0], rx[1], rx[2]);
      if(rx[1] < 0x10){
+	 spi_fingerprint = spidev;
          return -1;
+     }
+     if(rx[1] == 0x1c && rx[2] == 0x13)
+     {
+     	fpc1542_fp_exist = 1;
+	pr_info("%s, is fpc fingerprint sensor detect", __func__);
+     }
+     else
+     {
+	pr_info("%s, not fpc sensor", __func__);
+	spi_fingerprint = spidev;
+        return -1;
      }
      return 0;
 }
@@ -365,6 +378,17 @@ static int mtk6797_probe(struct spi_device *spidev)
 		fpc->pinctrl_state[i] = state;
 	}
 
+	fpc_regulater_enable(dev, 1);
+	dev_err(dev, "22 %s\n", __func__);
+	(void)hw_reset(fpc);
+	dev_err(dev, "4 %s\n", __func__);
+	if ( 0 != fpc_read_id(spidev))
+        {
+		devm_pinctrl_put(fpc->pinctrl_fpc);
+		
+		return 0;
+	}
+
 	node_eint = of_find_compatible_node(NULL, NULL, "mediatek,fpsensor_fp_eint");
 	if (node_eint == NULL) {
 		rc = -EINVAL;
@@ -408,11 +432,6 @@ static int mtk6797_probe(struct spi_device *spidev)
 		goto exit;
 	}
 
-	fpc_regulater_enable(dev, 1);
-	dev_err(dev, "22 %s\n", __func__);
-	(void)hw_reset(fpc);
-	dev_err(dev, "4 %s\n", __func__);
-	fpc_read_id(spidev);
 	enable_irq_wake(irq_num);
 	dev_err(dev, "%s: ok\n", __func__);
 exit:
