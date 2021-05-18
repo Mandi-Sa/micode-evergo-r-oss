@@ -61,6 +61,13 @@ static int total_bw_value;
 #ifdef USE_BCPU_WEIGHT
 int cpu_power_bcpu_weight_max = 350;
 int cpu_power_bcpu_weight_min = 100;
+
+int cpu_power_bcpu_weight_max0 = 350;
+int cpu_power_bcpu_weight_min0 = 100;
+
+int cpu_power_bcpu_weight_max1 = 480;
+int cpu_power_bcpu_weight_min1 = 100;
+
 #endif /* USE_BCPU_WEIGHT */
 #ifdef CM_TRIGEAR
 int cpu_power_bbcpu_weight_max = 100;
@@ -88,7 +95,7 @@ unsigned int cpu_power_ratio_down0[CM_MGR_EMI_OPP] = {100, 100, 100, 100, 100, 0
 unsigned int debounce_times_up_adb0[CM_MGR_EMI_OPP] = {0, 0, 0, 0, 0, 0};
 unsigned int debounce_times_down_adb0[CM_MGR_EMI_OPP] = {3, 0, 0, 0, 0, 0};
 
-unsigned int cpu_power_ratio_up1[CM_MGR_EMI_OPP] = {100, 120, 140, 100, 100, 100};
+unsigned int cpu_power_ratio_up1[CM_MGR_EMI_OPP] = {100, 120, 140, 100, 180, 140};
 unsigned int cpu_power_ratio_down1[CM_MGR_EMI_OPP] = {100, 100, 100, 100, 100, 100};
 unsigned int debounce_times_up_adb1[CM_MGR_EMI_OPP] = {0, 0, 0, 0, 0, 0};
 unsigned int debounce_times_down_adb1[CM_MGR_EMI_OPP] = {3, 0, 0, 0, 0, 0};
