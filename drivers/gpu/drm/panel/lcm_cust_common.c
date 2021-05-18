@@ -57,7 +57,7 @@ int _lcm_i2c_write_bytes(unsigned char addr, unsigned char value)
 struct lm36273_reg lm36273_regs_conf[] = {
 	//{ LP36273_DISP_BC1, 0x48 },/* disable pwm*/
 	{ LP36273_DISP_BC2, 0xcd},
-	{ LP36273_DISP_FULL_CURRENT, 0xa0},
+	//{ LP36273_DISP_FULL_CURRENT, 0xa0},
 	{ LP36273_DISP_BIAS_VPOS, 0x1e },/* set vsp to +5.5V*/
 	{ LP36273_DISP_BIAS_VNEG, 0x1e },/* set vsp to +5.5V*/
 };
@@ -107,7 +107,7 @@ int lm36273_brightness_set(int level)
 	if (level > 255)
 	    level = 255;
 
-	level = level * 2047 / 255;
+	level = level * 2047 / 255 * 180 / 255;
 	int LSB_tmp = level & 0x7;
 	int MSB_tmp = (level >> 3) & 0xFF;
 	_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, LSB_tmp);
@@ -122,40 +122,31 @@ int hbm_brightness_set(int level)
 {
 	mutex_lock(&g_lm36273_led.lock);
 
-	if (g_lm36273_led.level == BL_LEVEL_MAX) {
-		switch (level) {
-		case DISPPARAM_LCD_HBM_L1_ON:
-			_lcm_i2c_write_bytes(LP36273_DISP_FULL_CURRENT, 0xa1);
-			_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, 0x07);
-			_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, 0xff);
-			g_lm36273_led.hbm_status = 1;
-			break;
-		case DISPPARAM_LCD_HBM_L2_ON:
-			_lcm_i2c_write_bytes(LP36273_DISP_FULL_CURRENT, 0xb1);
-			_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, 0x07);
-			_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, 0xff);
-			g_lm36273_led.hbm_status = 2;
-			break;
-		case DISPPARAM_LCD_HBM_L3_ON:
-			_lcm_i2c_write_bytes(LP36273_DISP_FULL_CURRENT, 0xc1);
-			_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, 0x07);
-			_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, 0xff);
-			g_lm36273_led.hbm_status = 3;
-			break;
-		case DISPPARAM_LCD_HBM_OFF:
-			_lcm_i2c_write_bytes(LP36273_DISP_FULL_CURRENT, 0xa0);
+	switch (level) {
+	case DISPPARAM_LCD_HBM_L1_ON:
+		_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, BL_HBM_L1 & 0x7);
+		_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, BL_HBM_L1 >> 3);
+		g_lm36273_led.hbm_status = 1;
+		break;		
+	case DISPPARAM_LCD_HBM_L2_ON:
+		_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, BL_HBM_L2 & 0x7);
+		_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, BL_HBM_L2 >> 3);
+		g_lm36273_led.hbm_status = 2;
+		break;
+	case DISPPARAM_LCD_HBM_L3_ON:
+		_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, BL_HBM_L3 & 0x7);
+		_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, BL_HBM_L3 >> 3);
+		g_lm36273_led.hbm_status = 3;
+		break;
+	case DISPPARAM_LCD_HBM_OFF:
+		if (g_lm36273_led.level > 0 && g_lm36273_led.level <= BL_LEVEL_MAX) {
 			_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, g_lm36273_led.level & 0x7);
 			_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, g_lm36273_led.level >> 3);
-			g_lm36273_led.hbm_status = 0;
-			break;
-		default:
-			break;
 		}
-	} else {
-		_lcm_i2c_write_bytes(LP36273_DISP_FULL_CURRENT, 0xa0);
-		_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, g_lm36273_led.level & 0x7);
-		_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, g_lm36273_led.level >> 3);
 		g_lm36273_led.hbm_status = 0;
+		break;
+	default:
+		break;
 	}
 
 	mutex_unlock(&g_lm36273_led.lock);
