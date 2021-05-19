@@ -11,6 +11,7 @@
 #include <linux/platform_device.h>
 
 char Lcm_name[HARDWARE_MAX_ITEM_LONGTH];//req  wuzhenzhen.wt 20140901 add for hardware info
+char Tp_name[HARDWARE_MAX_ITEM_LONGTH];
 char Sar_name[HARDWARE_MAX_ITEM_LONGTH];//bug 417945 , add sar info, chenrongli.wt, 20181218
 char board_id[HARDWARE_MAX_ITEM_LONGTH];//req  wuzhenzhen.wt 20140901 add for hardware info
 char smart_pa_name[HARDWARE_MAX_ITEM_LONGTH];//Bug 493560  tsx.wt 20191112 add for smart pa ic info
@@ -128,6 +129,7 @@ static long hardwareinfo_ioctl(struct file *file, unsigned int cmd,unsigned long
 		break;
 	case HARDWARE_TP_GET:
 		hardwareinfo_num = HARDWARE_TP;
+		hardwareinfo_set_prop(HARDWARE_TP, Tp_name);
 		//tid_hardware_info_get(hardwareinfo_name[hardwareinfo_num],
 		//				ARRAY_SIZE(hardwareinfo_name[0]));
 		break;
