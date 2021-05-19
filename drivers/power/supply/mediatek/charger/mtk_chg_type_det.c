@@ -308,6 +308,73 @@ static int mt_ac_get_property(struct power_supply *psy,
 	return 0;
 }
 
+/* +Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type*/
+enum quick_charge_type {
+	QUICK_CHARGE_NORMAL = 0,
+	QUICK_CHARGE_FAST,
+	QUICK_CHARGE_FLASH,
+	QUICK_CHARGE_TURPE,
+	QUICK_CHARGE_MAX,
+};
+
+struct quick_charge {
+	enum charger_type adap_type;
+	enum quick_charge_type adap_cap;
+};
+
+struct quick_charge adapter_cap[7] = {
+	{ STANDARD_HOST,        QUICK_CHARGE_NORMAL },
+	{ STANDARD_CHARGER,     QUICK_CHARGE_NORMAL },
+	{ CHARGING_HOST,        QUICK_CHARGE_NORMAL },
+	{ NONSTANDARD_CHARGER,  QUICK_CHARGE_NORMAL },
+	{ PPS_CHARGER,            QUICK_CHARGE_FAST },
+	{ WIRELESS_CHARGER,       QUICK_CHARGE_FAST },
+	{0, 0},
+};
+
+int mt_get_quick_charge_type(struct mt_charger *mtk_chg)
+{
+	int i = 0;
+	int ret;
+	bool charge_enabled;
+	union power_supply_propval val = {0,};
+	struct power_supply *charger_dev;
+
+	if (!mtk_chg){
+		pr_info("%s:mtk_chg is null\n",__func__);
+		return 0;
+	}
+	charger_dev = power_supply_get_by_name("sc8551-standalone");
+	if (!charger_dev){
+		charger_dev = power_supply_get_by_name("ln8000-standalone");
+		if (!charger_dev){
+			pr_info("%s:get ln8000-standalone fail\n",__func__);
+			return 0;
+		}
+	}
+
+	if (STANDARD_CHARGER == mtk_chg->chg_type) {
+		ret = power_supply_get_property(charger_dev,POWER_SUPPLY_PROP_CHARGING_ENABLED, &val);
+		if (!ret)
+			charge_enabled = !!val.intval;
+		else
+			pr_info("%s:get CHARGING_ENABLED fail\n",__func__);
+		if (charge_enabled)
+			mtk_chg->chg_type = PPS_CHARGER;
+	}
+
+	while (adapter_cap[i].adap_type != 0) {
+		if (mtk_chg->chg_type == adapter_cap[i].adap_type) {
+			pr_info("%s:adap_type=%d,adap_cap=%d\n", __func__,adapter_cap[i].adap_type,adapter_cap[i].adap_cap);
+			return adapter_cap[i].adap_cap;
+		}
+		i++;
+	}
+
+	return 0;
+}
+/* -Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type*/
+
 static int mt_usb_get_property(struct power_supply *psy,
 	enum power_supply_property psp, union power_supply_propval *val)
 {
@@ -338,6 +405,11 @@ static int mt_usb_get_property(struct power_supply *psy,
 		pr_info("wt_debug info: %s, apdo_max = %d, value = %d\n", __func__, mtk_chg->apdo_max, val->intval);
 		break;
 	// -Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
+	/* +Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type*/
+	case POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE:
+		val->intval = mt_get_quick_charge_type(mtk_chg);
+		break;
+	/* -Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type*/
 	default:
 		return -EINVAL;
 	}
@@ -379,6 +451,8 @@ static enum power_supply_property mt_usb_properties[] = {
 	POWER_SUPPLY_PROP_TYPEC_POLARITY,
 	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
 	POWER_SUPPLY_PROP_APDO_MAX,	// Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
+	POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE, //Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type
+
 };
 
 static void tcpc_power_off_work_handler(struct work_struct *work)
