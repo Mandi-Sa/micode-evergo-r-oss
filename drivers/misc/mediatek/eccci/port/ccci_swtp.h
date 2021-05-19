@@ -17,9 +17,13 @@
 /* modify MAX_PIN_NUM/DTS to support more gpio,
  * need to follow SOP for customization.
  */
-#define MAX_PIN_NUM 2
+/*Bug651590 liuchaochao.wt  20210219 Add swtp feature begin*/
+#define MAX_PIN_NUM 4
 #define SWTP_COMPATIBLE_DEVICE_ID "mediatek, swtp-eint"
 #define SWTP1_COMPATIBLE_DEVICE_ID "mediatek, swtp1-eint"
+#define SWTP2_COMPATIBLE_DEVICE_ID "mediatek, swtp2-eint"
+#define SWTP3_COMPATIBLE_DEVICE_ID "mediatek, swtp3-eint"
+/*Bug651590 liuchaochao.wt  20210219 Add swtp feature begin*/
 
 
 #define SWTP_EINT_PIN_PLUG_IN	(1)
