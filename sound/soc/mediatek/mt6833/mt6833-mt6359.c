@@ -54,6 +54,23 @@ static const struct soc_enum mt6833_spk_type_enum[] = {
 			    mt6833_spk_i2s_type_str),
 };
 
+#if defined(CONFIG_SND_SOC_AW87XXX)
+enum {
+	AW87XXX_OFF_MODE = 0,
+	AW87XXX_MUSIC_MODE = 1,
+	AW87XXX_VOICE_MODE = 2,
+	AW87XXX_FM_MODE = 3,
+	AW87XXX_RCV_MODE = 4,
+	AW87XXX_MODE_MAX = 5,
+};
+enum {
+	AW87XXX_LEFT_CHANNEL = 0,
+	AW87XXX_RIRHT_CHANNEL = 1,
+};
+
+extern int aw87xxx_audio_scene_load(uint8_t mode, int32_t channel);
+#endif
+
 static int mt6833_spk_type_get(struct snd_kcontrol *kcontrol,
 			       struct snd_ctl_elem_value *ucontrol)
 {
@@ -164,7 +181,10 @@ static int mt6833_mt6359_rcv_amp_event(struct snd_soc_dapm_widget *w,
 			#ifdef CONFIG_SND_SOC_AW87339
 				aw87339_spk_enable_set(true);
 			#endif
-
+			#if defined(CONFIG_SND_SOC_AW87XXX)
+			pr_info("%s(), aw87389_audio_drcv()\n", __func__);
+			aw87xxx_audio_scene_load(AW87XXX_RCV_MODE, AW87XXX_LEFT_CHANNEL);
+			#endif
 			#ifdef CONFIG_SND_SOC_SIA8109
 				//sia81xx_start();
 			#endif
@@ -173,7 +193,10 @@ static int mt6833_mt6359_rcv_amp_event(struct snd_soc_dapm_widget *w,
 			#ifdef CONFIG_SND_SOC_AW87339
 				aw87339_spk_enable_set(true);
 			#endif
-
+			#if defined(CONFIG_SND_SOC_AW87XXX)
+			pr_info("%s(), aw87389_audio_dspk()\n", __func__);
+			aw87xxx_audio_scene_load(AW87XXX_MUSIC_MODE, AW87XXX_LEFT_CHANNEL);
+			#endif
 			#ifdef CONFIG_SND_SOC_SIA8109
 				//sia81xx_start();
 			#endif
@@ -184,7 +207,10 @@ static int mt6833_mt6359_rcv_amp_event(struct snd_soc_dapm_widget *w,
 		#ifdef CONFIG_SND_SOC_AW87339
 			aw87339_spk_enable_set(false);
 		#endif
-
+		#if defined(CONFIG_SND_SOC_AW87XXX)
+		pr_info("%s(), aw87389_audio_off()\n", __func__);
+		aw87xxx_audio_scene_load(AW87XXX_OFF_MODE, AW87XXX_LEFT_CHANNEL);
+		#endif
 		#ifdef CONFIG_SND_SOC_SIA8109
 			//sia81xx_stop();
 		#endif

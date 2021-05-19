@@ -433,5 +433,6 @@
 #include "mediatek/sia81xx.dtsi"
 #include "mediatek/sc8551.dtsi"
 #include "mediatek/irtx_led.dtsi"
+#include "mediatek/aw87xxx.dtsi"
 
 /*End of this file, DO NOT ADD ANYTHING HERE*/

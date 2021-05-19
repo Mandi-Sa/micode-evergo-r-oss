@@ -1893,6 +1893,7 @@ static int sia81xx_i2c_probe(
 	const char *chip_type_name = NULL;
 	unsigned int chip_type = CHIP_TYPE_UNKNOWN;
 	int ret = 0;
+	char chip_id_num = 0;	
 
 	pr_info("[ info][%s] %s: i2c addr = 0x%02x \r\n", 
 		LOG_FLAG, __func__, client->addr);
@@ -1947,6 +1948,19 @@ static int sia81xx_i2c_probe(
 
 	/* sava driver private data to the dev's driver data */
 	dev_set_drvdata(&client->dev, sia81xx);
+
+	if (sia81xx->chip_type == CHIP_TYPE_SIA8109) {
+		sia81xx_regmap_read(sia81xx->regmap, 0x41, 1, &chip_id_num);
+		pr_info("%s: sia8109_chip_id = 0x%02x \n", __func__, chip_id_num);
+	}
+
+	/* compatible awinic pa */
+	if (sia81xx->chip_type == CHIP_TYPE_SIA8152) {
+		sia81xx_regmap_read(sia81xx->regmap, 0x00, 1, &chip_id_num);
+		pr_info("%s: sia8152_chip_id = 0x%02x \n", __func__, chip_id_num);
+		if (chip_id_num != 0x52)
+			return -ENODEV;
+	}
 
 	// for sia8101 stereo
 	if (CHIP_TYPE_SIA8101 == sia81xx->chip_type 
