@@ -1560,8 +1560,10 @@ void print_selftest_result(struct seq_file *m, int32_t TestResult, uint8_t Recor
 static int32_t c_show_lockdown_info(struct seq_file *m, void *v)
 {
 	NVT_LOG("++++%s+++++\n", __func__);
-	if(lockdown_infor != NULL)
-		seq_printf(m, lockdown_infor+"\n");
+	if(lockdown_infor != NULL){
+		seq_printf(m, lockdown_infor);
+		seq_printf(m, "\n");
+	}
 	else
 		seq_printf(m, "can not access lockdown");
 	return 0;
