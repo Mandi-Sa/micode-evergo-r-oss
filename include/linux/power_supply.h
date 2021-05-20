@@ -178,6 +178,8 @@ enum power_supply_property {
 	/* -Bug653766,chenrui1.wt,MODIFY,20210514,add battery node */
 	// Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 	POWER_SUPPLY_PROP_APDO_MAX,
+	//Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type
+	POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE,
 	/* Local extensions */
 	POWER_SUPPLY_PROP_USB_HC,
 	POWER_SUPPLY_PROP_USB_OTG,
