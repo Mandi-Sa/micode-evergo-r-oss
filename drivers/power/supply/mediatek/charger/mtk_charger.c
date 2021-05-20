@@ -1808,6 +1808,30 @@ static void mtk_charger_init_timer(struct charger_manager *info)
 #endif /* CONFIG_PM */
 }
 
+//+Bug653711, chenrui1.wt,ADD,2021020,add control charging capacity
+#ifdef WT_COMPILE_FACTORY_VERSION
+#define BAT_CAPACITY_MIN 60
+#define BAT_CAPACITY_MAX 80
+
+void mtk_charging_control(struct charger_manager *info)
+{
+	if (info == NULL || info->chg1_dev == NULL)
+		return;
+
+	if (battery_get_soc() >= BAT_CAPACITY_MAX){
+		info->do_charging(info, false);
+		charger_dev_enable_hz(info->chg1_dev, true);
+		chr_err("wt_factory_version : capacity 80 stop charger");
+	}
+	else if (battery_get_soc() <= BAT_CAPACITY_MIN){
+		info->do_charging(info, true);
+		charger_dev_enable_hz(info->chg1_dev, false);
+		chr_err("wt_factory_version : capacity 60 start charger");
+	}
+}
+#endif
+//-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
+
 static int charger_routine_thread(void *arg)
 {
 	struct charger_manager *info = arg;
@@ -1857,6 +1881,13 @@ static int charger_routine_thread(void *arg)
 		} else
 			chr_debug("disable charging\n");
 
+//+Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
+#ifdef WT_COMPILE_FACTORY_VERSION
+		if (is_charger_on) {
+			mtk_charging_control(info);
+		}
+#endif
+//-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
 		spin_lock_irqsave(&info->slock, flags);
 		__pm_relax(&info->charger_wakelock);
 		spin_unlock_irqrestore(&info->slock, flags);

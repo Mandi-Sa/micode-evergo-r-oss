@@ -572,6 +572,19 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 	// Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 	union power_supply_propval pval = {0, };
 
+//+Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
+#ifdef WT_COMPILE_FACTORY_VERSION
+	int bat_cap = 0;
+	struct power_supply *battery_psy;
+
+	battery_psy = power_supply_get_by_name("battery");
+	power_supply_get_property(battery_psy,
+		POWER_SUPPLY_PROP_CAPACITY, &pval);
+	bat_cap = pval.intval;
+	pr_err("wt_debug: bat_cap is %d\n", pval.intval);
+#endif
+//-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
+
 	retValue = usbpd_get_pps_status(pdpm);
 	if (retValue)
 		pdpm->pps_supported = true;
@@ -588,9 +601,18 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 		power_supply_set_property(pdpm->apdo_psy,
 				POWER_SUPPLY_PROP_APDO_MAX, &pval);
 		// -Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
-		}
+	}
 	else
 		pr_notice("Not qualified PPS adapter\n");
+
+//+Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
+#ifdef WT_COMPILE_FACTORY_VERSION
+	if (bat_cap >= 80) {
+		pdpm->pps_supported = false;
+	}
+#endif
+//-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
+
 }
 
 
