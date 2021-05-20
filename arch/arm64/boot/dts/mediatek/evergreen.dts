@@ -47,7 +47,7 @@
 };
 
 
-&i2c6 {
+&i2c9 {
 	aw869x_haptic@5A {
 		compatible = "awinic,aw869x_haptic";
 		reg = <0x5A>;
