@@ -1959,7 +1959,7 @@ static int sia81xx_i2c_probe(
 		sia81xx_regmap_read(sia81xx->regmap, 0x00, 1, &chip_id_num);
 		pr_info("%s: sia8152_chip_id = 0x%02x \n", __func__, chip_id_num);
 		if (chip_id_num != 0x52)
-			return -ENODEV;
+			sia81xx->chip_type = CHIP_TYPE_UNKNOWN;
 	}
 
 	// for sia8101 stereo
