@@ -754,6 +754,11 @@ page_owner=on loop.max_part=7";
 		compatible = "mediatek,gauge_timer_service";
 	};
 
+simtray {
+	compatible = "xiaomi,simtray-status";
+	status-gpio = <&pio 4 0>;
+};
+
 #if (CONFIG_MTK_GAUGE_VERSION == 30)
 	#include "mediatek/bat_setting/mt6833_battery_prop.dtsi"
 #endif

@@ -63,6 +63,7 @@ obj-$(CONFIG_MEMORY_STATE_TIME)	+= memory_state_time.o
 obj-$(CONFIG_AW869X_HAPTIC) += aw869x_haptic/
 obj-$(CONFIG_MEDIATEK_SOLUTION) += mediatek/
 obj-y += mi-memory/
+obj-$(CONFIG_SIMTRAY_STATUS) += simtray.o
 
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_core.o
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_bugs.o
