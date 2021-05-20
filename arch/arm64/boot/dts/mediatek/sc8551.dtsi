@@ -43,7 +43,7 @@
 		sc,sc8551,bus-therm-threshold = <0x15>;
 		sc,sc8551,die-therm-threshold = <125>;
 
-		sc,sc8551,ac-ovp-threshold = <17>;
+		sc,sc8551,ac-ovp-threshold = <11>;
 		sc,sc8551,sense-resistor-mohm = <5>;
 	};
 };
