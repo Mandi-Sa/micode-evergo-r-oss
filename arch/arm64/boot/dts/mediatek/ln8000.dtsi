@@ -15,7 +15,7 @@
 		/* device configuration */
 		ln8000_charger,bat-ovp-threshold = <4550>;
 		ln8000_charger,bat-ovp-alarm-threshold = <4525>;
-		ln8000_charger,bus-ovp-threshold = <13000>;
+		ln8000_charger,bus-ovp-threshold = <11000>;
 		ln8000_charger,bus-ovp-alarm-threshold = <11000>;
 		ln8000_charger,bus-ocp-threshold = <3750>;
 		ln8000_charger,bus-ocp-alarm-threshold = <3500>;
