@@ -290,6 +290,10 @@ static void AFRegulatorCtrl(int Stage)
 					"k6833v1_64_6360_alpha", 20) == 0) {
 					regVCAMAF =
 					regulator_get(lens_device, "vmch");
+				} else if (strncmp(CONFIG_ARCH_MTK_PROJECT,
+					"evergreen", 9) == 0) {
+					regVCAMAF =
+					regulator_get(lens_device, "vibr");
 				} else {
 					#if defined(CONFIG_REGULATOR_MT6317)
 					regVCAMAF =
