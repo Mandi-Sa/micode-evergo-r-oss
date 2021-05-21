@@ -42,6 +42,8 @@
 #include <linux/jiffies.h>
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
 
+#include <linux/hardware_info.h>
+
 #if NVT_TOUCH_ESD_PROTECT
 static struct delayed_work nvt_esd_check_work;
 static struct workqueue_struct *nvt_esd_check_wq;
@@ -84,6 +86,18 @@ static void nvt_ts_late_resume(struct early_suspend *h);
 uint32_t ENG_RST_ADDR  = 0x7FFF80;
 uint32_t SWRST_N8_ADDR = 0; //read from dtsi
 uint32_t SPI_RD_FAST_ADDR = 0;	//read from dtsi
+
+extern char Tp_name[HARDWARE_MAX_ITEM_LONGTH];
+
+struct tag_videolfb_nova {
+	u64 fb_base;
+	u32 islcmfound;
+	u32 fps;
+	u32 vram;
+	char lcmname[1];
+	//u32 lcm_width;
+	//u32 lcm_heigh;
+};
 
 #if TOUCH_KEY_NUM > 0
 const uint16_t touch_key_array[TOUCH_KEY_NUM] = {
@@ -143,6 +157,8 @@ const struct mtk_chip_config spi_ctrdata = {
 #endif
 
 static uint8_t bTouchIsAwake = 0;
+
+static int lcm_index ;
 
 /*******************************************************
 Description:
@@ -1630,6 +1646,48 @@ out:
 	return ret;
 }
 
+/****************************************
+function :
+	to get lcm name for choose whice panel
+Rerurn :
+	the int index  for Lcm name
+****************************************/
+
+static void mtk_drm_lcm_info_get(void){
+	struct device_node *chosen_node;
+	struct tag_videolfb_nova *videolfb_tag = NULL;
+	unsigned long size = 0;
+
+	chosen_node = of_find_node_by_path("/chosen");
+	if (chosen_node) {
+		videolfb_tag = (struct tag_videolfb_nova *)of_get_property(
+			chosen_node, "atag,videolfb", (int *)&size);
+		if (videolfb_tag) {
+			//access the lcmname from videolfb_tag
+			strncpy(Tp_name,videolfb_tag->lcmname,strlen(videolfb_tag->lcmname)+1);
+			if (!strcmp(videolfb_tag->lcmname, "nt36672c_fhdp_wt_dsi_vdo_cphy_90hz_tianma")){
+				lcm_index =  0; //the first panel config
+				NVT_LOG("The first panel for this project");
+			} else if(!strcmp(videolfb_tag->lcmname, "nt36672c_fhdp_wt_dsi_vdo_cphy_90hz_csot")){
+					lcm_index = 1; //the second panel config
+					NVT_LOG("The second panel for this project");
+			           } else {
+					lcm_index = 9; //two panel id and the index can not > 9
+					NVT_LOG("No panel found");
+				}
+		} else {
+			NVT_ERR("nvt: videolfb_tag not found\n");
+			lcm_index = 10;
+		}
+	} else {
+		NVT_ERR("nvt: of_chosen not found\n");
+		lcm_index = 11;
+	}
+	NVT_LOG("%s end for lcm_index =%d \n", __func__, lcm_index );
+}
+
+
+
 #if defined(CONFIG_DRM_PANEL)
 static int nvt_ts_check_dt(struct device_node *np)
 {
@@ -1686,17 +1744,23 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 #endif
 
 #if defined(CONFIG_DRM_PANEL)
+	//get lcm info from vediolfb
+	mtk_drm_lcm_info_get();
+
 	dp = client->dev.of_node;
+	if ((lcm_index == 0) ||(lcm_index == 1)){
+		ret = nvt_ts_check_dt(dp);
+		if (ret == -EPROBE_DEFER) {
+			return ret;
+		}
 
-	ret = nvt_ts_check_dt(dp);
-
-	if (ret == -EPROBE_DEFER) {
-		return ret;
-	}
-
-	if (ret) {
-		ret = -ENODEV;
-		return ret;
+		if (ret) {
+			ret = -ENODEV;
+			return ret;
+		}
+	}else{
+		NVT_ERR("nvt: no lcm info of panel found,somethings wrong\n");
+		return -ENODEV;
 	}
 #endif
 
