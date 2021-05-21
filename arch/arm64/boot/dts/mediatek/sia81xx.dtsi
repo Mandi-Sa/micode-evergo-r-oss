@@ -98,7 +98,7 @@
 
 	sia81xx_i2c_R: sia81xx_i2c@R {
 		compatible = "si,sia8109-i2c";
-		reg = <0x28>;
+		reg = <0x2a>;
 		si,sia81xx-dev = <&sia81xx_R>;
 	};
 };
