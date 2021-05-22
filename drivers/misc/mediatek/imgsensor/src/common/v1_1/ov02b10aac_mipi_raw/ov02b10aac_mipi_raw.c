@@ -29,6 +29,7 @@
 	pr_debug(PFX "[%s] " format, __func__, ##args)
 
 #define USE_OTP 0
+#define OTP_DATA_NUMBER 19
 /* Camera Hardwareinfo */
 //extern struct global_otp_struct hw_info_main2_otp;
 
@@ -1154,6 +1155,21 @@ static void slim_video_setting(void)
     write_cmos_sensor(0x14, 0x00);
     write_cmos_sensor(0x15, 0x11);
     write_cmos_sensor(0xfe, 0x02);
+}
+
+unsigned int
+ov02b10aac_get_otpdata(unsigned char *data, u16 i2cId)
+{
+        int ii = 0;
+        int otp_addr[OTP_DATA_NUMBER] = { 0x0c, 0x0d, 0x0e, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f};
+        LOG_INF("%s in", __func__);
+        for (ii = 0; ii < OTP_DATA_NUMBER; ii++) {
+                char pusendcmd[2] = {(char)(0x01 >> 8), (char)(otp_addr[ii] & 0xFF) };
+                iReadRegI2C(pusendcmd, 2, (u8 *)&data[ii], 1, i2cId);
+                LOG_INF("%s otp_info %d is %x", __func__,otp_addr[ii],data[ii]);
+        }
+
+        return OTP_DATA_NUMBER;
 }
 
 #if USE_OTP

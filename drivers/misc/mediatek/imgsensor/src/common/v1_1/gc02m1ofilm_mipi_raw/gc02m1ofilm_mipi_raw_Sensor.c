@@ -38,6 +38,7 @@
 #define LOG_INF(format, args...)    pr_err(PFX "[%s] " format, __func__, ##args)
 
 #define USER_OTP 0
+#define OTP_DATA_NUMBER 12
 #define MULTI_WRITE    1
 #define VENDOR_ID 0x07
 
@@ -875,6 +876,22 @@ gc02m1ofilm_mipi_raw_read_otp_info(struct i2c_client *client,
 	}
 	return size;
 }
+
+unsigned int
+gc02m1ofilm_get_otpdata(unsigned char *data, u16 i2cId)
+{
+        int ii = 0;
+        int otp_addr[OTP_DATA_NUMBER] = { 0x0c, 0x0d, 0x0e, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18 };
+        LOG_INF("%s in", __func__);
+        for (ii = 0; ii < OTP_DATA_NUMBER; ii++) {
+                char pusendcmd[2] = {(char)(0x01 >> 8), (char)(otp_addr[ii] & 0xFF) };
+                iReadRegI2C(pusendcmd, 2, (u8 *)&data[ii], 1, i2cId);
+                LOG_INF("%s otp_info %x is %x", __func__,otp_addr[ii],data[ii]);
+        }
+
+        return OTP_DATA_NUMBER;
+}
+
 
 #if USER_OTP
 static void gc02m1ofilm_mipi_raw_read_otp(void)

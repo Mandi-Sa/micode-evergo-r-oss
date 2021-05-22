@@ -57,6 +57,7 @@
 #undef IMX355_PDAF_SUPPORT
 #define SUPPORT_HPS 0
 #define VENDOR_ID 0x01
+#define OTP_DATA_NUMBER 14
 
 #define LOG_INF(format, args...) pr_debug(PFX "[%s] " format, __func__, ##args)
 
@@ -2744,6 +2745,21 @@ static kal_uint32 set_test_pattern_mode(kal_bool enable)
 	return ERROR_NONE;
 }
 
+unsigned int
+imx355sunny_get_otpdata(unsigned char *data, u16 i2cId)
+{
+        int ii = 0;
+        int otp_addr[OTP_DATA_NUMBER] = { 0x0c, 0x0d, 0x0e, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a };
+        LOG_INF("%s in", __func__);
+        for (ii = 0; ii < OTP_DATA_NUMBER; ii++) {
+                char pusendcmd[2] = {(char)(0x01 >> 8), (char)(otp_addr[ii] & 0xFF) };
+                iReadRegI2C(pusendcmd, 2, (u8 *)&data[ii], 1, i2cId);
+                LOG_INF("%s otp_info %d is %x", __func__,otp_addr[ii],data[ii]);
+        }
+
+        return OTP_DATA_NUMBER;
+}
+
 /*************************************************************************
  * FUNCTION
  *    get_vendor_id
@@ -2766,6 +2782,7 @@ static kal_uint16 get_vendor_id(void)
 	char pusendcmd[2] = {(char)(0x01 >> 8), (char)(0x01 & 0xFF) };
 
 	iReadRegI2C(pusendcmd, 2, (u8 *)&get_byte, 1, 0xA0);
+        LOG_INF("%s is %x", __func__,get_byte);
 	return get_byte;
 
 }

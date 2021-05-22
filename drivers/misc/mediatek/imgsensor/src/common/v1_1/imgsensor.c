@@ -51,6 +51,7 @@
 #include "imgsensor_oc.h"
 #endif
 #include "imgsensor.h"
+#include "imgsensor_hw_register_info.h"
 
 #if defined(CONFIG_MTK_CAM_SECURE_I2C)
 #include "imgsensor_ca.h"
@@ -545,6 +546,11 @@ static inline int imgsensor_check_is_alive(struct IMGSENSOR_SENSOR *psensor)
 		err = ERROR_SENSOR_CONNECT_FAIL;
 	} else {
 		PK_DBG("Sensor found ID = 0x%x\n", sensorID);
+		/*begin add for camera's hardware info by sunrey 20210521*/
+		imgsensor_mutex_lock(psensor_inst);
+		imgsensor_sensor_hw_register(psensor,sensorID);
+		imgsensor_mutex_unlock(psensor_inst);
+		/*end add for camera's hardware info by sunrey 20210521*/
 		err = ERROR_NONE;
 	}
 
@@ -592,6 +598,7 @@ int imgsensor_set_driver(struct IMGSENSOR_SENSOR *psensor)
 					psensor_inst->sensor_idx,
 					psensor_inst->psensor_list->name);
 					ret = 0;
+
 					break;
 				}
 			} else {
