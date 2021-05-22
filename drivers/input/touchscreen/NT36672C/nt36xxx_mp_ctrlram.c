@@ -32,24 +32,19 @@
 #define FREQ_HOP_DISABLE 0x66
 #define FREQ_HOP_ENABLE 0x65
 
-#define SHORT_TEST_CSV_FILE "/data/local/tmp/ShortTest.csv"
-#define OPEN_TEST_CSV_FILE "/data/local/tmp/OpenTest.csv"
-#define FW_RAWDATA_CSV_FILE "/data/local/tmp/FWMutualTest.csv"
-#define FW_CC_CSV_FILE "/data/local/tmp/FWCCTest.csv"
-#define NOISE_TEST_CSV_FILE "/data/local/tmp/NoiseTest.csv"
+#define CSV_FILE_NAME_LEN 100
+#define SHORT_TEST_CSV_FILE "/data/vendor/fac_sources/ShortTest"
+#define OPEN_TEST_CSV_FILE "/data/vendor/fac_sources/OpenTest"
+#define FW_RAWDATA_CSV_FILE "/data/vendor/fac_sources/FWMutualTest"
+#define FW_CC_CSV_FILE "/data/vendor/fac_sources/FWCCTest"
+#define NOISE_TEST_CSV_FILE "/data/vendor/fac_sources/NoiseTest"
+#define PEN_FW_RAW_TEST_CSV_FILE "/data/vendor/fac_sources/PenFWRawTest.csv"
+#define PEN_NOISE_TEST_CSV_FILE "/data/vendor/fac_sources/PenNoiseTest.csv"
 
-//#define SHORT_TEST_CSV_FILE "/sdcard/ShortTest.csv"
-//#define OPEN_TEST_CSV_FILE "/sdcard/OpenTest.csv"
-//#define FW_RAWDATA_CSV_FILE "/sdcard/FWMutualTest.csv"
-//#define FW_CC_CSV_FILE "/sdcard/FWCCTest.csv"
-//#define NOISE_TEST_CSV_FILE "/sdcard/NoiseTest.csv"
-
-
-#define PEN_FW_RAW_TEST_CSV_FILE "/data/local/tmp/PenFWRawTest.csv"
-#define PEN_NOISE_TEST_CSV_FILE "/data/local/tmp/PenNoiseTest.csv"
 
 #define nvt_mp_seq_printf(m, fmt, args...) do {	\
-	seq_printf(m, fmt, ##args);	\
+	if (nvt_mp_test_result_printed)	\
+		seq_printf(m, fmt, ##args);	\
 	if (!nvt_mp_test_result_printed)	\
 		printk(fmt, ##args);	\
 } while (0)
@@ -115,6 +110,12 @@ static int32_t *RawData_PenRingX_DiffMin = NULL;
 static int32_t *RawData_PenRingX_DiffMax = NULL;
 static int32_t *RawData_PenRingY_DiffMin = NULL;
 static int32_t *RawData_PenRingY_DiffMax = NULL;
+
+static char short_test_file[CSV_FILE_NAME_LEN];
+static char open_test_file[CSV_FILE_NAME_LEN];
+static char fw_rawdata_file[CSV_FILE_NAME_LEN];
+static char fw_cc_file[CSV_FILE_NAME_LEN];
+static char noise_test_file[CSV_FILE_NAME_LEN];
 
 static struct proc_dir_entry *NVT_proc_selftest_entry = NULL;
 static int8_t nvt_mp_test_result_printed = 0;
@@ -943,7 +944,7 @@ static int32_t nvt_read_baseline(int32_t *xdata)
 
 	printk("%s:\n", __func__);
 	// Save Rawdata to CSV file
-	if (nvt_save_rawdata_to_csv(xdata, X_Channel, Y_Channel, FW_RAWDATA_CSV_FILE, 0) < 0) {
+	if (nvt_save_rawdata_to_csv(xdata, X_Channel, Y_Channel, fw_rawdata_file, 0) < 0) {
 		NVT_ERR("save rawdata to CSV file failed\n");
 		return -EAGAIN;
 	}
@@ -988,7 +989,7 @@ static int32_t nvt_read_CC(int32_t *xdata)
 
 	printk("%s:\n", __func__);
 	// Save Rawdata to CSV file
-	if (nvt_save_rawdata_to_csv(xdata, X_Channel, Y_Channel, FW_CC_CSV_FILE, 0) < 0) {
+	if (nvt_save_rawdata_to_csv(xdata, X_Channel, Y_Channel, fw_cc_file, 0) < 0) {
 		NVT_ERR("save rawdata to CSV file failed\n");
 		return -EAGAIN;
 	}
@@ -1131,7 +1132,7 @@ static int32_t nvt_read_fw_noise(int32_t *xdata)
 
 	printk("%s:RawData_Diff_Max:\n", __func__);
 	// Save Rawdata to CSV file
-	if (nvt_save_rawdata_to_csv(RawData_Diff_Max, X_Channel, Y_Channel, NOISE_TEST_CSV_FILE, 0) < 0) {
+	if (nvt_save_rawdata_to_csv(RawData_Diff_Max, X_Channel, Y_Channel, noise_test_file, 0) < 0) {
 		NVT_ERR("save rawdata to CSV file failed\n");
 		return -EAGAIN;
 	}
@@ -1143,7 +1144,7 @@ static int32_t nvt_read_fw_noise(int32_t *xdata)
 #endif /* #if TOUCH_KEY_NUM > 0 */
 	printk("%s:RawData_Diff_Min:\n", __func__);
 	// Save Rawdata to CSV file
-	if (nvt_save_rawdata_to_csv(RawData_Diff_Min, X_Channel, Y_Channel, NOISE_TEST_CSV_FILE, rawdata_diff_min_offset) < 0) {
+	if (nvt_save_rawdata_to_csv(RawData_Diff_Min, X_Channel, Y_Channel, noise_test_file, rawdata_diff_min_offset) < 0) {
 		NVT_ERR("save rawdata to CSV file failed\n");
 		return -EAGAIN;
 	}
@@ -1321,7 +1322,7 @@ static int32_t nvt_read_fw_open(int32_t *xdata)
 
 	printk("%s:RawData_Open\n", __func__);
 	// Save RawData to CSV file
-	if (nvt_save_rawdata_to_csv(xdata, X_Channel, Y_Channel, OPEN_TEST_CSV_FILE, 0) < 0) {
+	if (nvt_save_rawdata_to_csv(xdata, X_Channel, Y_Channel, open_test_file, 0) < 0) {
 		NVT_ERR("save rawdata to CSV file failed\n");
 		return -EAGAIN;
 	}
@@ -1415,7 +1416,7 @@ static int32_t nvt_read_fw_short(int32_t *xdata)
 
 	printk("%s:RawData_Short\n", __func__);
 	// Save Rawdata to CSV file
-	if (nvt_save_rawdata_to_csv(xdata, X_Channel, Y_Channel, SHORT_TEST_CSV_FILE, 0) < 0) {
+	if (nvt_save_rawdata_to_csv(xdata, X_Channel, Y_Channel, short_test_file, 0) < 0) {
 		NVT_ERR("save rawdata to CSV file failed\n");
 		return -EAGAIN;
 	}
@@ -1591,55 +1592,55 @@ static int32_t c_show_selftest(struct seq_file *m, void *v)
 
 	nvt_mp_seq_printf(m, "FW Version: %d\n\n", fw_ver);
 
-	nvt_mp_seq_printf(m, "Short Test\n");
-	//print_selftest_result(m, TestResult_Short, RecordResult_Short, RawData_Short, X_Channel, Y_Channel);
+	nvt_mp_seq_printf(m, "Short Test");
+	print_selftest_result(m, TestResult_Short, RecordResult_Short, RawData_Short, X_Channel, Y_Channel);
 
-	nvt_mp_seq_printf(m, "Open Test\n");
-	//print_selftest_result(m, TestResult_Open, RecordResult_Open, RawData_Open, X_Channel, Y_Channel);
+	nvt_mp_seq_printf(m, "Open Test");
+	print_selftest_result(m, TestResult_Open, RecordResult_Open, RawData_Open, X_Channel, Y_Channel);
 
-	nvt_mp_seq_printf(m, "FW Rawdata Test\n");
+	nvt_mp_seq_printf(m, "FW Rawdata Test");
 	if ((TestResult_FW_Rawdata == 0) || (TestResult_FW_Rawdata == 1)) {
-		 //print_selftest_result(m, TestResult_FWMutual, RecordResult_FWMutual, RawData_FWMutual, X_Channel, Y_Channel);
+		 print_selftest_result(m, TestResult_FWMutual, RecordResult_FWMutual, RawData_FWMutual, X_Channel, Y_Channel);
 	} else { // TestResult_FW_Rawdata is -1
 		nvt_mp_seq_printf(m, " FAIL!\n");
 		if (TestResult_FWMutual == -1) {
-			nvt_mp_seq_printf(m, "FW Mutual\n");
-			//print_selftest_result(m, TestResult_FWMutual, RecordResult_FWMutual, RawData_FWMutual, X_Channel, Y_Channel);
+			nvt_mp_seq_printf(m, "FW Mutual");
+			print_selftest_result(m, TestResult_FWMutual, RecordResult_FWMutual, RawData_FWMutual, X_Channel, Y_Channel);
 		}
 		if (TestResult_FW_CC == -1) {
-			nvt_mp_seq_printf(m, "FW CC\n");
-			//print_selftest_result(m, TestResult_FW_CC, RecordResult_FW_CC, RawData_FW_CC, X_Channel, Y_Channel);
+			nvt_mp_seq_printf(m, "FW CC");
+			print_selftest_result(m, TestResult_FW_CC, RecordResult_FW_CC, RawData_FW_CC, X_Channel, Y_Channel);
 		}
 	}
 
 	nvt_mp_seq_printf(m, "Noise Test");
 	if ((TestResult_Noise == 0) || (TestResult_Noise == 1)) {
-		//print_selftest_result(m, TestResult_FW_DiffMax, RecordResult_FW_DiffMax, RawData_Diff_Max, X_Channel, Y_Channel);
+		print_selftest_result(m, TestResult_FW_DiffMax, RecordResult_FW_DiffMax, RawData_Diff_Max, X_Channel, Y_Channel);
 	} else { // TestResult_Noise is -1
 		nvt_mp_seq_printf(m, " FAIL!\n");
 		if (TestResult_FW_DiffMax == -1) {
-			nvt_mp_seq_printf(m, "FW Diff Max\n");
-			//print_selftest_result(m, TestResult_FW_DiffMax, RecordResult_FW_DiffMax, RawData_Diff_Max, X_Channel, Y_Channel);
+			nvt_mp_seq_printf(m, "FW Diff Max");
+			print_selftest_result(m, TestResult_FW_DiffMax, RecordResult_FW_DiffMax, RawData_Diff_Max, X_Channel, Y_Channel);
 		}
 		if (TestResult_FW_DiffMin == -1) {
-			nvt_mp_seq_printf(m, "FW Diff Min\n");
-			//print_selftest_result(m, TestResult_FW_DiffMin, RecordResult_FW_DiffMin, RawData_Diff_Min, X_Channel, Y_Channel);
+			nvt_mp_seq_printf(m, "FW Diff Min");
+			print_selftest_result(m, TestResult_FW_DiffMin, RecordResult_FW_DiffMin, RawData_Diff_Min, X_Channel, Y_Channel);
 		}
 	}
 
 	if (ts->pen_support) {
 		nvt_mp_seq_printf(m, "Pen FW Rawdata Test");
 		if ((TestResult_Pen_FW_Raw == 0) || (TestResult_Pen_FW_Raw == 1)) {
-			//print_selftest_result(m, TestResult_Pen_FW_Raw, RecordResult_PenTipX_Raw, RawData_PenTipX_Raw, ts->x_num, ts->y_gang_num);
+			print_selftest_result(m, TestResult_Pen_FW_Raw, RecordResult_PenTipX_Raw, RawData_PenTipX_Raw, ts->x_num, ts->y_gang_num);
 		} else { // TestResult_Pen_FW_Raw is -1
 			nvt_mp_seq_printf(m, " FAIL!\n");
 			if (TestResult_PenTipX_Raw == -1) {
 				nvt_mp_seq_printf(m, "Pen Tip X Raw");
-				//print_selftest_result(m, TestResult_PenTipX_Raw, RecordResult_PenTipX_Raw, RawData_PenTipX_Raw, ts->x_num, ts->y_gang_num);
+				print_selftest_result(m, TestResult_PenTipX_Raw, RecordResult_PenTipX_Raw, RawData_PenTipX_Raw, ts->x_num, ts->y_gang_num);
 			}
 			if (TestResult_PenTipY_Raw == -1) {
 				nvt_mp_seq_printf(m, "Pen Tip Y Raw");
-				//print_selftest_result(m, TestResult_PenTipY_Raw, RecordResult_PenTipY_Raw, RawData_PenTipY_Raw, ts->x_gang_num, ts->y_num);
+				print_selftest_result(m, TestResult_PenTipY_Raw, RecordResult_PenTipY_Raw, RawData_PenTipY_Raw, ts->x_gang_num, ts->y_num);
 			}
 			if (TestResult_PenRingX_Raw == -1) {
 				nvt_mp_seq_printf(m, "Pen Ring X Raw");
@@ -1695,9 +1696,9 @@ static int32_t c_show_selftest(struct seq_file *m, void *v)
 
 	//Short Test , Open Test , Fw Rawdate Test , Noise Test
 	if((!TestResult_Short)&&(!TestResult_Open)&&(!TestResult_FW_Rawdata)&&(!TestResult_Noise))
-		nvt_mp_seq_printf(m, "\n result = 1!\n");
+		nvt_mp_seq_printf(m, "result=1\n");
 	else
-		nvt_mp_seq_printf(m, "\n result = 1!\n");
+		nvt_mp_seq_printf(m, "result=0\n");
 
 	NVT_LOG("--\n");
 	return 0;
@@ -1772,6 +1773,7 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 {
 	struct device_node *np = ts->client->dev.of_node;
 	unsigned char mpcriteria[32] = {0};	//novatek-mp-criteria-default
+	struct timeval tv;
 
 	TestResult_Short = 0;
 	TestResult_Open = 0;
@@ -1864,6 +1866,18 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 
 	msleep(100);
 
+	do_gettimeofday(&tv);
+	snprintf(short_test_file, CSV_FILE_NAME_LEN, "%s_%ld.csv",
+		SHORT_TEST_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec);
+	snprintf(open_test_file, CSV_FILE_NAME_LEN, "%s_%ld.csv",
+		OPEN_TEST_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec);
+	snprintf(fw_rawdata_file, CSV_FILE_NAME_LEN, "%s_%ld.csv",
+		FW_RAWDATA_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec);
+	snprintf(fw_cc_file, CSV_FILE_NAME_LEN, "%s_%ld.csv",
+		FW_CC_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec);
+	snprintf(noise_test_file, CSV_FILE_NAME_LEN, "%s_%ld.csv",
+		NOISE_TEST_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec);
+
 	//---Enter Test Mode---
 	if (nvt_clear_fw_status()) {
 		mutex_unlock(&ts->lock);
@@ -1881,20 +1895,20 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 
 	//---FW Rawdata Test---
 	if (nvt_read_baseline(RawData_FWMutual) != 0) {
-		TestResult_FWMutual = 0;
+		TestResult_FWMutual = 1;
 	} else {
 		TestResult_FWMutual = RawDataTest_SinglePoint_Sub(RawData_FWMutual, RecordResult_FWMutual, X_Channel, Y_Channel,
 												PS_Config_Lmt_FW_Rawdata_P, PS_Config_Lmt_FW_Rawdata_N);
 	}
 	if (nvt_read_CC(RawData_FW_CC) != 0) {
-		TestResult_FW_CC = 0;
+		TestResult_FW_CC = 1;
 	} else {
 		TestResult_FW_CC = RawDataTest_SinglePoint_Sub(RawData_FW_CC, RecordResult_FW_CC, X_Channel, Y_Channel,
 											PS_Config_Lmt_FW_CC_P, PS_Config_Lmt_FW_CC_N);
 	}
 
 	if ((TestResult_FWMutual == 1) || (TestResult_FW_CC == 1)) {
-		TestResult_FW_Rawdata = 0;
+		TestResult_FW_Rawdata = 1;
 	} else {
 		if ((TestResult_FWMutual == -1) || (TestResult_FW_CC == -1))
 			TestResult_FW_Rawdata = -1;
@@ -1928,9 +1942,9 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 
 	//---Noise Test---
 	if (nvt_read_fw_noise(RawData_Diff) != 0) {
-		TestResult_Noise = 0;	// 1: ERROR
-		TestResult_FW_DiffMax = 0;
-		TestResult_FW_DiffMin = 0;
+		TestResult_Noise = 1;	// 1: ERROR
+		TestResult_FW_DiffMax = 1;
+		TestResult_FW_DiffMin = 1;
 		if (ts->pen_support) {
 			TestResult_Pen_Noise = 1;
 			TestResult_PenTipX_DiffMax = 1;
@@ -1950,7 +1964,7 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 											PS_Config_Lmt_FW_Diff_P, PS_Config_Lmt_FW_Diff_N);
 
 		if ((TestResult_FW_DiffMax == -1) || (TestResult_FW_DiffMin == -1))
-			TestResult_Noise = 0;
+			TestResult_Noise = -1;
 		else
 			TestResult_Noise = 0;
 
@@ -1989,7 +2003,7 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 
 	//--Short Test---
 	if (nvt_read_fw_short(RawData_Short) != 0) {
-		TestResult_Short = 0; // 1:ERROR
+		TestResult_Short = 1; // 1:ERROR
 	} else {
 		//---Self Test Check --- // 0:PASS, -1:FAIL
 		TestResult_Short = RawDataTest_SinglePoint_Sub(RawData_Short, RecordResult_Short, X_Channel, Y_Channel,
@@ -1998,7 +2012,7 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 
 	//---Open Test---
 	if (nvt_read_fw_open(RawData_Open) != 0) {
-		TestResult_Open = 0;    // 1:ERROR
+		TestResult_Open = 1;    // 1:ERROR
 	} else {
 		//---Self Test Check --- // 0:PASS, -1:FAIL
 		TestResult_Open = RawDataTest_SinglePoint_Sub(RawData_Open, RecordResult_Open, X_Channel, Y_Channel,
