@@ -17,8 +17,10 @@ static char * serialno_get(void)
 		return s2;
 	}
 	s1 += strlen("uniqueno="); //skip uniqueno=
-	strncpy(dest,s1,40); //serialno length=40
-	dest[40]='\0';
+//+ExtB HONGMI-84704 ,lizhenyu.wt,add,20210522,add serial_num/cpuid
+	strncpy(dest,s1,56); //serialno length=56
+	dest[56]='\0';
+//-ExtB HONGMI-84704 ,lizhenyu.wt,add,20210522,add serial_num/cpuid
 	s1 = dest;
 
 	return s1;
