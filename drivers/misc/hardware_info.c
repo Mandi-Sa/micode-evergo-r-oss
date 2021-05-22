@@ -10,6 +10,29 @@
 
 #include <linux/platform_device.h>
 
+/*add by sunrey for camera hwinfo begin 20210520*/
+//后摄
+char main_cam_name[HARDWARE_MAX_ITEM_LONGTH];
+char main_cam_moduleid[HARDWARE_MAX_ITEM_LONGTH];
+char main_cam_sensorid[HARDWARE_MAX_ITEM_LONGTH];
+char main_cam_fuseid[HARDWARE_MAX_ITEM_LONGTH];
+//前摄
+char sub_cam_name[HARDWARE_MAX_ITEM_LONGTH];
+char sub_cam_moduleid[HARDWARE_MAX_ITEM_LONGTH];
+char sub_cam_sensorid[HARDWARE_MAX_ITEM_LONGTH];
+char sub_cam_fuseid[HARDWARE_MAX_ITEM_LONGTH];
+//广角
+char wide_cam_name[HARDWARE_MAX_ITEM_LONGTH];
+char wide_cam_moduleid[HARDWARE_MAX_ITEM_LONGTH];
+char wide_cam_sensorid[HARDWARE_MAX_ITEM_LONGTH];
+char wide_cam_fuseid[HARDWARE_MAX_ITEM_LONGTH];
+//微距
+char macro_cam_name[HARDWARE_MAX_ITEM_LONGTH];
+char macro_cam_moduleid[HARDWARE_MAX_ITEM_LONGTH];
+char macro_cam_sensorid[HARDWARE_MAX_ITEM_LONGTH];
+char macro_cam_fuseid[HARDWARE_MAX_ITEM_LONGTH];
+/*add by sunrey for camera hwinfo begin 20210520*/
+
 char Lcm_name[HARDWARE_MAX_ITEM_LONGTH];//req  wuzhenzhen.wt 20140901 add for hardware info
 char Sar_name[HARDWARE_MAX_ITEM_LONGTH];//bug 417945 , add sar info, chenrongli.wt, 20181218
 char board_id[HARDWARE_MAX_ITEM_LONGTH];//req  wuzhenzhen.wt 20140901 add for hardware info
@@ -135,18 +158,22 @@ static long hardwareinfo_ioctl(struct file *file, unsigned int cmd,unsigned long
 		hardwareinfo_num = HARDWARE_FLASH;
 		break;
 	case HARDWARE_FRONT_CAM_GET:
+		hardwareinfo_set_prop(HARDWARE_FRONT_CAM, sub_cam_name);
 		hardwareinfo_num = HARDWARE_FRONT_CAM;
 		break;
 	case HARDWARE_BACK_CAM_GET:
+		hardwareinfo_set_prop(HARDWARE_FRONT_CAM, main_cam_name);
 		hardwareinfo_num = HARDWARE_BACK_CAM;
 		break;
 	case HARDWARE_BACK_SUBCAM_GET:
 		hardwareinfo_num = HARDWARE_BACK_SUBCAM;
 		break;
 	case HARDWARE_WIDE_ANGLE_CAM_GET:
+		hardwareinfo_set_prop(HARDWARE_WIDE_ANGLE_CAM, wide_cam_name);
 		hardwareinfo_num = HARDWARE_WIDE_ANGLE_CAM;
 		break;
 	case HARDWARE_MACRO_CAM_GET:
+		hardwareinfo_set_prop(HARDWARE_MACRO_CAM, macro_cam_name);
 		hardwareinfo_num = HARDWARE_MACRO_CAM;
 		break;
 	case HARDWARE_BT_GET:
@@ -202,19 +229,55 @@ static long hardwareinfo_ioctl(struct file *file, unsigned int cmd,unsigned long
 		break;
 	/* -Extb HONGMI-84911,wangbin,wt.ADD.20210514,add sub charger info.*/
 	case HARDWARE_BACK_CAM_MOUDULE_ID_GET:
+		hardwareinfo_set_prop(HARDWARE_BACK_CAM_MOUDULE_ID, main_cam_moduleid);
 		hardwareinfo_num = HARDWARE_BACK_CAM_MOUDULE_ID;
 		break;
 	case HARDWARE_BACK_SUBCAM_MODULEID_GET:
 		hardwareinfo_num = HARDWARE_BACK_SUBCAM_MODULEID;
 		break;
 	case HARDWARE_FRONT_CAM_MODULE_ID_GET:
+		hardwareinfo_set_prop(HARDWARE_FRONT_CAM_MOUDULE_ID, sub_cam_moduleid);
 		hardwareinfo_num = HARDWARE_FRONT_CAM_MOUDULE_ID;
 		break;
 	case HARDWARE_WIDE_ANGLE_CAM_MOUDULE_ID_GET:
+		hardwareinfo_set_prop(HARDWARE_WIDE_ANGLE_CAM_MOUDULE_ID, wide_cam_moduleid);
 		hardwareinfo_num = HARDWARE_WIDE_ANGLE_CAM_MOUDULE_ID;
 		break;
 	case HARDWARE_MACRO_CAM_MOUDULE_ID_GET:
+		hardwareinfo_set_prop(HARDWARE_MACRO_CAM_MOUDULE_ID, macro_cam_moduleid);
 		hardwareinfo_num = HARDWARE_MACRO_CAM_MOUDULE_ID;
+		break;
+	case HARDWARE_BACK_CAM_SENSORID_GET:
+		hardwareinfo_set_prop(HARDWARE_BACK_CAM_SENSORID_ID, main_cam_sensorid);
+		hardwareinfo_num = HARDWARE_BACK_CAM_SENSORID_ID;
+		break;
+	case HARDWARE_FRONT_CAM_SENSORID_GET:
+		hardwareinfo_set_prop(HARDWARE_FRONT_CAM_SENSORID_ID, sub_cam_sensorid);
+		hardwareinfo_num = HARDWARE_FRONT_CAM_SENSORID_ID;
+		break;
+	case HARDWARE_WIDE_ANGLE_CAM_SENSORID_GET:
+		hardwareinfo_set_prop(HARDWARE_WIDE_ANGLE_CAM_SENSORID_ID, wide_cam_sensorid);
+		hardwareinfo_num = HARDWARE_WIDE_ANGLE_CAM_SENSORID_ID;
+		break;
+	case HARDWARE_MACRO_CAM_SENSORID_GET:
+		hardwareinfo_set_prop(HARDWARE_MACRO_CAM_SENSORID_ID, macro_cam_sensorid);
+		hardwareinfo_num = HARDWARE_MACRO_CAM_SENSORID_ID;
+		break;
+	case HARDWARE_BACK_CAM_EFUSEID_GET:
+		hardwareinfo_set_prop(HARDWARE_BACK_CAM_EFUSEID_ID, main_cam_fuseid);
+		hardwareinfo_num = HARDWARE_BACK_CAM_EFUSEID_ID;
+		break;
+	case HARDWARE_FRONT_CAME_EFUSEID_GET:
+		hardwareinfo_set_prop(HARDWARE_FRONT_CAM_EFUSEID_ID, sub_cam_fuseid);
+		hardwareinfo_num = HARDWARE_FRONT_CAM_EFUSEID_ID;
+		break;
+	case HARDWARE_WIDE_ANGLE_CAM_EFUSEID_GET:
+		hardwareinfo_set_prop(HARDWARE_WIDE_ANGLE_CAM_EFUSEID_ID, wide_cam_fuseid);
+		hardwareinfo_num = HARDWARE_WIDE_ANGLE_CAM_EFUSEID_ID;
+		break;
+	case HARDWARE_MACRO_CAM_EFUSEID_GET:
+		hardwareinfo_set_prop(HARDWARE_MACRO_CAM_EFUSEID_ID, macro_cam_fuseid);
+		hardwareinfo_num = HARDWARE_MACRO_CAM_EFUSEID_ID;
 		break;
 	/*Bug 493560 tsx.wt add smart pa hw info 20191112 begin */
 	case HARDWARE_SMARTPA_IC_GET:

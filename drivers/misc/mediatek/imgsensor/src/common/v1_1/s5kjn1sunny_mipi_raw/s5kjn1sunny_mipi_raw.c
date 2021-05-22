@@ -34,6 +34,7 @@
 //#define FPTPDAFSUPPORT
 
 #define MULTI_WRITE 1
+#define OTP_DATA_NUMBER 9
 
 #define PFX "S5KJN1SUNNY_camera_sensor"
 
@@ -5268,6 +5269,23 @@ static void custom2_setting(void)
 	write_cmos_sensor(0x6F12, 0xA32E);
 }
 #endif
+
+unsigned int
+s5kjn1sunny_get_otpdata(unsigned char *data, u16 i2cId)
+{
+        int ii = 0;
+        int otp_addr[OTP_DATA_NUMBER] = { 0x0c, 0x0d, 0x0e, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15 };
+        int otp_data[OTP_DATA_NUMBER] = {0}; 
+        LOG_INF("%s in", __func__);
+        for (ii = 0; ii < OTP_DATA_NUMBER; ii++) {
+                char pusendcmd[2] = {(char)(0x01 >> 8), (char)(otp_addr[ii] & 0xFF) };
+                iReadRegI2C(pusendcmd, 2, (u8 *)&otp_data[ii], 1, i2cId);
+                LOG_INF("%s otp_info %d is %x", __func__,otp_addr[ii],otp_data[ii]);
+        }
+
+        return OTP_DATA_NUMBER;
+}
+
 /*************************************************************************
 *FUNCTION
 *  get_imgsensor_id

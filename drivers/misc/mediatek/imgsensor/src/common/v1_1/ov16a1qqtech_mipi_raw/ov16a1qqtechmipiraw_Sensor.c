@@ -36,6 +36,7 @@
 #include "ov16a1qqtechmipiraw_Sensor.h"
 
 #define VENDOR_ID 0x06
+#define OTP_DATA_NUMBER 19
 
 static DEFINE_SPINLOCK(imgsensor_drv_lock);
 
@@ -620,6 +621,21 @@ static void custom2_setting(void)
     preview_setting();
     //table_write_cmos_sensor(ov16a1qqtech_custom2_setting,
     //sizeof(ov16a1qqtech_custom2_setting) / sizeof(kal_uint16));
+}
+
+unsigned int
+ov16a1qqtech_get_otpdata(unsigned char *data, u16 i2cId)
+{
+        int ii = 0;
+        int otp_addr[OTP_DATA_NUMBER] = { 0x0c, 0x0d, 0x0e, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f};
+        LOG_INF("%s in", __func__);
+        for (ii = 0; ii < OTP_DATA_NUMBER; ii++) {
+                char pusendcmd[2] = {(char)(0x01 >> 8), (char)(otp_addr[ii] & 0xFF) };
+                iReadRegI2C(pusendcmd, 2, (u8 *)&data[ii], 1, i2cId);
+                LOG_INF("%s otp_info %d is %x", __func__,otp_addr[ii],data[ii]);
+        }
+
+        return OTP_DATA_NUMBER;
 }
 
 /*************************************************************************
