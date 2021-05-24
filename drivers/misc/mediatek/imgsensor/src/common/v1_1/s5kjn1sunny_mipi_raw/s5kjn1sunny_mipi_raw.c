@@ -131,7 +131,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.sensor_interface_type = SENSOR_INTERFACE_TYPE_MIPI,
 	.mipi_sensor_type = MIPI_OPHY_NCSI2,
 	.mipi_settle_delay_mode = 1,
-	.sensor_output_dataformat = SENSOR_OUTPUT_FORMAT_RAW_Gr,
+	.sensor_output_dataformat = SENSOR_OUTPUT_FORMAT_RAW_Gb,
 	.mclk = 24,
 	.mipi_lane_num = SENSOR_MIPI_4_LANE,
 	.i2c_addr_table = {0x20, 0x5A, 0xff},
@@ -5482,7 +5482,7 @@ preview(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *
 	imgsensor.autoflicker_en = KAL_FALSE;
 	spin_unlock(&imgsensor_drv_lock);
 	preview_setting();
-	set_mirror_flip(IMAGE_NORMAL);
+	set_mirror_flip(IMAGE_HV_MIRROR);
 	return ERROR_NONE;
 }
 
@@ -5539,7 +5539,7 @@ capture(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *
 	}
 	spin_unlock(&imgsensor_drv_lock);
 	capture_setting(imgsensor.current_fps);
-	set_mirror_flip(IMAGE_NORMAL);
+	set_mirror_flip(IMAGE_HV_MIRROR);
 	mdelay(10);
 
 	for (i = 0; i < 10; i++) {
@@ -5567,7 +5567,7 @@ normal_video(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *
 	imgsensor.autoflicker_en = KAL_FALSE;
 	spin_unlock(&imgsensor_drv_lock);
 	normal_video_setting(imgsensor.current_fps);
-	set_mirror_flip(IMAGE_NORMAL);
+	set_mirror_flip(IMAGE_HV_MIRROR);
 	return ERROR_NONE;
 }
 
@@ -5589,7 +5589,7 @@ hs_video(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *
 	imgsensor.autoflicker_en = KAL_FALSE;
 	spin_unlock(&imgsensor_drv_lock);
 	hs_video_setting();
-	set_mirror_flip(IMAGE_NORMAL);
+	set_mirror_flip(IMAGE_HV_MIRROR);
 	return ERROR_NONE;
 }
 

@@ -206,7 +206,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	/* 0,MIPI_SETTLEDELAY_AUTO; 1,MIPI_SETTLEDELAY_MANNUAL */
 
 	/* sensor output first pixel color */
-	.sensor_output_dataformat = SENSOR_OUTPUT_FORMAT_RAW_R,
+	.sensor_output_dataformat = SENSOR_OUTPUT_FORMAT_RAW_B,
 	.mclk = 24,	/* mclk value, suggest 24 or 26 for 24Mhz or 26Mhz */
 	.mipi_lane_num = SENSOR_MIPI_4_LANE,	/* mipi lane num */
 	.i2c_addr_table = {0x34, 0xff},  //0x20,
@@ -2320,6 +2320,7 @@ kal_uint16 addr_data_pair_init_imx355sunny[] = {
 	0x0136, 0x18,
 	0x0137, 0x00,
 
+	0x0101, 0x03,
 	0x4348, 0x16,
         0x4350, 0x19,
         0x4408, 0x0A,
