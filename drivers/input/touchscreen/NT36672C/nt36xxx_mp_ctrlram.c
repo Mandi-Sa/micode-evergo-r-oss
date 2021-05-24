@@ -49,6 +49,7 @@
 		printk(fmt, ##args);	\
 } while (0)
 
+extern struct  panel_data parnel;
 static uint8_t *RecordResult_Short = NULL;
 static uint8_t *RecordResult_Open = NULL;
 static uint8_t *RecordResult_FWMutual = NULL;
@@ -1569,8 +1570,57 @@ void print_selftest_result(struct seq_file *m, int32_t TestResult, uint8_t Recor
 static int32_t c_show_lockdown_info(struct seq_file *m, void *v)
 {
 	NVT_LOG("++++%s+++++\n", __func__);
+	int char_size;
+	char tp_color[2];
+
 	if(lockdown_infor != NULL){
-		seq_printf(m, lockdown_infor);
+		char_size = sizeof(lockdown_infor);
+		NVT_LOG("++++%s+++ char_size = %d++\n", __func__, char_size);
+		if(char_size != 8){
+			NVT_LOG("%s+lockdown is wrong with char_size = %d++\n", __func__, char_size);
+			seq_printf(m, "wrong_value_of_lockdown");
+			seq_printf(m, "\n");
+			return 0;
+		}
+		seq_printf(m, "0x");
+		strncpy(tp_color, lockdown_infor+0, 2);
+		seq_printf(m, tp_color);
+		seq_printf(m, ",");
+
+		seq_printf(m, "0x");
+		strncpy(tp_color, lockdown_infor+2, 2);
+		seq_printf(m, tp_color);
+		seq_printf(m, ",");
+
+		seq_printf(m, "0x");
+		strncpy(tp_color, lockdown_infor+4, 2);
+		seq_printf(m, tp_color);
+		seq_printf(m, ",");
+
+		seq_printf(m, "0x");
+		strncpy(tp_color, lockdown_infor+6, 2);
+		seq_printf(m, tp_color);
+		seq_printf(m, ",");
+
+		seq_printf(m, "0x");
+		strncpy(tp_color, lockdown_infor+8, 2);
+		seq_printf(m, tp_color);
+		seq_printf(m, ",");
+
+		seq_printf(m, "0x");
+		strncpy(tp_color, lockdown_infor+10, 2);
+		seq_printf(m, tp_color);
+		seq_printf(m, ",");
+
+		seq_printf(m, "0x");
+		strncpy(tp_color, lockdown_infor+12, 2);
+		seq_printf(m, tp_color);
+		seq_printf(m, ",");
+
+		seq_printf(m, "0x");
+		strncpy(tp_color, lockdown_infor+14, 2);
+		seq_printf(m, tp_color);
+		seq_printf(m, ",");
 		seq_printf(m, "\n");
 	}
 	else
@@ -1811,7 +1861,7 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
 
 	//---Download MP FW---
-	nvt_update_firmware(MP_UPDATE_FIRMWARE_NAME);
+	nvt_update_firmware(parnel.MP_UPDATE_FIRMWARE_NAME);
 
 	if (nvt_get_fw_info()) {
 		mutex_unlock(&ts->lock);
@@ -1835,7 +1885,7 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 
 		if (nvt_mp_parse_dt(np, mpcriteria)) {
 			//---Download Normal FW---
-			nvt_update_firmware(BOOT_UPDATE_FIRMWARE_NAME);
+			nvt_update_firmware(parnel.BOOT_UPDATE_FIRMWARE_NAME);
 			mutex_unlock(&ts->lock);
 			NVT_ERR("mp parse device tree failed!\n");
 			return -EINVAL;
@@ -2020,7 +2070,7 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 	}
 
 	//---Download Normal FW---
-	nvt_update_firmware(BOOT_UPDATE_FIRMWARE_NAME);
+	nvt_update_firmware(parnel.BOOT_UPDATE_FIRMWARE_NAME);
 
 	mutex_unlock(&ts->lock);
 

@@ -64,6 +64,20 @@ extern void nvt_mp_proc_deinit(void);
 
 struct nvt_ts_data *ts;
 
+struct  panel_data parnel;
+
+struct panel_data parnel1 = {
+	0,"panel1", "novatek_ts_fw.bin", "novatek_ts_mp.bin"
+};
+
+struct panel_data parnel2 = {
+	1, "panel2", "novatek_ts_ct_fw.bin", "novatek_ts_ct_mp.bin"
+};
+
+struct panel_data parnel_unkonw = {
+	9, "unknow", "unknow", "unknow"
+};
+
 #if BOOT_UPDATE_FIRMWARE
 static struct workqueue_struct *nvt_fwu_wq;
 extern void Boot_Update_Firmware(struct work_struct *work);
@@ -157,8 +171,6 @@ const struct mtk_chip_config spi_ctrdata = {
 #endif
 
 static uint8_t bTouchIsAwake = 0;
-
-static int lcm_index ;
 
 /*******************************************************
 Description:
@@ -1216,7 +1228,7 @@ static void nvt_esd_check_func(struct work_struct *work)
 		mutex_lock(&ts->lock);
 		NVT_ERR("do ESD recovery, timer = %d, retry = %d\n", timer, esd_retry);
 		/* do esd recovery, reload fw */
-		nvt_update_firmware(BOOT_UPDATE_FIRMWARE_NAME);
+		nvt_update_firmware(parnel.BOOT_UPDATE_FIRMWARE_NAME);
 		mutex_unlock(&ts->lock);
 		/* update interrupt timer */
 		irq_timer = jiffies;
@@ -1380,7 +1392,7 @@ static irqreturn_t nvt_ts_work_func(int irq, void *data)
    /* ESD protect by WDT */
    if (nvt_wdt_fw_recovery(point_data)) {
        NVT_ERR("Recover for fw reset, %02X\n", point_data[1]);
-       nvt_update_firmware(BOOT_UPDATE_FIRMWARE_NAME);
+       nvt_update_firmware(parnel.BOOT_UPDATE_FIRMWARE_NAME);
        goto XFER_ERROR;
    }
 #endif /* #if NVT_TOUCH_WDT_RECOVERY */
@@ -1666,24 +1678,23 @@ static void mtk_drm_lcm_info_get(void){
 			//access the lcmname from videolfb_tag
 			strncpy(Tp_name,videolfb_tag->lcmname,strlen(videolfb_tag->lcmname)+1);
 			if (!strcmp(videolfb_tag->lcmname, "nt36672c_fhdp_wt_dsi_vdo_cphy_90hz_tianma")){
-				lcm_index =  0; //the first panel config
+				parnel = parnel1;//the first panel config
 				NVT_LOG("The first panel for this project");
 			} else if(!strcmp(videolfb_tag->lcmname, "nt36672c_fhdp_wt_dsi_vdo_cphy_90hz_csot")){
-					lcm_index = 1; //the second panel config
+					parnel = parnel2; //the second panel config
 					NVT_LOG("The second panel for this project");
 			           } else {
-					lcm_index = 9; //two panel id and the index can not > 9
-					NVT_LOG("No panel found");
+					NVT_LOG("No panel found");//two panel id and the index can not > 9
 				}
 		} else {
 			NVT_ERR("nvt: videolfb_tag not found\n");
-			lcm_index = 10;
+			parnel = parnel_unkonw;
 		}
 	} else {
 		NVT_ERR("nvt: of_chosen not found\n");
-		lcm_index = 11;
+		parnel = parnel_unkonw;
 	}
-	NVT_LOG("%s end for lcm_index =%d \n", __func__, lcm_index );
+	NVT_LOG("%s end for lcm_index =%d \n", __func__, parnel.lcm_index );
 }
 
 
@@ -1696,14 +1707,14 @@ static int nvt_ts_check_dt(struct device_node *np)
 	struct device_node *node;
 	struct drm_panel *panel;
 
-	count = of_count_phandle_with_args(np, "panel", NULL);
-	NVT_ERR("nvt: ++++%s++count = %d++\n", __func__, count);
+	count = of_count_phandle_with_args(np, parnel.panel , NULL);
+	NVT_LOG("nvt: +%s+lcm_index  = %d++panel = %s++count = %d++\n", __func__, parnel.lcm_index, parnel.panel, count);
 
 	if (count <= 0)
 		return 0;
 
 	for (i = 0; i < count; i++) {
-		node = of_parse_phandle(np, "panel", i);
+		node = of_parse_phandle(np, parnel.panel, i);
 		if(node == NULL){
 			NVT_ERR("%s: node is null", __func__);
 			return -1;
@@ -1748,7 +1759,7 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	mtk_drm_lcm_info_get();
 
 	dp = client->dev.of_node;
-	if ((lcm_index == 0) ||(lcm_index == 1)){
+	if ((parnel.lcm_index == 0) ||(parnel.lcm_index == 1)){
 		ret = nvt_ts_check_dt(dp);
 		if (ret == -EPROBE_DEFER) {
 			return ret;
@@ -2420,7 +2431,7 @@ static int32_t nvt_ts_resume(struct device *dev)
 #if NVT_TOUCH_SUPPORT_HW_RST
 	gpio_set_value(ts->reset_gpio, 1);
 #endif
-	if (nvt_update_firmware(BOOT_UPDATE_FIRMWARE_NAME)) {
+	if (nvt_update_firmware(parnel.BOOT_UPDATE_FIRMWARE_NAME)) {
 		NVT_ERR("download firmware failed, ignore check fw state\n");
 	} else {
 		NVT_ERR("nvt_check_fw_reset_state\n");

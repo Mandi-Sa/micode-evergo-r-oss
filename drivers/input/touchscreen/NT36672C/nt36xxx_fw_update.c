@@ -35,6 +35,8 @@
 #define NVT_DUMP_PARTITION_PATH "/data/local/tmp"
 
 static ktime_t start, end;
+extern struct  panel_data parnel;
+
 const struct firmware *fw_entry = NULL;
 static size_t fw_need_write_size = 0;
 static uint8_t *fwbuf = NULL;
@@ -1043,7 +1045,7 @@ return:
 void Boot_Update_Firmware(struct work_struct *work)
 {
 	mutex_lock(&ts->lock);
-	nvt_update_firmware(BOOT_UPDATE_FIRMWARE_NAME);
+	nvt_update_firmware(parnel.BOOT_UPDATE_FIRMWARE_NAME);
 	mutex_unlock(&ts->lock);
 }
 #endif /* BOOT_UPDATE_FIRMWARE */
