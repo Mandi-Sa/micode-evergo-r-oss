@@ -94,8 +94,8 @@ extern const uint16_t touch_key_array[TOUCH_KEY_NUM];
 extern const uint16_t gesture_key_array[];
 #endif
 #define BOOT_UPDATE_FIRMWARE 1
-#define BOOT_UPDATE_FIRMWARE_NAME "novatek_ts_fw.bin"
-#define MP_UPDATE_FIRMWARE_NAME   "novatek_ts_mp.bin"
+//#define BOOT_UPDATE_FIRMWARE_NAME "novatek_ts_fw.bin"
+//#define MP_UPDATE_FIRMWARE_NAME   "novatek_ts_mp.bin"
 #define POINT_DATA_CHECKSUM 1
 #define POINT_DATA_CHECKSUM_LEN 65
 
@@ -197,6 +197,13 @@ typedef enum {
 
 //---extern structures---
 extern struct nvt_ts_data *ts;
+
+struct panel_data{
+	int lcm_index;
+	char panel[16];  //node for lcd
+	char BOOT_UPDATE_FIRMWARE_NAME[32];
+	char MP_UPDATE_FIRMWARE_NAME[32];
+};
 
 //---extern functions---
 int32_t CTP_SPI_READ(struct spi_device *client, uint8_t *buf, uint16_t len);
