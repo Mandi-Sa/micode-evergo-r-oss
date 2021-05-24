@@ -135,6 +135,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.min_gain = BASEGAIN, // 1x gain
 	.max_gain = 16 * BASEGAIN, //real again is 15.5x
 	.min_gain_iso = 50,
+	.exp_step = 2,
 	.gain_step = 1,
 	.gain_type = 1,
 	.max_frame_length = 0x7fe9,//max framelength by sensor register's limitation
@@ -1394,6 +1395,56 @@ static kal_uint32 feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
 		*(MUINT32 *)(uintptr_t)(*(feature_data + 1)) = 6160000;
 		break;
 #endif
+	case SENSOR_FEATURE_GET_FRAME_CTRL_INFO_BY_SCENARIO:
+		/*
+		 * 1, if driver support new sw frame sync
+		 * set_shutter_frame_length() support third para auto_extend_en
+		 */
+		*(feature_data + 1) = 1;
+		/* margin info by scenario */
+		*(feature_data + 2) = imgsensor_info.margin;
+		break;
+	case SENSOR_FEATURE_GET_AWB_REQ_BY_SCENARIO:
+		switch (*feature_data) {
+		case MSDK_SCENARIO_ID_CUSTOM3:
+			*(MUINT32 *)(uintptr_t)(*(feature_data + 1)) = 1;
+			break;
+		default:
+			*(MUINT32 *)(uintptr_t)(*(feature_data + 1)) = 0;
+			break;
+		}
+		break;
+	case SENSOR_FEATURE_GET_BINNING_TYPE:
+		switch (*(feature_data + 1)) {
+		case MSDK_SCENARIO_ID_CUSTOM3:
+			*feature_return_para_32 = 1; /*BINNING_NONE*/
+			break;
+		case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
+		case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
+		case MSDK_SCENARIO_ID_HIGH_SPEED_VIDEO:
+		case MSDK_SCENARIO_ID_SLIM_VIDEO:
+		case MSDK_SCENARIO_ID_CAMERA_PREVIEW:
+		case MSDK_SCENARIO_ID_CUSTOM5:
+		case MSDK_SCENARIO_ID_CUSTOM6:
+		case MSDK_SCENARIO_ID_CUSTOM7:
+		case MSDK_SCENARIO_ID_CUSTOM8:
+		case MSDK_SCENARIO_ID_CUSTOM9:
+		case MSDK_SCENARIO_ID_CUSTOM10:
+		case MSDK_SCENARIO_ID_CUSTOM11:
+		case MSDK_SCENARIO_ID_CUSTOM12:
+		case MSDK_SCENARIO_ID_CUSTOM13:
+		case MSDK_SCENARIO_ID_CUSTOM14:
+		case MSDK_SCENARIO_ID_CUSTOM15:
+		case MSDK_SCENARIO_ID_CUSTOM4:
+		default:
+			*feature_return_para_32 = 1; /*BINNING_AVERAGED*/
+			break;
+		}
+		pr_debug("SENSOR_FEATURE_GET_BINNING_TYPE AE_binning_type:%d,\n",
+			*feature_return_para_32);
+		*feature_para_len = 4;
+
+		break;
 	case SENSOR_FEATURE_GET_PERIOD:
 		*feature_return_para_16++ = imgsensor.line_length;
 		*feature_return_para_16 = imgsensor.frame_length;

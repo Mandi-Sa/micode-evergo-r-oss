@@ -78,6 +78,7 @@ extern char macro_cam_fuseid[HARDWARE_MAX_ITEM_LONGTH];
 
 #define MAX_VENDOR_COUNT 2
 #define MAX_IMGSENSOR_NUM 5
+#define HARDWARE_MODULEID_LONGTH 5
 char main_hw_info[19]; //这几个数组大小根据项目会不同
 char sub_hw_info[19];
 char wide_hw_info[14];
@@ -86,6 +87,7 @@ typedef struct IMGSENSOR_HW_REGISTER_INFO {
 	// IMGSENSOR_SENSOR_IDX psensor_idx;
 	 char psensor_name[HARDWARE_MAX_ITEM_LONGTH];
 	 u16 nameNumber;
+	 char moduleid[HARDWARE_MODULEID_LONGTH];
 	 MUINT32 sensorID;
 	 char *hw_info_data;
 	 u16 i2cId;
@@ -97,27 +99,27 @@ typedef struct IMGSENSOR_HW_REGISTER_INFO {
  ************************************************************************/
 IMGSENSOR_HQ_REGISTER_INFO cam_hwinfo[MAX_IMGSENSOR_NUM][MAX_VENDOR_COUNT] = {
 	{
-	    {"s5kjn1sunny_mipi_raw_i", 22, S5KJN1SUNNY_SENSOR_ID, main_hw_info, 0xA2, s5kjn1sunny_get_otpdata},
-	    {"ov50c40ofilm_mipi_raw_ii", 24, OV50C40OFILM_SENSOR_ID, main_hw_info, 0xA2, ov50c40ofilm_get_otpdata},
+	    {"s5kjn1sunny_mipi_raw_i", 22, "0905", S5KJN1SUNNY_SENSOR_ID, main_hw_info, 0xA2, s5kjn1sunny_get_otpdata},
+	    {"ov50c40ofilm_mipi_raw_ii", 24, "0903", OV50C40OFILM_SENSOR_ID, main_hw_info, 0xA2, ov50c40ofilm_get_otpdata},
 	},
 	{
-	    {"ov16a1qofilm_mipi_raw_i", 22, OV16A1QOFILM_SENSOR_ID, sub_hw_info, 0xA2, ov16a1qofilm_get_otpdata},
-	    {"ov16a1qqtech_mipi_raw_ii", 24, OV16A1QQTECH_SENSOR_ID, sub_hw_info, 0xA2, ov16a1qqtech_get_otpdata},
+	    {"ov16a1qofilm_mipi_raw_i", 22, "f607", OV16A1QOFILM_SENSOR_ID, sub_hw_info, 0xA2, ov16a1qofilm_get_otpdata},
+	    {"ov16a1qqtech_mipi_raw_ii", 24, "f608", OV16A1QQTECH_SENSOR_ID, sub_hw_info, 0xA2, ov16a1qqtech_get_otpdata},
 	},
 	{
-	    {"imx355sunny_mipi_raw_i", 22, IMX355SUNNY_SENSOR_ID, wide_hw_info, 0xA0, imx355sunny_get_otpdata},
-	    {"imx355ofilm_mipi_raw_ii", 23, IMX355OFILM_SENSOR_ID, wide_hw_info, 0xA0, imx355ofilm_get_otpdata},
+	    {"imx355sunny_mipi_raw_i", 22, "0301", IMX355SUNNY_SENSOR_ID, wide_hw_info, 0xA0, imx355sunny_get_otpdata},
+	    {"imx355ofilm_mipi_raw_ii", 23, "0300", IMX355OFILM_SENSOR_ID, wide_hw_info, 0xA0, imx355ofilm_get_otpdata},
 	},
 	{
-	    {"ov02b10aac_mipi_raw_i", 21, OV02B10AAC_SENSOR_ID, macro_hw_info, 0xA4, ov02b10aac_get_otpdata},
-	    {"gc02m1ofilm_mipi_raw_ii", 23, GC02M1OFILM_SENSOR_ID, macro_hw_info, 0xA4, gc02m1ofilm_get_otpdata},
+	    {"ov02b10aac_mipi_raw_i", 21, "0123", OV02B10AAC_SENSOR_ID, macro_hw_info, 0xA4, ov02b10aac_get_otpdata},
+	    {"gc02m1ofilm_mipi_raw_ii", 23, "0124", GC02M1OFILM_SENSOR_ID, macro_hw_info, 0xA4, gc02m1ofilm_get_otpdata},
 	}
 };
 
 /************************************************************************
  * imgsensor_sensor_hw_register
- * register cam_info by sensorID 
- * Todo :get moduleid  sensorid and fuseid by sensorID 
+ * register cam_info by sensorID
+ * Todo :get moduleid  sensorid and fuseid by sensorID
  ************************************************************************/
 MINT8 imgsensor_sensor_hw_register(struct IMGSENSOR_SENSOR *psensor, MUINT32 sensorID)
 {
@@ -137,55 +139,59 @@ MINT8 imgsensor_sensor_hw_register(struct IMGSENSOR_SENSOR *psensor, MUINT32 sen
 	}
 	switch(j) {
 	case 0: {
-		strncpy(main_cam_name,cam_hwinfo[j][search_index].psensor_name,cam_hwinfo[j][search_index].nameNumber+1);	
+		strncpy(main_cam_name,cam_hwinfo[j][search_index].psensor_name,cam_hwinfo[j][search_index].nameNumber+1);
+		strncpy(main_cam_moduleid,cam_hwinfo[j][search_index].moduleid,5);
 		main_cam_sensorid[0] = main_hw_info[0];
 		main_cam_sensorid[1] = '\0';
-		main_cam_moduleid[0] = main_hw_info[1];
-		main_cam_moduleid[1] = main_hw_info[2];
-		main_cam_moduleid[2] = '\0';
+		//main_cam_moduleid[0] = main_hw_info[1];
+		//main_cam_moduleid[1] = main_hw_info[2];
+		//main_cam_moduleid[2] = '\0';
 		for(fuseid_index = 0 ; fuseid_index <= (ret-3) ; fuseid_index++ )
 			main_cam_fuseid[fuseid_index] = main_hw_info[fuseid_index+3];
 		main_cam_fuseid[ret-2] = '\0';
 	}
 		break;
 	case 1: {
-		strncpy(sub_cam_name,cam_hwinfo[j][search_index].psensor_name,cam_hwinfo[j][search_index].nameNumber+1);	
+		strncpy(sub_cam_name,cam_hwinfo[j][search_index].psensor_name,cam_hwinfo[j][search_index].nameNumber+1);
+		strncpy(sub_cam_moduleid,cam_hwinfo[j][search_index].moduleid,5);
 		sub_cam_sensorid[0] = sub_hw_info[0];
 		sub_cam_sensorid[1] = '\0';
-		sub_cam_moduleid[0] = sub_hw_info[1];
-		sub_cam_moduleid[1] = sub_hw_info[2];
-		sub_cam_moduleid[2] = '\0';
+		//sub_cam_moduleid[0] = sub_hw_info[1];
+		//sub_cam_moduleid[1] = sub_hw_info[2];
+		//sub_cam_moduleid[2] = '\0';
 		for(fuseid_index = 0 ; fuseid_index <= (ret-3) ; fuseid_index++ )
 			sub_cam_fuseid[fuseid_index] = sub_hw_info[fuseid_index+3];
 		sub_cam_fuseid[ret-2] = '\0';
 	}
 		break;
 	case 2: {
-		strncpy(wide_cam_name,cam_hwinfo[j][search_index].psensor_name,cam_hwinfo[j][search_index].nameNumber+1);	
+		strncpy(wide_cam_name,cam_hwinfo[j][search_index].psensor_name,cam_hwinfo[j][search_index].nameNumber+1);
+		strncpy(wide_cam_moduleid,cam_hwinfo[j][search_index].moduleid,5);
 		wide_cam_sensorid[0] = wide_hw_info[0];
 		wide_cam_sensorid[1] = '\0';
-		wide_cam_moduleid[0] = wide_hw_info[1];
-		wide_cam_moduleid[1] = wide_hw_info[2];
-		wide_cam_moduleid[2] = '\0';
+		//wide_cam_moduleid[0] = wide_hw_info[1];
+		//wide_cam_moduleid[1] = wide_hw_info[2];
+		//wide_cam_moduleid[2] = '\0';
 		for(fuseid_index = 0 ; fuseid_index <= (ret-3) ; fuseid_index++ )
 			wide_cam_fuseid[fuseid_index] = wide_hw_info[fuseid_index+3];
 		wide_cam_fuseid[ret-2] = '\0';
 	}
 		break;
 	case 3: {
-		strncpy(macro_cam_name,cam_hwinfo[j][search_index].psensor_name,cam_hwinfo[j][search_index].nameNumber+1);	
+		strncpy(macro_cam_name,cam_hwinfo[j][search_index].psensor_name,cam_hwinfo[j][search_index].nameNumber+1);
+		strncpy(macro_cam_moduleid,cam_hwinfo[j][search_index].moduleid,5);
 		macro_cam_sensorid[0] = macro_hw_info[0];
 		macro_cam_sensorid[1] = '\0';
-		macro_cam_moduleid[0] = macro_hw_info[1];
-		macro_cam_moduleid[1] = macro_hw_info[2];
-		macro_cam_moduleid[2] = '\0';
+		//macro_cam_moduleid[0] = macro_hw_info[1];
+		//macro_cam_moduleid[1] = macro_hw_info[2];
+		//macro_cam_moduleid[2] = '\0';
 		for(fuseid_index = 0 ; fuseid_index <= (ret-3) ; fuseid_index++ )
 			macro_cam_fuseid[fuseid_index] = macro_hw_info[fuseid_index+3];
 		macro_cam_fuseid[ret-2] = '\0';
 	}
 		break;
 	default:
-		pr_info("%s sensor number too much", __func__); 
+		pr_info("%s sensor number too much", __func__);
 		break;
 	}
 
