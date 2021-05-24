@@ -57,6 +57,15 @@ enum {
 	CM_MGR_MAX,
 };
 
+#ifdef USE_BCPU_WEIGHT
+extern int cpu_power_bcpu_weight_max;
+extern int cpu_power_bcpu_weight_min;
+extern int cpu_power_bcpu_weight_max0;
+extern int cpu_power_bcpu_weight_min0;
+extern int cpu_power_bcpu_weight_max1;
+extern int cpu_power_bcpu_weight_min1;
+#endif /* USE_BCPU_WEIGHT */
+
 extern void __iomem *mcucfg_mp0_counter_base;
 
 extern unsigned int cpu_power_up_array[CM_MGR_CPU_CLUSTER];

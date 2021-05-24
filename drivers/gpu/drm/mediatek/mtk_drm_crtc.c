@@ -1777,7 +1777,7 @@ unsigned int mtk_crtc_get_idle_interval(struct drm_crtc *crtc, unsigned int fps)
 
 	unsigned int idle_interval = mtk_drm_get_idle_check_interval(crtc);
 	/*calculate the timeout to enter idle in ms*/
-	if (idle_interval > 50)
+	if (idle_interval > 51)
 		return 0;
 	idle_interval = (3 * 1000) / fps + 1;
 

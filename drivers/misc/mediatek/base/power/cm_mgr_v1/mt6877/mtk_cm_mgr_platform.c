@@ -1087,6 +1087,10 @@ void cm_mgr_ddr_setting_init(void)
 			debounce_times_up_adb[i] = debounce_times_up_adb0[i];
 			debounce_times_down_adb[i] = debounce_times_down_adb0[i];
 		}
+#ifdef USE_BCPU_WEIGHT
+		cpu_power_bcpu_weight_max = cpu_power_bcpu_weight_max0;
+		cpu_power_bcpu_weight_min = cpu_power_bcpu_weight_min0;
+#endif
 	} else if (idx == CM_MGR_LP5) {
 		for (i = 0; i < CM_MGR_EMI_OPP; i++) {
 			cpu_power_ratio_up[i] = cpu_power_ratio_up1[i];
@@ -1094,6 +1098,10 @@ void cm_mgr_ddr_setting_init(void)
 			debounce_times_up_adb[i] = debounce_times_up_adb1[i];
 			debounce_times_down_adb[i] = debounce_times_down_adb1[i];
 		}
+#ifdef USE_BCPU_WEIGHT
+		cpu_power_bcpu_weight_max = cpu_power_bcpu_weight_max1;
+		cpu_power_bcpu_weight_min = cpu_power_bcpu_weight_min1;
+#endif
 	}
 #if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
 	for (i = 0; i < CM_MGR_EMI_OPP; i++) {
