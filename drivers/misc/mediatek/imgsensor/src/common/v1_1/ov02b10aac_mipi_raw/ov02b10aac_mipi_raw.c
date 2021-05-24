@@ -127,6 +127,12 @@ static struct imgsensor_info_struct imgsensor_info = {
 	},
 	.margin = 7,            //sensor framelength & shutter margin
 	.min_shutter = 4,        //min shutter
+	.min_gain = 64, /*1x gain*/
+	.max_gain = 1024, /*16x gain*/
+	.min_gain_iso = 100,
+	.exp_step = 2,
+	.gain_step = 1,
+	.gain_type = 1,
 	.max_frame_length = 0x7fff,//max framelength by sensor register's limitation
 	.ae_shut_delay_frame = 0,    //shutter delay frame for AE cycle, 2 frame with ispGain_delay-shut_delay=2-0=2
 	.ae_sensor_gain_delay_frame = 0,//sensor gain delay frame for AE cycle,2 frame with ispGain_delay-sensor_gain_delay=2-0=2
@@ -1892,6 +1898,69 @@ static kal_uint32 feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
 
 	LOG_INF("feature_id = %d\n", feature_id);
 	switch (feature_id) {
+	case SENSOR_FEATURE_GET_GAIN_RANGE_BY_SCENARIO:
+		*(feature_data + 1) = imgsensor_info.min_gain;
+		*(feature_data + 2) = imgsensor_info.max_gain;
+		break;
+	case SENSOR_FEATURE_GET_BASE_GAIN_ISO_AND_STEP:
+		*(feature_data + 0) = imgsensor_info.min_gain_iso;
+		*(feature_data + 1) = imgsensor_info.gain_step;
+		*(feature_data + 2) = imgsensor_info.gain_type;
+		break;
+	case SENSOR_FEATURE_GET_MIN_SHUTTER_BY_SCENARIO:
+		*(feature_data + 1) = imgsensor_info.min_shutter;
+		*(feature_data + 2) = imgsensor_info.exp_step;
+		break;
+	case SENSOR_FEATURE_GET_BINNING_TYPE:
+		switch (*(feature_data + 1)) {
+		case MSDK_SCENARIO_ID_CUSTOM3:
+			*feature_return_para_32 = 1; /*BINNING_NONE*/
+			break;
+		case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
+		case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
+		case MSDK_SCENARIO_ID_HIGH_SPEED_VIDEO:
+		case MSDK_SCENARIO_ID_SLIM_VIDEO:
+		case MSDK_SCENARIO_ID_CAMERA_PREVIEW:
+		case MSDK_SCENARIO_ID_CUSTOM5:
+		case MSDK_SCENARIO_ID_CUSTOM6:
+		case MSDK_SCENARIO_ID_CUSTOM7:
+		case MSDK_SCENARIO_ID_CUSTOM8:
+		case MSDK_SCENARIO_ID_CUSTOM9:
+		case MSDK_SCENARIO_ID_CUSTOM10:
+		case MSDK_SCENARIO_ID_CUSTOM11:
+		case MSDK_SCENARIO_ID_CUSTOM12:
+		case MSDK_SCENARIO_ID_CUSTOM13:
+		case MSDK_SCENARIO_ID_CUSTOM14:
+		case MSDK_SCENARIO_ID_CUSTOM15:
+		case MSDK_SCENARIO_ID_CUSTOM4:
+		default:
+			*feature_return_para_32 = 1; /*BINNING_AVERAGED*/
+			break;
+		}
+		pr_debug("SENSOR_FEATURE_GET_BINNING_TYPE AE_binning_type:%d,\n",
+			*feature_return_para_32);
+		*feature_para_len = 4;
+
+		break;
+	case SENSOR_FEATURE_GET_FRAME_CTRL_INFO_BY_SCENARIO:
+		/*
+		 * 1, if driver support new sw frame sync
+		 * set_shutter_frame_length() support third para auto_extend_en
+		 */
+		*(feature_data + 1) = 1;
+		/* margin info by scenario */
+		*(feature_data + 2) = imgsensor_info.margin;
+		break;
+	case SENSOR_FEATURE_GET_AWB_REQ_BY_SCENARIO:
+		switch (*feature_data) {
+		case MSDK_SCENARIO_ID_CUSTOM3:
+			*(MUINT32 *)(uintptr_t)(*(feature_data + 1)) = 1;
+			break;
+		default:
+			*(MUINT32 *)(uintptr_t)(*(feature_data + 1)) = 0;
+			break;
+		}
+		break;
 	case SENSOR_FEATURE_GET_PERIOD_BY_SCENARIO:
 		switch (*feature_data) {
 		case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:

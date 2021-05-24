@@ -138,6 +138,12 @@ struct imgsensor_info_struct {
 
 	kal_uint8  i2c_addr_table[5];
 	kal_uint32  i2c_speed; //khz
+	kal_uint32 min_gain;
+	kal_uint32 max_gain;
+	kal_uint32 min_gain_iso;
+	kal_uint32 exp_step;
+	kal_uint32 gain_step;
+	kal_uint32 gain_type;
 };
 
 extern int iReadRegI2C(u8 *a_pSendData, u16 a_sizeSendData,

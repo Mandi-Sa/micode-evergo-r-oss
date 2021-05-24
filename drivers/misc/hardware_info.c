@@ -164,7 +164,7 @@ static long hardwareinfo_ioctl(struct file *file, unsigned int cmd,unsigned long
 		hardwareinfo_num = HARDWARE_FRONT_CAM;
 		break;
 	case HARDWARE_BACK_CAM_GET:
-		hardwareinfo_set_prop(HARDWARE_FRONT_CAM, main_cam_name);
+		hardwareinfo_set_prop(HARDWARE_BACK_CAM, main_cam_name);
 		hardwareinfo_num = HARDWARE_BACK_CAM;
 		break;
 	case HARDWARE_BACK_SUBCAM_GET:
