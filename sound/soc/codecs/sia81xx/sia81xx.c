@@ -68,7 +68,7 @@
 #define SIA81XX_NAME					"sia81xx"
 #define SIA81XX_I2C_NAME				SIA81XX_NAME
 
-//#define DISTINGUISH_CHIP_TYPE
+#define DISTINGUISH_CHIP_TYPE
 //#define ALGO_SWITCH_EN
 
 #define SIA81XX_CMD_POWER_ON			(1)
@@ -1948,11 +1948,6 @@ static int sia81xx_i2c_probe(
 
 	/* sava driver private data to the dev's driver data */
 	dev_set_drvdata(&client->dev, sia81xx);
-
-	if (sia81xx->chip_type == CHIP_TYPE_SIA8109) {
-		sia81xx_regmap_read(sia81xx->regmap, 0x41, 1, &chip_id_num);
-		pr_info("%s: sia8109_chip_id = 0x%02x \n", __func__, chip_id_num);
-	}
 
 	/* compatible awinic pa */
 	if (sia81xx->chip_type == CHIP_TYPE_SIA8152) {
