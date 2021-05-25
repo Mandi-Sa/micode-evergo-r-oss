@@ -42,12 +42,16 @@
 extern struct nvt_ts_data *ts;
 
 #define HFP_SUPPORT 0
+
+#define PHYSICAL_WIDTH              72390
+#define PHYSICAL_HEIGHT             159690
+
 #if HFP_SUPPORT
 static int current_fps = 60;
 #endif
 //static char bl_tb0[] = { 0x51, 0xff };
 
-struct csot {
+struct tianma {
 	struct device *dev;
 	struct drm_panel panel;
 	struct backlight_device *backlight;
@@ -61,31 +65,31 @@ struct csot {
 	int error;
 };
 
-static struct regulator *lcd_dvdd_ldo;
+struct regulator *lcd_dvdd_ldo;
 
-#define csot_dcs_write_seq(ctx, seq...)                                         \
+#define tianma_dcs_write_seq(ctx, seq...)                                         \
 	({                                                                     \
 		const u8 d[] = { seq };                                        \
 		BUILD_BUG_ON_MSG(ARRAY_SIZE(d) > 64,                           \
 				 "DCS sequence too big for stack");            \
-		csot_dcs_write(ctx, d, ARRAY_SIZE(d));                          \
+		tianma_dcs_write(ctx, d, ARRAY_SIZE(d));                          \
 	})
 
-#define csot_dcs_write_seq_static(ctx, seq...)                                  \
+#define tianma_dcs_write_seq_static(ctx, seq...)                                  \
 	({                                                                     \
 		static const u8 d[] = { seq };                                 \
-		csot_dcs_write(ctx, d, ARRAY_SIZE(d));                          \
+		tianma_dcs_write(ctx, d, ARRAY_SIZE(d));                          \
 	})
 
 extern int lm36273_brightness_set(int level);
 
-static inline struct csot *panel_to_csot(struct drm_panel *panel)
+static inline struct tianma *panel_to_tianma(struct drm_panel *panel)
 {
-	return container_of(panel, struct csot, panel);
+	return container_of(panel, struct tianma, panel);
 }
 
 #ifdef PANEL_SUPPORT_READBACK
-static int csot_dcs_read(struct csot *ctx, u8 cmd, void *data, size_t len)
+static int tianma_dcs_read(struct tianma *ctx, u8 cmd, void *data, size_t len)
 {
 	struct mipi_dsi_device *dsi = to_mipi_dsi_device(ctx->dev);
 	ssize_t ret;
@@ -103,7 +107,7 @@ static int csot_dcs_read(struct csot *ctx, u8 cmd, void *data, size_t len)
 	return ret;
 }
 
-static void csot_panel_get_data(struct csot *ctx)
+static void tianma_panel_get_data(struct tianma *ctx)
 {
 	u8 buffer[3] = { 0 };
 	static int ret;
@@ -111,7 +115,7 @@ static void csot_panel_get_data(struct csot *ctx)
 	pr_info("%s+\n", __func__);
 
 	if (ret == 0) {
-		ret = csot_dcs_read(ctx, 0x0A, buffer, 1);
+		ret = tianma_dcs_read(ctx, 0x0A, buffer, 1);
 		pr_info("%s  0x%08x\n", __func__, buffer[0] | (buffer[1] << 8));
 		dev_info(ctx->dev, "return %d data(0x%08x) to dsi engine\n",
 			 ret, buffer[0] | (buffer[1] << 8));
@@ -119,7 +123,7 @@ static void csot_panel_get_data(struct csot *ctx)
 }
 #endif
 
-static void csot_dcs_write(struct csot *ctx, const void *data, size_t len)
+static void tianma_dcs_write(struct tianma *ctx, const void *data, size_t len)
 {
 	struct mipi_dsi_device *dsi = to_mipi_dsi_device(ctx->dev);
 	ssize_t ret;
@@ -140,7 +144,7 @@ static void csot_dcs_write(struct csot *ctx, const void *data, size_t len)
 }
 
 
-static void csot_panel_init(struct csot *ctx)
+static void tianma_panel_init(struct tianma *ctx)
 {
 	ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
 	usleep_range(10 * 1000, 15 * 1000);
@@ -152,59 +156,60 @@ static void csot_panel_init(struct csot *ctx)
 	pr_info("%s+\n", __func__);
 #if HFP_SUPPORT
 	pr_info("%s, fps:%d\n", __func__, current_fps);
-	csot_dcs_write_seq_static(ctx, 0xFF, 0x25);
-	csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	tianma_dcs_write_seq_static(ctx, 0xFF, 0x25);
+	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
 	if (current_fps == 60)
-		csot_dcs_write_seq_static(ctx, 0x18, 0x21);
+		tianma_dcs_write_seq_static(ctx, 0x18, 0x21);
 	else if (current_fps == 90)
-		csot_dcs_write_seq_static(ctx, 0x18, 0x20);
+		tianma_dcs_write_seq_static(ctx, 0x18, 0x20);
 	else
-		csot_dcs_write_seq_static(ctx, 0x18, 0x21);
+		tianma_dcs_write_seq_static(ctx, 0x18, 0x21);
 #endif
-	//csot_dcs_write_seq_static(ctx, 0xFF, 0xD0);
-	//csot_dcs_write_seq_static(ctx, 0x00, 0x77);
-	//csot_dcs_write_seq_static(ctx, 0x02, 0xAA);
-	//csot_dcs_write_seq_static(ctx, 0x09, 0xD0);
 
+	tianma_dcs_write_seq_static(ctx, 0xFF, 0x10);
+	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	tianma_dcs_write_seq_static(ctx, 0x3B, 0x03,0x14,0x36,0x04,0x04);
+	tianma_dcs_write_seq_static(ctx, 0xB0, 0x00);
+	tianma_dcs_write_seq_static(ctx, 0xC0, 0x00);
+	tianma_dcs_write_seq_static(ctx, 0xC1, 0x89,0x28,0x00,0x14,0x00,0xAA,0x02,0x0E,0x00,
+0x71,0x00,0x07,0x05,0x0E,0x05,0x16);
+	tianma_dcs_write_seq_static(ctx, 0xC2, 0x1B,0xA0);
 
-	csot_dcs_write_seq_static(ctx, 0xFF, 0x10);
-	csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	tianma_dcs_write_seq_static(ctx, 0xFF, 0xE0);
+	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	tianma_dcs_write_seq_static(ctx, 0x35, 0x82);
 
-	csot_dcs_write_seq_static(ctx, 0xC0, 0x00);
+	tianma_dcs_write_seq_static(ctx, 0xFF, 0xF0);
+	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	tianma_dcs_write_seq_static(ctx, 0x1C, 0x01);
+	tianma_dcs_write_seq_static(ctx, 0x33, 0x01);
+	tianma_dcs_write_seq_static(ctx, 0x5A, 0x00);
 
-	csot_dcs_write_seq_static(ctx, 0xFF, 0xE0);
-	csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
-	csot_dcs_write_seq_static(ctx, 0x35, 0x82);
-
-	csot_dcs_write_seq_static(ctx, 0xFF, 0xF0);
-	csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
-	csot_dcs_write_seq_static(ctx, 0x1C, 0x01);
-	csot_dcs_write_seq_static(ctx, 0x33, 0x01);
-	csot_dcs_write_seq_static(ctx, 0x5A, 0x00);
-
-	csot_dcs_write_seq_static(ctx, 0xFF, 0xD0);
-	csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
-	csot_dcs_write_seq_static(ctx, 0x53, 0x22);
-	csot_dcs_write_seq_static(ctx, 0x54, 0x02);
+	tianma_dcs_write_seq_static(ctx, 0xFF, 0xD0);
+	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	tianma_dcs_write_seq_static(ctx, 0x53, 0x22);
+	tianma_dcs_write_seq_static(ctx, 0x54, 0x02);
 	
-	csot_dcs_write_seq_static(ctx, 0xFF, 0xC0);
-	csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
-	csot_dcs_write_seq_static(ctx, 0x9C, 0x11);
-	csot_dcs_write_seq_static(ctx, 0x9D, 0x11);
+	tianma_dcs_write_seq_static(ctx, 0xFF, 0xC0);
+	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	tianma_dcs_write_seq_static(ctx, 0x9C, 0x11);
+	tianma_dcs_write_seq_static(ctx, 0x9D, 0x11);
 	
-	csot_dcs_write_seq_static(ctx, 0xFF, 0x10);;
+	tianma_dcs_write_seq_static(ctx, 0xFF, 0x10);
+	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	tianma_dcs_write_seq_static(ctx, 0xC0, 0x00);
 
-	csot_dcs_write_seq_static(ctx, 0x11);
+	tianma_dcs_write_seq_static(ctx, 0x11);
 	msleep(100);
 	/* Display On*/
-	csot_dcs_write_seq_static(ctx, 0x29);
+	tianma_dcs_write_seq_static(ctx, 0x29);
 	msleep(40);
 	pr_info("%s-\n", __func__);
 }
 
-static int csot_disable(struct drm_panel *panel)
+static int tianma_disable(struct drm_panel *panel)
 {
-	struct csot *ctx = panel_to_csot(panel);
+	struct tianma *ctx = panel_to_tianma(panel);
 
 	if (!ctx->enabled)
 		return 0;
@@ -219,10 +224,10 @@ static int csot_disable(struct drm_panel *panel)
 	return 0;
 }
 
-static int csot_unprepare(struct drm_panel *panel)
+static int tianma_unprepare(struct drm_panel *panel)
 {
 
-	struct csot *ctx = panel_to_csot(panel);
+	struct tianma *ctx = panel_to_tianma(panel);
 	int ret = 0;
 	int retval = 0;
 	struct drm_panel_notifier notifier_data;
@@ -242,10 +247,9 @@ static int csot_unprepare(struct drm_panel *panel)
 		drm_panel_notifier_call_chain(panel, DRM_PANEL_EARLY_EVENT_BLANK, &notifier_data);
 		pr_err("nvt : %s ++++ drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data)++++", __func__);
 	}
-
-	csot_dcs_write_seq_static(ctx, 0x28);
+	tianma_dcs_write_seq_static(ctx, 0x28);
 	msleep(40);
-	csot_dcs_write_seq_static(ctx, 0x10);
+	tianma_dcs_write_seq_static(ctx, 0x10);
 	msleep(100);
 	
 	ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
@@ -282,9 +286,9 @@ static int csot_unprepare(struct drm_panel *panel)
 	return 0;
 }
 
-static int csot_prepare(struct drm_panel *panel)
+static int tianma_prepare(struct drm_panel *panel)
 {
-	struct csot *ctx = panel_to_csot(panel);
+	struct tianma *ctx = panel_to_tianma(panel);
 	int ret;
 	int retval = 0;
 
@@ -336,17 +340,17 @@ static int csot_prepare(struct drm_panel *panel)
 	gpiod_set_value(ctx->bias_neg, 1);
 	devm_gpiod_put(ctx->dev, ctx->bias_neg);
 
-	csot_panel_init(ctx);
+	tianma_panel_init(ctx);
 
 	ret = ctx->error;
 	if (ret < 0){
-		csot_unprepare(panel);
+		tianma_unprepare(panel);
 		ctx->prepared = false;
 		return ret;
 	}
 	ctx->prepared = true;
 #ifdef PANEL_SUPPORT_READBACK
-	csot_panel_get_data(ctx);
+	tianma_panel_get_data(ctx);
 #endif
 
 	if((ts != NULL)&&(ts->panel_tp_flag == 1)){
@@ -358,14 +362,13 @@ static int csot_prepare(struct drm_panel *panel)
 		drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data);
 		pr_err("nvt : %s ++++drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data); ++++", __func__);
 	}
-
 	pr_info("%s-\n", __func__);
 	return ret;
 }
 
-static int csot_enable(struct drm_panel *panel)
+static int tianma_enable(struct drm_panel *panel)
 {
-	struct csot *ctx = panel_to_csot(panel);
+	struct tianma *ctx = panel_to_tianma(panel);
 
 	if (ctx->enabled)
 		return 0;
@@ -417,18 +420,18 @@ static const struct drm_display_mode performance_mode = {
 	.vrefresh = 90,
 };
 #else
-#define HFP (86)
-#define HSA (16)
-#define HBP (32)
+#define HFP (20)
+#define HSA (4)
+#define HBP (36)
 #define VFP_45HZ (54)
-#define VFP_60HZ (1286)
+#define VFP_60HZ (1290)
 #define VFP_90HZ (54)
-#define VSA (8)
-#define VBP (12)
+#define VSA (4)
+#define VBP (16)
 #define VAC (2400)
 #define HAC (1080)
 static const struct drm_display_mode default_mode = {
-	.clock = 269945,
+	.clock = 253764,
 	.hdisplay = HAC,
 	.hsync_start = HAC + HFP,
 	.hsync_end = HAC + HFP + HSA,
@@ -441,7 +444,7 @@ static const struct drm_display_mode default_mode = {
 };
 
 static const struct drm_display_mode performance_mode = {
-	.clock = 270309,
+	.clock = 253832,
 	.hdisplay = HAC,
 	.hsync_start = HAC + HFP,
 	.hsync_end = HAC + HFP + HSA,
@@ -456,7 +459,9 @@ static const struct drm_display_mode performance_mode = {
 
 #if defined(CONFIG_MTK_PANEL_EXT)
 static struct mtk_panel_params ext_params = {
-	.pll_clk = 550,
+	.physical_width_um = PHYSICAL_WIDTH/1000,
+	.physical_height_um = PHYSICAL_HEIGHT/1000,
+	.pll_clk = 535,
 	//.vfp_low_power = VFP_45HZ,
 	.cust_esd_check = 0,
 	.esd_check_enable = 0,
@@ -485,7 +490,9 @@ static struct mtk_panel_params ext_params = {
 };
 
 static struct mtk_panel_params ext_params_90hz = {
-	.pll_clk = 550,
+	.physical_width_um = PHYSICAL_WIDTH/1000,
+	.physical_height_um = PHYSICAL_HEIGHT/1000,
+	.pll_clk = 535,
 	//.vfp_low_power = VFP_60HZ,
 	.cust_esd_check = 0,
 	.esd_check_enable = 0,
@@ -515,20 +522,20 @@ static struct mtk_panel_params ext_params_90hz = {
 };
 
 
-static int csot_panel_ata_check(struct drm_panel *panel)
+static int panel_ata_check(struct drm_panel *panel)
 {
 	/* Customer test by own ATA tool */
 	return 1;
 }
 
-static int csot_setbacklight_cmdq(void *dsi, dcs_write_gce cb, void *handle,
+static int tianma_setbacklight_cmdq(void *dsi, dcs_write_gce cb, void *handle,
 				 unsigned int level)
 {
 	lm36273_brightness_set(level);
 	return 0;
 }
 
-static struct drm_display_mode *get_mode_by_id_hfp(struct drm_panel *panel,
+struct drm_display_mode *get_mode_by_id_hfp(struct drm_panel *panel,
 	unsigned int mode)
 {
 	struct drm_display_mode *m;
@@ -542,7 +549,7 @@ static struct drm_display_mode *get_mode_by_id_hfp(struct drm_panel *panel,
 	return NULL;
 }
 
-static int csot_mtk_panel_ext_param_set(struct drm_panel *panel, unsigned int mode)
+static int mtk_panel_ext_param_set(struct drm_panel *panel, unsigned int mode)
 {
 	struct mtk_panel_ext *ext = find_panel_ext(panel);
 	int ret = 0;
@@ -564,7 +571,7 @@ static int csot_mtk_panel_ext_param_set(struct drm_panel *panel, unsigned int mo
 	return ret;
 }
 
-static int csot_mtk_panel_ext_param_get(struct mtk_panel_params *ext_para,
+static int mtk_panel_ext_param_get(struct mtk_panel_params *ext_para,
 			 unsigned int mode)
 {
 	int ret = 0;
@@ -580,26 +587,26 @@ static int csot_mtk_panel_ext_param_get(struct mtk_panel_params *ext_para,
 
 }
 
-static void csot_mode_switch_to_90(struct drm_panel *panel)
+static void mode_switch_to_90(struct drm_panel *panel)
 {
-	struct csot *ctx = panel_to_csot(panel);
+	struct tianma *ctx = panel_to_tianma(panel);
 
-	csot_dcs_write_seq_static(ctx, 0xFF, 0x25);
-	csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
-	csot_dcs_write_seq_static(ctx, 0x18, 0x20);//90hz
+	tianma_dcs_write_seq_static(ctx, 0xFF, 0x25);
+	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	tianma_dcs_write_seq_static(ctx, 0x18, 0x20);//90hz
 
 }
 
-static void csot_mode_switch_to_60(struct drm_panel *panel)
+static void mode_switch_to_60(struct drm_panel *panel)
 {
-	struct csot *ctx = panel_to_csot(panel);
+	struct tianma *ctx = panel_to_tianma(panel);
 
-	csot_dcs_write_seq_static(ctx, 0xFF, 0x25);
-	csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
-	csot_dcs_write_seq_static(ctx, 0x18, 0x21);
+	tianma_dcs_write_seq_static(ctx, 0xFF, 0x25);
+	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	tianma_dcs_write_seq_static(ctx, 0x18, 0x21);
 }
 
-static int csot_mode_switch(struct drm_panel *panel, unsigned int cur_mode,
+static int mode_switch(struct drm_panel *panel, unsigned int cur_mode,
 		unsigned int dst_mode, enum MTK_PANEL_MODE_SWITCH_STAGE stage)
 {
 	int ret = 0;
@@ -608,18 +615,18 @@ static int csot_mode_switch(struct drm_panel *panel, unsigned int cur_mode,
 	pr_info("%s cur_mode = %d dst_mode %d\n", __func__, cur_mode, dst_mode);
 
 	if (dst_mode == 60) { /* 60 switch to 120 */
-		csot_mode_switch_to_60(panel);
+		mode_switch_to_60(panel);
 	} else if (dst_mode == 90) { /* 1200 switch to 60 */
-		csot_mode_switch_to_90(panel);
+		mode_switch_to_90(panel);
 	} else
 		ret = 1;
 
 	return ret;
 }
 
-static int csot_panel_ext_reset(struct drm_panel *panel, int on)
+static int panel_ext_reset(struct drm_panel *panel, int on)
 {
-	struct csot *ctx = panel_to_csot(panel);
+	struct tianma *ctx = panel_to_tianma(panel);
 
 	ctx->reset_gpio =
 		devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
@@ -630,12 +637,12 @@ static int csot_panel_ext_reset(struct drm_panel *panel, int on)
 }
 
 static struct mtk_panel_funcs ext_funcs = {
-	.reset = csot_panel_ext_reset,
-	.set_backlight_cmdq = csot_setbacklight_cmdq,
-	.ext_param_set = csot_mtk_panel_ext_param_set,
-	.ext_param_get = csot_mtk_panel_ext_param_get,
-	.mode_switch = csot_mode_switch,
-	.ata_check = csot_panel_ata_check,
+	.reset = panel_ext_reset,
+	.set_backlight_cmdq = tianma_setbacklight_cmdq,
+	.ext_param_set = mtk_panel_ext_param_set,
+	.ext_param_get = mtk_panel_ext_param_get,
+	.mode_switch = mode_switch,
+	.ata_check = panel_ata_check,
 };
 #endif
 
@@ -669,7 +676,7 @@ struct panel_desc {
 	} delay;
 };
 
-static int csot_get_modes(struct drm_panel *panel)
+static int tianma_get_modes(struct drm_panel *panel)
 {
 	struct drm_display_mode *mode;
 	struct drm_display_mode *mode2;
@@ -704,18 +711,18 @@ static int csot_get_modes(struct drm_panel *panel)
 	return 1;
 }
 
-static const struct drm_panel_funcs csot_drm_funcs = {
-	.disable = csot_disable,
-	.unprepare = csot_unprepare,
-	.prepare = csot_prepare,
-	.enable = csot_enable,
-	.get_modes = csot_get_modes,
+static const struct drm_panel_funcs tianma_drm_funcs = {
+	.disable = tianma_disable,
+	.unprepare = tianma_unprepare,
+	.prepare = tianma_prepare,
+	.enable = tianma_enable,
+	.get_modes = tianma_get_modes,
 };
 
-static int csot_probe(struct mipi_dsi_device *dsi)
+static int tianma_probe(struct mipi_dsi_device *dsi)
 {
 	struct device *dev = &dsi->dev;
-	struct csot *ctx;
+	struct tianma *ctx;
 	struct device_node *backlight;
 	int ret;
 	struct device_node *dsi_node, *remote_node = NULL, *endpoint = NULL;
@@ -739,8 +746,7 @@ static int csot_probe(struct mipi_dsi_device *dsi)
 
 	pr_err("nvt: %s, dev->of_node->full_name = %s\n",__func__,(dev->of_node)->full_name);
 	pr_info("%s+\n", __func__);
-
-	ctx = devm_kzalloc(dev, sizeof(struct csot), GFP_KERNEL);
+	ctx = devm_kzalloc(dev, sizeof(struct tianma), GFP_KERNEL);
 	if (!ctx)
 		return -ENOMEM;
 
@@ -779,7 +785,7 @@ static int csot_probe(struct mipi_dsi_device *dsi)
 
 	ctx->lcm_bl_en_gpio = devm_gpiod_get(dev, "lcm-bl-enable", GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->lcm_bl_en_gpio)) {
-		dev_info(dev, "cannot get lcm-bl-enable-gpio %ld\n",
+		dev_info(dev, "cannot get pm_gpio %ld\n",
 			 PTR_ERR(ctx->lcm_bl_en_gpio));
 		return PTR_ERR(ctx->lcm_bl_en_gpio);
 	}
@@ -806,7 +812,7 @@ static int csot_probe(struct mipi_dsi_device *dsi)
 	ctx->enabled = true;
 	drm_panel_init(&ctx->panel);
 	ctx->panel.dev = dev;
-	ctx->panel.funcs = &csot_drm_funcs;
+	ctx->panel.funcs = &tianma_drm_funcs;
 
 	ret = drm_panel_add(&ctx->panel);
 	if (ret < 0)
@@ -826,13 +832,13 @@ static int csot_probe(struct mipi_dsi_device *dsi)
 #endif
 	lcd_dvdd_ldo = devm_regulator_get_optional(dev, "lcd_dvdd");
 
-	pr_info("%s- wt,csot,nt36672c,cphy,vdo,90hz\n", __func__);
+	pr_info("%s- wt,tianma,nt36672c,cphy,vdo,90hz\n", __func__);
 	return ret;
 }
 
-static int csot_remove(struct mipi_dsi_device *dsi)
+static int tianma_remove(struct mipi_dsi_device *dsi)
 {
-	struct csot *ctx = mipi_dsi_get_drvdata(dsi);
+	struct tianma *ctx = mipi_dsi_get_drvdata(dsi);
 
 	mipi_dsi_detach(dsi);
 	drm_panel_remove(&ctx->panel);
@@ -840,27 +846,27 @@ static int csot_remove(struct mipi_dsi_device *dsi)
 	return 0;
 }
 
-static const struct of_device_id csot_of_match[] = {
+static const struct of_device_id tianma_of_match[] = {
 	{
-	    .compatible = "wt,nt36672c_fhdp_wt_dsi_vdo_cphy_90hz_csot",
+	    .compatible = "k16a_36_02_0a_vdo,lcm",
 	},
 	{}
 };
 
-MODULE_DEVICE_TABLE(of, csot_of_match);
+MODULE_DEVICE_TABLE(of, tianma_of_match);
 
-static struct mipi_dsi_driver csot_driver = {
-	.probe = csot_probe,
-	.remove = csot_remove,
+static struct mipi_dsi_driver tianma_driver = {
+	.probe = tianma_probe,
+	.remove = tianma_remove,
 	.driver = {
-		.name = "nt36672c_fhdp_wt_dsi_vdo_cphy_90hz_csot",
+		.name = "k16a_36_02_0a_vdo",
 		.owner = THIS_MODULE,
-		.of_match_table = csot_of_match,
+		.of_match_table = tianma_of_match,
 	},
 };
 
-module_mipi_dsi_driver(csot_driver);
+module_mipi_dsi_driver(tianma_driver);
 
 MODULE_AUTHOR("samir.liu <samir.liu@mediatek.com>");
-MODULE_DESCRIPTION("wt csot nt36672c vdo Panel Driver");
+MODULE_DESCRIPTION("wt tianma nt36672c vdo Panel Driver");
 MODULE_LICENSE("GPL v2");

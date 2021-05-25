@@ -725,25 +725,25 @@ config DRM_PANEL_SAMSUNG_S68FC01_VDO_AOD
 	  and uses 24-bits RGB per pixel. It provides a MIPI DSI
 	  interface to host.
 
-config DRM_PANEL_WT_TIANMA_NT36672_CPHY_VDO_90HZ
-    tristate "wt tianma module nt36672 fhdp vdo panel"
+config DRM_PANEL_K16A_36_02_0A_VDO
+    tristate "xiaomi k16a 36 02 0a video mode panel"
     depends on OF
     depends on DRM_MIPI_DSI
     depends on BACKLIGHT_CLASS_DEVICE
     help
-      Say Y here if you want to enable support for wt tiamma nt36672
-      fhdp vdo panel. The panel has a 1080x2400 resolution
+      Say Y here if you want to enable support for xiaomi k16a 36 02 0a
+      video mode panel. The panel has a 1080x2400 resolution
       and uses 24-bits RGB per pixel. It provides a MIPI DSI
       interface to host.
 
-config DRM_PANEL_WT_CSOT_NT36672_CPHY_VDO_90HZ
-    tristate "wt csot module nt36672 fhdp vdo panel"
+config DRM_PANEL_K16A_42_02_0B_VDO
+    tristate "xiaomi k16a 42 02 0b video mode panel"
     depends on OF
     depends on DRM_MIPI_DSI
     depends on BACKLIGHT_CLASS_DEVICE
     help
-      Say Y here if you want to enable support for wt csot nt36672
-      fhdp vdo panel. The panel has a 1080x2400 resolution
+      Say Y here if you want to enable support for xiaomi k16a 42 02 0b
+      video mode panel. The panel has a 1080x2400 resolution
       and uses 24-bits RGB per pixel. It provides a MIPI DSI
       interface to host.
 
