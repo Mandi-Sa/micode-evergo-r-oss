@@ -165,6 +165,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.min_gain = 64,
 	.max_gain = 768,
 	.min_gain_iso = 100,
+	.exp_step = 2,
 	.gain_step = 8,
 	.gain_type = 4,
 	.max_frame_length = 0x3fff,
@@ -1772,6 +1773,60 @@ feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
 	LOG_INF("feature_id = %d, len=%d\n", feature_id, *feature_para_len);
 	switch (feature_id) {
 
+	case SENSOR_FEATURE_GET_GAIN_RANGE_BY_SCENARIO:
+		*(feature_data + 1) = imgsensor_info.min_gain;
+		*(feature_data + 2) = imgsensor_info.max_gain;
+		break;
+	case SENSOR_FEATURE_GET_BASE_GAIN_ISO_AND_STEP:
+		*(feature_data + 0) = imgsensor_info.min_gain_iso;
+		*(feature_data + 1) = imgsensor_info.gain_step;
+		*(feature_data + 2) = imgsensor_info.gain_type;
+		break;
+	case SENSOR_FEATURE_GET_MIN_SHUTTER_BY_SCENARIO:
+		*(feature_data + 1) = imgsensor_info.min_shutter;
+		*(feature_data + 2) = imgsensor_info.exp_step;
+		break;
+	case SENSOR_FEATURE_GET_BINNING_TYPE:
+		switch (*(feature_data + 1)) {
+		case MSDK_SCENARIO_ID_CUSTOM3:
+			*feature_return_para_32 = 1; /*BINNING_NONE*/
+			break;
+		case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
+		case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
+		case MSDK_SCENARIO_ID_HIGH_SPEED_VIDEO:
+		case MSDK_SCENARIO_ID_SLIM_VIDEO:
+		case MSDK_SCENARIO_ID_CAMERA_PREVIEW:
+		case MSDK_SCENARIO_ID_CUSTOM5:
+		case MSDK_SCENARIO_ID_CUSTOM6:
+		case MSDK_SCENARIO_ID_CUSTOM7:
+		case MSDK_SCENARIO_ID_CUSTOM8:
+		case MSDK_SCENARIO_ID_CUSTOM9:
+		case MSDK_SCENARIO_ID_CUSTOM10:
+		case MSDK_SCENARIO_ID_CUSTOM11:
+		case MSDK_SCENARIO_ID_CUSTOM12:
+		case MSDK_SCENARIO_ID_CUSTOM13:
+		case MSDK_SCENARIO_ID_CUSTOM14:
+		case MSDK_SCENARIO_ID_CUSTOM15:
+		case MSDK_SCENARIO_ID_CUSTOM4:
+		default:
+			*feature_return_para_32 = 1; /*BINNING_AVERAGED*/
+			break;
+		}
+		pr_debug("SENSOR_FEATURE_GET_BINNING_TYPE AE_binning_type:%d,\n",
+			*feature_return_para_32);
+		*feature_para_len = 4;
+
+		break;
+	case SENSOR_FEATURE_GET_AWB_REQ_BY_SCENARIO:
+		switch (*feature_data) {
+		case MSDK_SCENARIO_ID_CUSTOM3:
+			*(MUINT32 *)(uintptr_t)(*(feature_data + 1)) = 1;
+			break;
+		default:
+			*(MUINT32 *)(uintptr_t)(*(feature_data + 1)) = 0;
+			break;
+		}
+		break;
 	case SENSOR_FEATURE_GET_PIXEL_CLOCK_FREQ_BY_SCENARIO:
 		switch (*feature_data) {
 		case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
