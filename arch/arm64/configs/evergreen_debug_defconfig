@@ -1,5 +1,5 @@
 CONFIG_CROSS_COMPILE="aarch64-linux-android-"
-# CONFIG_LOCALVERSION_AUTO is not set
+CONFIG_LOCALVERSION_AUTO=y
 # CONFIG_FHANDLE is not set
 CONFIG_IKHEADERS=m
 #HONGMI-84834 lizhenyu.wt modify 20210508,change CONFIG_LOG_BUF_SHIFT=21,modify to 19 when MP version
