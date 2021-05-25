@@ -120,6 +120,7 @@ struct nvt_ts_data {
 #else
 	struct notifier_block fb_notif;
 #endif
+	int panel_tp_flag;
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
 	struct early_suspend early_suspend;
 #endif

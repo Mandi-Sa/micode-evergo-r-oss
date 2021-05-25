@@ -38,6 +38,9 @@
 
 #include "lcm_cust_common.h"
 
+#include <touch/nova36672c/nt36xxx.h>
+extern struct nvt_ts_data *ts;
+
 #define HFP_SUPPORT 0
 #if HFP_SUPPORT
 static int current_fps = 60;
@@ -231,14 +234,15 @@ static int tianma_unprepare(struct drm_panel *panel)
 	if (!ctx->prepared)
 		return 0;
 
-	power_status = DRM_PANEL_BLANK_POWERDOWN;
-	notifier_data.data = &power_status;
-	notifier_data.refresh_rate = 60;
-	notifier_data.id = 1;
+	if((ts != NULL)&&(ts->panel_tp_flag == 1)){
+		power_status = DRM_PANEL_BLANK_POWERDOWN;
+		notifier_data.data = &power_status;
+		notifier_data.refresh_rate = 60;
+		notifier_data.id = 1;
 
-	drm_panel_notifier_call_chain(panel, DRM_PANEL_EARLY_EVENT_BLANK, &notifier_data);
-	pr_err("nvt : %s ++++ drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data)++++", __func__);
-
+		drm_panel_notifier_call_chain(panel, DRM_PANEL_EARLY_EVENT_BLANK, &notifier_data);
+		pr_err("nvt : %s ++++ drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data)++++", __func__);
+	}
 	tianma_dcs_write_seq_static(ctx, 0x28);
 	msleep(40);
 	tianma_dcs_write_seq_static(ctx, 0x10);
@@ -345,14 +349,15 @@ static int tianma_prepare(struct drm_panel *panel)
 	tianma_panel_get_data(ctx);
 #endif
 
-	power_status = DRM_PANEL_BLANK_UNBLANK;
-	notifier_data.data = &power_status;
-	notifier_data.refresh_rate = 60;
-	notifier_data.id = 1;
+	if((ts != NULL)&&(ts->panel_tp_flag == 1)){
+		power_status = DRM_PANEL_BLANK_UNBLANK;
+		notifier_data.data = &power_status;
+		notifier_data.refresh_rate = 60;
+		notifier_data.id = 1;
 
-	drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data);
-	pr_err("nvt : %s ++++drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data); ++++", __func__);
-
+		drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data);
+		pr_err("nvt : %s ++++drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data); ++++", __func__);
+	}
 	pr_info("%s-\n", __func__);
 	return ret;
 }

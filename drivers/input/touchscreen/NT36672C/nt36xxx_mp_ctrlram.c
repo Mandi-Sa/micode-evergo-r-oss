@@ -20,8 +20,8 @@
 #include <linux/seq_file.h>
 #include <linux/slab.h>
 
-#include "nt36xxx.h"
-#include "nt36xxx_mp_ctrlram.h"
+#include <touch/nova36672c/nt36xxx.h>
+#include <touch/nova36672c/nt36xxx_mp_ctrlram.h>
 
 #if NVT_TOUCH_MP
 
