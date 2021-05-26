@@ -1917,16 +1917,16 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 	msleep(100);
 
 	do_gettimeofday(&tv);
-	snprintf(short_test_file, CSV_FILE_NAME_LEN, "%s_%ld.csv",
-		SHORT_TEST_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec);
-	snprintf(open_test_file, CSV_FILE_NAME_LEN, "%s_%ld.csv",
-		OPEN_TEST_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec);
-	snprintf(fw_rawdata_file, CSV_FILE_NAME_LEN, "%s_%ld.csv",
-		FW_RAWDATA_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec);
-	snprintf(fw_cc_file, CSV_FILE_NAME_LEN, "%s_%ld.csv",
-		FW_CC_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec);
-	snprintf(noise_test_file, CSV_FILE_NAME_LEN, "%s_%ld.csv",
-		NOISE_TEST_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec);
+	snprintf(short_test_file, CSV_FILE_NAME_LEN, "%s_%ld_%d.csv",
+		SHORT_TEST_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec, parnel.lcm_index);
+	snprintf(open_test_file, CSV_FILE_NAME_LEN, "%s_%ld_%d.csv",
+		OPEN_TEST_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec, parnel.lcm_index);
+	snprintf(fw_rawdata_file, CSV_FILE_NAME_LEN, "%s_%ld_%d.csv",
+		FW_RAWDATA_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec, parnel.lcm_index);
+	snprintf(fw_cc_file, CSV_FILE_NAME_LEN, "%s_%ld_%d.csv",
+		FW_CC_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec, parnel.lcm_index);
+	snprintf(noise_test_file, CSV_FILE_NAME_LEN, "%s_%ld_%d.csv",
+		NOISE_TEST_CSV_FILE, tv.tv_sec*1000000L + tv.tv_usec,parnel.lcm_index );
 
 	//---Enter Test Mode---
 	if (nvt_clear_fw_status()) {
