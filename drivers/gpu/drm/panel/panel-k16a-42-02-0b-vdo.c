@@ -42,6 +42,10 @@
 extern struct nvt_ts_data *ts;
 
 #define HFP_SUPPORT 0
+
+#define PHYSICAL_WIDTH              68785
+#define PHYSICAL_HEIGHT             152856
+
 #if HFP_SUPPORT
 static int current_fps = 60;
 #endif
@@ -456,6 +460,8 @@ static const struct drm_display_mode performance_mode = {
 
 #if defined(CONFIG_MTK_PANEL_EXT)
 static struct mtk_panel_params ext_params = {
+	.physical_width_um = PHYSICAL_WIDTH/1000,
+	.physical_height_um = PHYSICAL_HEIGHT/1000,
 	.pll_clk = 550,
 	//.vfp_low_power = VFP_45HZ,
 	.cust_esd_check = 0,
@@ -485,6 +491,8 @@ static struct mtk_panel_params ext_params = {
 };
 
 static struct mtk_panel_params ext_params_90hz = {
+	.physical_width_um = PHYSICAL_WIDTH/1000,
+	.physical_height_um = PHYSICAL_HEIGHT/1000,
 	.pll_clk = 550,
 	//.vfp_low_power = VFP_60HZ,
 	.cust_esd_check = 0,

@@ -43,8 +43,8 @@ extern struct nvt_ts_data *ts;
 
 #define HFP_SUPPORT 0
 
-#define PHYSICAL_WIDTH              72390
-#define PHYSICAL_HEIGHT             159690
+#define PHYSICAL_WIDTH              68785
+#define PHYSICAL_HEIGHT             152856
 
 #if HFP_SUPPORT
 static int current_fps = 60;
