@@ -1677,10 +1677,10 @@ static void mtk_drm_lcm_info_get(void){
 		if (videolfb_tag) {
 			//access the lcmname from videolfb_tag
 			strncpy(Tp_name,videolfb_tag->lcmname,strlen(videolfb_tag->lcmname)+1);
-			if (!strcmp(videolfb_tag->lcmname, "nt36672c_fhdp_wt_dsi_vdo_cphy_90hz_tianma")){
+			if (!strcmp(videolfb_tag->lcmname, "k16a_36_02_0a_vdo")){
 				parnel = parnel1;//the first panel config
 				NVT_LOG("The first panel for this project");
-			} else if(!strcmp(videolfb_tag->lcmname, "nt36672c_fhdp_wt_dsi_vdo_cphy_90hz_csot")){
+			} else if(!strcmp(videolfb_tag->lcmname, "k16a_42_02_0b_vdo")){
 					parnel = parnel2; //the second panel config
 					NVT_LOG("The second panel for this project");
 			           } else {
