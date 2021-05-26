@@ -1569,62 +1569,34 @@ void print_selftest_result(struct seq_file *m, int32_t TestResult, uint8_t Recor
 
 static int32_t c_show_lockdown_info(struct seq_file *m, void *v)
 {
-	NVT_LOG("++++%s+++++\n", __func__);
 	int char_size;
-	char tp_color[2];
+
+	char all_info[32];
 
 	if(lockdown_infor != NULL){
 		char_size = sizeof(lockdown_infor);
-		NVT_LOG("++++%s+++ char_size = %d++\n", __func__, char_size);
+		NVT_LOG("++++%s+++ char_size = %d+lockdown_infor is %s+\n", __func__, char_size, lockdown_infor);
 		if(char_size != 8){
 			NVT_LOG("%s+lockdown is wrong with char_size = %d++\n", __func__, char_size);
 			seq_printf(m, "wrong_value_of_lockdown");
 			seq_printf(m, "\n");
 			return 0;
 		}
-		seq_printf(m, "0x");
-		strncpy(tp_color, lockdown_infor+0, 2);
-		seq_printf(m, tp_color);
-		seq_printf(m, ",");
 
-		seq_printf(m, "0x");
-		strncpy(tp_color, lockdown_infor+2, 2);
-		seq_printf(m, tp_color);
-		seq_printf(m, ",");
-
-		seq_printf(m, "0x");
-		strncpy(tp_color, lockdown_infor+4, 2);
-		seq_printf(m, tp_color);
-		seq_printf(m, ",");
-
-		seq_printf(m, "0x");
-		strncpy(tp_color, lockdown_infor+6, 2);
-		seq_printf(m, tp_color);
-		seq_printf(m, ",");
-
-		seq_printf(m, "0x");
-		strncpy(tp_color, lockdown_infor+8, 2);
-		seq_printf(m, tp_color);
-		seq_printf(m, ",");
-
-		seq_printf(m, "0x");
-		strncpy(tp_color, lockdown_infor+10, 2);
-		seq_printf(m, tp_color);
-		seq_printf(m, ",");
-
-		seq_printf(m, "0x");
-		strncpy(tp_color, lockdown_infor+12, 2);
-		seq_printf(m, tp_color);
-		seq_printf(m, ",");
-
-		seq_printf(m, "0x");
-		strncpy(tp_color, lockdown_infor+14, 2);
-		seq_printf(m, tp_color);
-		seq_printf(m, ",");
+		strcpy (all_info ,lockdown_infor);
+		NVT_LOG("+++++all_info is %s+++++", all_info);
+		seq_printf(m, "0x%c%c,0x%c%c,0x%c%c,0x%c%c,0x%c%c,0x%c%c,0x%c%c,0x%c%c",
+			all_info[0],   all_info[1],   all_info[2],   all_info[3],   all_info[4],
+			all_info[5],   all_info[6],   all_info[7],   all_info[8],   all_info[9],
+			all_info[10], all_info[11], all_info[12], all_info[13], all_info[14],
+			all_info[15]
+		);
 		seq_printf(m, "\n");
 	}
-	else
+	else{
 		seq_printf(m, "can not access lockdown");
+		seq_printf(m, "\n");
+	}
 	return 0;
 }
 

@@ -1677,6 +1677,7 @@ static void mtk_drm_lcm_info_get(void){
 		if (videolfb_tag) {
 			//access the lcmname from videolfb_tag
 			strncpy(Tp_name,videolfb_tag->lcmname,strlen(videolfb_tag->lcmname)+1);
+			NVT_LOG("videolfb_tag->lcmname is %s", videolfb_tag->lcmname);
 			if (!strcmp(videolfb_tag->lcmname, "k16a_36_02_0a_vdo")){
 				parnel = parnel1;//the first panel config
 				NVT_LOG("The first panel for this project");
