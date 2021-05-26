@@ -20,7 +20,8 @@
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
 
-#include "nt36xxx.h"
+//#include "nt36xxx.h"
+#include <touch/nova36672c/nt36xxx.h>
 
 #if NVT_TOUCH_EXT_PROC
 #define NVT_FW_VERSION "nvt_fw_version"

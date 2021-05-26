@@ -19,7 +19,8 @@
 #include <linux/firmware.h>
 #include <linux/gpio.h>
 
-#include "nt36xxx.h"
+//#include "nt36xxx.h"
+#include <touch/nova36672c/nt36xxx.h>
 
 #if BOOT_UPDATE_FIRMWARE
 

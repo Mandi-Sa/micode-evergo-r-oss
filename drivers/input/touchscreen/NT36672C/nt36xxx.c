@@ -37,7 +37,7 @@
 #include <linux/earlysuspend.h>
 #endif
 
-#include "nt36xxx.h"
+#include <touch/nova36672c/nt36xxx.h>
 #if NVT_TOUCH_ESD_PROTECT
 #include <linux/jiffies.h>
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
@@ -1800,6 +1800,8 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	ts->client = client;
 	spi_set_drvdata(client, ts);
 
+	ts->panel_tp_flag = 0;
+
 	//---prepare for spi parameter---
 	if (ts->client->master->flags & SPI_MASTER_HALF_DUPLEX) {
 		NVT_ERR("Full duplex not supported by master\n");
@@ -2007,7 +2009,7 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	}
 	INIT_DELAYED_WORK(&ts->nvt_fwu_work, Boot_Update_Firmware);
 	// please make sure boot update start after display reset(RESX) sequence
-	queue_delayed_work(nvt_fwu_wq, &ts->nvt_fwu_work, msecs_to_jiffies(14000));
+	queue_delayed_work(nvt_fwu_wq, &ts->nvt_fwu_work, msecs_to_jiffies(10000));
 #endif
 
 	NVT_LOG("NVT_TOUCH_ESD_PROTECT is %d\n", NVT_TOUCH_ESD_PROTECT);
@@ -2087,6 +2089,7 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	bTouchIsAwake = 1;
 	NVT_LOG("end\n");
 
+	ts->panel_tp_flag = 1;
 	nvt_irq_enable(true);
 
 	return 0;
@@ -2200,6 +2203,7 @@ static int32_t nvt_ts_remove(struct spi_device *client)
 {
 	NVT_LOG("Removing driver...\n");
 
+	ts->panel_tp_flag = 0;
 #if defined(CONFIG_FB)
 #if defined(CONFIG_DRM_PANEL)
 	if (active_panel) {
@@ -2282,6 +2286,7 @@ static void nvt_ts_shutdown(struct spi_device *client)
 {
 	NVT_LOG("Shutdown driver...\n");
 
+	ts->panel_tp_flag = 0;
 	nvt_irq_enable(false);
 
 #if defined(CONFIG_FB)
