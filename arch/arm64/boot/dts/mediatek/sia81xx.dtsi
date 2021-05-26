@@ -13,7 +13,7 @@
 
 &pio {
 /*
-	sia81xx_gpio_L: sia81xx_gpio_L {
+	sia81xx_gpio_R: sia81xx_gpio_R {
 		pins_cmd_dat {
 			pinmux = <PINMUX_GPIO3__FUNC_GPIO3>;
 
@@ -22,7 +22,7 @@
 		};
 	};
 */
-	sia81xx_gpio_R: sia81xx_gpio_R {
+	sia81xx_gpio_L: sia81xx_gpio_L {
 		pins_cmd_dat {
 			pinmux = <PINMUX_GPIO131__FUNC_GPIO131>;
 
@@ -33,13 +33,13 @@
 };
 
 &odm {
-	sia81xx_L: sia81xx@L {
+	sia81xx_R: sia81xx@R {
 		compatible = "si,sia8152";
 		si,sia81xx_type = "sia8152";
 //		si,sia81xx_reset = <&pio 3 0>;
 //		si,sia81xx_owi = <&pio 3 0>;
 //		pinctrl-names = "sia81xx_gpio";
-//		pinctrl-0 = <&sia81xx_gpio_L>;
+//		pinctrl-0 = <&sia81xx_gpio_R>;
 
 		si,sia81xx_disable_pin = <1>;
 
@@ -55,13 +55,13 @@
 		dynamic_updata_vdd_port = <0x2>;
 	};
 
-	sia81xx_R: sia81xx@R {
+	sia81xx_L: sia81xx@L {
 		compatible = "si,sia8109";
 		si,sia81xx_type = "sia8109";
 		si,sia81xx_reset = <&pio 131 0>;
 		si,sia81xx_owi = <&pio 131 0>;
 		pinctrl-names = "sia81xx_gpio";
-		pinctrl-0 = <&sia81xx_gpio_R>;
+		pinctrl-0 = <&sia81xx_gpio_L>;
 
 		si,sia81xx_disable_pin = <0>;
 
@@ -80,8 +80,8 @@
 
 &sound {
 	si,sia81xx-max-num = <2>;
-	si,sia81xx-aux-devs = <&sia81xx_L>, <&sia81xx_R>;
-	si,sia81xx-aux-devs-prefix = "SpkrLeft", "SpkrRight";
+	si,sia81xx-aux-devs = <&sia81xx_R>, <&sia81xx_L>;
+	si,sia81xx-aux-devs-prefix = "SpkrRight", "SpkrLeft";
 };
 
 &i2c6 {
@@ -90,15 +90,15 @@
 	clock-frequency = <400000>;
 	mediatek,use-open-drain;
 
-	sia81xx_i2c_L: sia81xx_i2c@L {
+	sia81xx_i2c_R: sia81xx_i2c@R {
 		compatible = "si,sia8152-i2c";
 		reg = <0x58>;
-		si,sia81xx-dev = <&sia81xx_L>;
+		si,sia81xx-dev = <&sia81xx_R>;
 	};
 
-	sia81xx_i2c_R: sia81xx_i2c@R {
+	sia81xx_i2c_L: sia81xx_i2c@L {
 		compatible = "si,sia8109-i2c";
 		reg = <0x2a>;
-		si,sia81xx-dev = <&sia81xx_R>;
+		si,sia81xx-dev = <&sia81xx_L>;
 	};
 };
