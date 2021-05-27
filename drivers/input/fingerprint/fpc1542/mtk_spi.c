@@ -177,7 +177,7 @@ static int fpc_read_id(struct spi_device *spidev)
 	 spi_fingerprint = spidev;
          return -1;
      }
-     if(rx[1] == 0x1c && rx[2] == 0x13)
+     if(rx[1] == 0x1f && rx[2] == 0x12)
      {
      	fpc1542_fp_exist = 1;
 	pr_info("%s, is fpc fingerprint sensor detect", __func__);
