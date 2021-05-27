@@ -27,6 +27,10 @@
 #include "ccci_modem.h"
 #include "ccci_swtp.h"
 #include "ccci_fsm.h"
+//+ bug 661608  kouxin.wt 2021.05.27  add swtp proc
+#include <linux/proc_fs.h>
+static unsigned int swtp_gpio_value=0;
+//- bug 661608  kouxin.wt 2021.05.27  add swtp proc
 
 const struct of_device_id swtp_of_match[] = {
 	{ .compatible = SWTP_COMPATIBLE_DEVICE_ID, },
@@ -136,6 +140,9 @@ static int swtp_switch_state(int irq, struct swtp_t *swtp)
     //CCCI_LEGACY_ERR_LOG(swtp->md_id, SYS,"wttest4-swtp->tx_power_mode = %d\n", swtp->tx_power_mode);
     /*Bug651590 liuchaochao.wt  20210219 Add swtp feature begin*/
 
+	//+ bug 661608  kouxin.wt 2021.05.27  add swtp proc
+    swtp_gpio_value = !(swtp->tx_power_mode);
+    //- bug 661608  kouxin.wt 2021.05.27  add swtp proc
 	return swtp->tx_power_mode;
 }
 
@@ -211,7 +218,30 @@ int swtp_md_tx_power_req_hdlr(int md_id, int data)
 
 	return 0;
 }
+//+ bug 661608  kouxin.wt 2021.05.27  add swtp proc
+	static int swtp_gpio_show(struct seq_file *m, void *v)
+	{
+		seq_printf(m,"%d\n", swtp_gpio_value);
+		return 0;
+	}
 
+	static int swtp_gpio_proc_open(struct inode *inode, struct file *file)
+	{
+		return single_open(file, swtp_gpio_show, NULL);
+	}
+
+	static const struct file_operations swtp_gpio_fops = {
+		.open    = swtp_gpio_proc_open,
+		.read    = seq_read,
+		.llseek  = seq_lseek,
+		.release = single_release,
+	};
+
+	static void swtp_gpio_create_proc(void)
+	{
+		proc_create("swtp_status_value", 0444, NULL, &swtp_gpio_fops);
+	}
+//-bug 661608  kouxin.wt 2021.05.27  add swtp proc
 int swtp_init(int md_id)
 {
 	int i, ret = 0;
@@ -300,7 +330,9 @@ int swtp_init(int md_id)
 	}
 	register_ccci_sys_call_back(md_id, MD_SW_MD1_TX_POWER_REQ,
 		swtp_md_tx_power_req_hdlr);
-
+		//+bug 661608  kouxin.wt 2021.05.27  add swtp proc
+		swtp_gpio_create_proc();
+        //-bug 661608  kouxin.wt 2021.05.27  add swtp proc
 	return ret;
 }
 
