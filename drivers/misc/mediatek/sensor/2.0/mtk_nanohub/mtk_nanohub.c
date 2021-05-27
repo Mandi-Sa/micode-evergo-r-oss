@@ -1128,6 +1128,31 @@ int mtk_nanohub_calibration_to_hub(uint8_t sensor_id)
 	return ret < 0 ? ret : 0;
 }
 
+int mtk_nanohub_calibration_leak_to_hub(uint8_t sensor_id)
+{
+	uint8_t sensor_type = id_to_type(sensor_id);
+	struct ConfigCmd cmd;
+	int ret = 0;
+
+	if (sensor_id >= ID_SENSOR_MAX) {
+		pr_err("invalid id %d\n", sensor_id);
+		return -1;
+	}
+	if (!sensor_state[sensor_type].sensorType) {
+		pr_err("unhandle id %d, is inited?\n", sensor_id);
+		return -1;
+	}
+	init_sensor_config_cmd(&cmd, sensor_type);
+	cmd.cmd = CONFIG_CMD_CALIBRATE_LEAK;
+	if (atomic_read(&power_status) == SENSOR_POWER_UP) {
+		ret = nanohub_external_write((const uint8_t *)&cmd,
+			sizeof(struct ConfigCmd));
+		if (ret < 0)
+			pr_err("failed calibration: [%d]\n", sensor_id);
+	}
+	return ret < 0 ? ret : 0;
+}
+
 int mtk_nanohub_selftest_to_hub(uint8_t sensor_id)
 {
 	uint8_t sensor_type = id_to_type(sensor_id);
@@ -2027,10 +2052,17 @@ static int mtk_nanohub_calibration(struct hf_device *hfdev,
 {
 	if (sensor_type <= 0)
 		return 0;
-	pr_notice("%s [%d]\n", __func__, sensor_type);
+	pr_notice("Kaze %s [%d]\n", __func__, sensor_type);
 	return mtk_nanohub_calibration_to_hub(type_to_id(sensor_type));
 }
-
+static int mtk_nanohub_calibration_leak(struct hf_device *hfdev,
+		int sensor_type)
+{
+	if (sensor_type <= 0)
+		return 0;
+	pr_notice("Kaze %s [%d]\n", __func__, sensor_type);
+	return mtk_nanohub_calibration_leak_to_hub(type_to_id(sensor_type));
+}
 static int mtk_nanohub_config(struct hf_device *hfdev,
 		int sensor_type, int32_t *data)
 {
@@ -2466,12 +2498,14 @@ static int mtk_nanohub_report_to_manager(struct data_unit_t *data)
 			event.sensor_type = id_to_type(data->sensor_type);
 			event.action = data->flush_action;
 			event.word[0] = data->data[0];
+			event.word[1] = data->data[1];
 			break;
 		case ID_REAR_LIGHT:
 			event.timestamp = data->time_stamp;
 			event.sensor_type = id_to_type(data->sensor_type);
 			event.action = data->flush_action;
 			event.word[0] = data->data[0];
+			event.word[1] = data->data[1];
 			break;
 		case ID_PRESSURE:
 			event.timestamp = data->time_stamp;
@@ -2612,6 +2646,7 @@ static int mtk_nanohub_create_manager(void)
 	hf_dev->batch = mtk_nanohub_batch;
 	hf_dev->flush = mtk_nanohub_flush;
 	hf_dev->calibration = mtk_nanohub_calibration;
+	hf_dev->leak_calibration = mtk_nanohub_calibration_leak;
 	hf_dev->config_cali = mtk_nanohub_config;
 	hf_dev->selftest = mtk_nanohub_selftest;
 	hf_dev->rawdata = mtk_nanohub_rawdata;
