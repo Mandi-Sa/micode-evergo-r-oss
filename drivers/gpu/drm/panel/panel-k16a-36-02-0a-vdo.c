@@ -257,7 +257,7 @@ static int tianma_unprepare(struct drm_panel *panel)
 	devm_gpiod_put(ctx->dev, ctx->reset_gpio);
 
 	usleep_range(2000, 2001);
-    
+
 	ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
 	gpiod_set_value(ctx->bias_neg, 0);
 	devm_gpiod_put(ctx->dev, ctx->bias_neg);
