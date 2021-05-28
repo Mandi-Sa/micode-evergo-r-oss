@@ -147,9 +147,13 @@ static void tianma_dcs_write(struct tianma *ctx, const void *data, size_t len)
 static void tianma_panel_init(struct tianma *ctx)
 {
 	ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
-	usleep_range(10 * 1000, 15 * 1000);
+	usleep_range(10 * 1000, 11 * 1000);
 	gpiod_set_value(ctx->reset_gpio, 0);
-	usleep_range(10 * 1000, 15 * 1000);
+	usleep_range(10 * 1000, 11 * 1000);
+	gpiod_set_value(ctx->reset_gpio, 1);
+	usleep_range(10 * 1000, 11 * 1000);
+	gpiod_set_value(ctx->reset_gpio, 0);
+	usleep_range(10 * 1000, 11 * 1000);
 	gpiod_set_value(ctx->reset_gpio, 1);
 	usleep_range(10 * 1000, 15 * 1000);
 	devm_gpiod_put(ctx->dev, ctx->reset_gpio);
@@ -226,7 +230,6 @@ static int tianma_disable(struct drm_panel *panel)
 
 static int tianma_unprepare(struct drm_panel *panel)
 {
-
 	struct tianma *ctx = panel_to_tianma(panel);
 	int ret = 0;
 	int retval = 0;
@@ -248,27 +251,28 @@ static int tianma_unprepare(struct drm_panel *panel)
 		pr_err("nvt : %s ++++ drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data)++++", __func__);
 	}
 	tianma_dcs_write_seq_static(ctx, 0x28);
-	msleep(40);
+	msleep(20);
 	tianma_dcs_write_seq_static(ctx, 0x10);
 	msleep(100);
 	
-	ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
-	gpiod_set_value(ctx->reset_gpio, 0);
-	devm_gpiod_put(ctx->dev, ctx->reset_gpio);
-
-	usleep_range(2000, 2001);
-
-	ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
-	gpiod_set_value(ctx->bias_neg, 0);
-	devm_gpiod_put(ctx->dev, ctx->bias_neg);
-
-	usleep_range(2000, 2001);
+	//ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
+	//gpiod_set_value(ctx->reset_gpio, 0);
+	//devm_gpiod_put(ctx->dev, ctx->reset_gpio);
 
 	ctx->bias_pos = devm_gpiod_get_index(ctx->dev, "bias", 0, GPIOD_OUT_HIGH);
 	gpiod_set_value(ctx->bias_pos, 0);
 	devm_gpiod_put(ctx->dev, ctx->bias_pos);
 
 	usleep_range(2000, 2001);
+
+	lm36273_bias_enable(0, 3);
+	usleep_range(2000, 2001);
+	ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
+	gpiod_set_value(ctx->bias_neg, 0);
+	devm_gpiod_put(ctx->dev, ctx->bias_neg);
+
+	usleep_range(2000, 2001);
+
 
 	ret = regulator_disable(lcd_dvdd_ldo);
 	if (ret < 0)
