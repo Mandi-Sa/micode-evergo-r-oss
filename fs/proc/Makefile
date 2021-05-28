@@ -36,3 +36,4 @@ proc-$(CONFIG_PROC_PAGE_MONITOR)	+= page.o
 #+Bug 653764 ,lizhenyu.wt,add,20210514,add serial_num/cpuid/chipid
 proc-y  += serial_num.o
 #-Bug 653764 ,lizhenyu.wt,add,20210514,add serial_num/cpuid/chipid
+proc-y  += board_id.o
