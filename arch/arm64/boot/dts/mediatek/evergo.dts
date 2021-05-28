@@ -190,15 +190,17 @@
 		};
 	};
 	panel3: panel3@0 {
-		compatible = "truly,ft8756,vdo";
-		reg = <2>;
+		compatible = "virtual,default,vdo";
+		reg = <3>;
 		pm-enable-gpios = <&pio 136 0>;
+		lcm-bl-enable-gpios = <&pio 87 0>;
 		reset-gpios = <&pio 86 0>;
 		bias-gpios = <&pio 137 0>,
 			<&pio 138 0>;
 		pinctrl-names = "default";
+		lcd_dvdd-supply = <&mt_pmic_vcn13_ldo_reg>;
 		port {
-			panel_in3: endpoint {
+			panel_in4: endpoint {
 				remote-endpoint = <&dsi_out>;
 			};
 		};
