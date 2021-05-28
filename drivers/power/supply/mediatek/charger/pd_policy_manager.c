@@ -575,6 +575,7 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 //+Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
 #ifdef WT_COMPILE_FACTORY_VERSION
 	int bat_cap = 0;
+	static bool status = true;
 	struct power_supply *battery_psy;
 
 	battery_psy = power_supply_get_by_name("battery");
@@ -609,7 +610,13 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 #ifdef WT_COMPILE_FACTORY_VERSION
 	if (bat_cap >= 80) {
 		pdpm->pps_supported = false;
+		status = false;
 	}
+	else if (bat_cap < 60) {
+		pdpm->pps_supported = true;
+		status = true;
+	}
+	else pdpm->pps_supported = status;
 #endif
 //-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
 
@@ -769,6 +776,12 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 	static int tune_vbus_retry;
 	static bool stop_sw;
 	static bool recover;
+//+Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
+#ifdef WT_COMPILE_FACTORY_VERSION
+		union power_supply_propval pval = {0, };
+		struct power_supply *battery_psy;
+#endif
+//-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
 
 	pr_err(">>>>>>>>>>>state phase :%d\n", pdpm->state);
 	pr_err(">>>>>vbus_vol %d    vbat_vol %d   vout %d\n", pdpm->cp.vbus_volt, pdpm->cp.vbat_volt, pdpm->cp.vout_volt);
@@ -899,8 +912,18 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 			pr_err("request_voltage:%d, request_current:%d\n",
 					pdpm->request_voltage, pdpm->request_current);
 		}
-	
-		
+
+//+Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
+#ifdef WT_COMPILE_FACTORY_VERSION
+		battery_psy = power_supply_get_by_name("battery");
+		power_supply_get_property(battery_psy,
+			POWER_SUPPLY_PROP_CAPACITY, &pval);
+		pr_err("wt_debug %s: bat_cap is %d\n", __func__, pval.intval);
+		if (pval.intval >= 80 || pval.intval <= 60) {
+			usbpd_pm_evaluate_src_caps(pdpm);
+		}
+#endif
+//-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
 		/*stop second charge pump if either of ibus is lower than 750ma during CV*/
 		if (pm_config.cp_sec_enable && pdpm->cp_sec.charge_enabled 
 				&& pdpm->cp.vbat_volt > pm_config.bat_volt_lp_lmt - 50

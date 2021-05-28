@@ -1818,12 +1818,12 @@ void mtk_charging_control(struct charger_manager *info)
 	if (info == NULL || info->chg1_dev == NULL)
 		return;
 
-	if (battery_get_soc() >= BAT_CAPACITY_MAX){
+	if (battery_get_uisoc() >= BAT_CAPACITY_MAX){
 		info->do_charging(info, false);
 		charger_dev_enable_hz(info->chg1_dev, true);
 		chr_err("wt_factory_version : capacity 80 stop charger");
 	}
-	else if (battery_get_soc() <= BAT_CAPACITY_MIN){
+	else if (battery_get_uisoc() <= BAT_CAPACITY_MIN){
 		info->do_charging(info, true);
 		charger_dev_enable_hz(info->chg1_dev, false);
 		chr_err("wt_factory_version : capacity 60 start charger");
