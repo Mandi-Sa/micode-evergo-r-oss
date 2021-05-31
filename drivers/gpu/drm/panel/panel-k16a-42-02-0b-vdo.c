@@ -147,9 +147,13 @@ static void csot_dcs_write(struct csot *ctx, const void *data, size_t len)
 static void csot_panel_init(struct csot *ctx)
 {
 	ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
-	usleep_range(10 * 1000, 15 * 1000);
+	usleep_range(10 * 1000, 11 * 1000);
 	gpiod_set_value(ctx->reset_gpio, 0);
-	usleep_range(10 * 1000, 15 * 1000);
+	usleep_range(10 * 1000, 11 * 1000);
+	gpiod_set_value(ctx->reset_gpio, 1);
+	usleep_range(10 * 1000, 11 * 1000);
+	gpiod_set_value(ctx->reset_gpio, 0);
+	usleep_range(10 * 1000, 11 * 1000);
 	gpiod_set_value(ctx->reset_gpio, 1);
 	usleep_range(10 * 1000, 15 * 1000);
 	devm_gpiod_put(ctx->dev, ctx->reset_gpio);
@@ -248,25 +252,27 @@ static int csot_unprepare(struct drm_panel *panel)
 	}
 
 	csot_dcs_write_seq_static(ctx, 0x28);
-	msleep(40);
+	msleep(20);
 	csot_dcs_write_seq_static(ctx, 0x10);
 	msleep(100);
 	
-	ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
-	gpiod_set_value(ctx->reset_gpio, 0);
-	devm_gpiod_put(ctx->dev, ctx->reset_gpio);
+	//ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
+	//gpiod_set_value(ctx->reset_gpio, 0);
+	//devm_gpiod_put(ctx->dev, ctx->reset_gpio);
 
-	usleep_range(2000, 2001);
+	//usleep_range(2000, 2001);
     
-	ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
-	gpiod_set_value(ctx->bias_neg, 0);
-	devm_gpiod_put(ctx->dev, ctx->bias_neg);
-
-	usleep_range(2000, 2001);
-
 	ctx->bias_pos = devm_gpiod_get_index(ctx->dev, "bias", 0, GPIOD_OUT_HIGH);
 	gpiod_set_value(ctx->bias_pos, 0);
 	devm_gpiod_put(ctx->dev, ctx->bias_pos);
+
+	usleep_range(2000, 2001);
+
+	lm36273_bias_enable(0, 3);
+	usleep_range(2000, 2001);
+	ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
+	gpiod_set_value(ctx->bias_neg, 0);
+	devm_gpiod_put(ctx->dev, ctx->bias_neg);
 
 	usleep_range(2000, 2001);
 
