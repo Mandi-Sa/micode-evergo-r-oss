@@ -2756,6 +2756,10 @@ simtray {
 		};
 	};
 
+       snd_scp_ultra: snd_scp_ultra {
+               compatible = "mediatek,snd_scp_ultra";
+       };
+
 	audio_sram@11212000 {
 		compatible = "mediatek,audio_sram";
 		reg = <0 0x11212000 0 0xD000>;
