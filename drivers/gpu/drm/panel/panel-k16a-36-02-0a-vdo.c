@@ -273,7 +273,6 @@ static int tianma_unprepare(struct drm_panel *panel)
 
 	usleep_range(2000, 2001);
 
-
 	ret = regulator_disable(lcd_dvdd_ldo);
 	if (ret < 0)
 		pr_err("disable regulator lcd_dvdd_ldo fail, ret = %d\n", ret);
