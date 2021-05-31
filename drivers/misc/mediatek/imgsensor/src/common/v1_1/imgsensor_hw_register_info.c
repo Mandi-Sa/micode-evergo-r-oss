@@ -99,20 +99,20 @@ typedef struct IMGSENSOR_HW_REGISTER_INFO {
  ************************************************************************/
 IMGSENSOR_HQ_REGISTER_INFO cam_hwinfo[MAX_IMGSENSOR_NUM][MAX_VENDOR_COUNT] = {
 	{
-	    {"s5kjn1sunny_mipi_raw_i", 22, "0905", S5KJN1SUNNY_SENSOR_ID, main_hw_info, 0xA2, s5kjn1sunny_get_otpdata},
-	    {"ov50c40ofilm_mipi_raw_ii", 24, "0903", OV50C40OFILM_SENSOR_ID, main_hw_info, 0xA2, ov50c40ofilm_get_otpdata},
+	    {"s5kjn1sunny_mipi_raw_i", 22, "SUNNY", S5KJN1SUNNY_SENSOR_ID, main_hw_info, 0xA2, s5kjn1sunny_get_otpdata},
+	    {"ov50c40ofilm_mipi_raw_ii", 24, "OFILM", OV50C40OFILM_SENSOR_ID, main_hw_info, 0xA2, ov50c40ofilm_get_otpdata},
 	},
 	{
-	    {"ov16a1qofilm_mipi_raw_i", 22, "f607", OV16A1QOFILM_SENSOR_ID, sub_hw_info, 0xA2, ov16a1qofilm_get_otpdata},
-	    {"ov16a1qqtech_mipi_raw_ii", 24, "f608", OV16A1QQTECH_SENSOR_ID, sub_hw_info, 0xA2, ov16a1qqtech_get_otpdata},
+	    {"ov16a1qofilm_mipi_raw_i", 22, "OFILM", OV16A1QOFILM_SENSOR_ID, sub_hw_info, 0xA2, ov16a1qofilm_get_otpdata},
+	    {"ov16a1qqtech_mipi_raw_ii", 24, "QTECH", OV16A1QQTECH_SENSOR_ID, sub_hw_info, 0xA2, ov16a1qqtech_get_otpdata},
 	},
 	{
-	    {"imx355sunny_mipi_raw_i", 22, "0301", IMX355SUNNY_SENSOR_ID, wide_hw_info, 0xA0, imx355sunny_get_otpdata},
-	    {"imx355ofilm_mipi_raw_ii", 23, "0300", IMX355OFILM_SENSOR_ID, wide_hw_info, 0xA0, imx355ofilm_get_otpdata},
+	    {"imx355sunny_mipi_raw_i", 22, "SUNNY", IMX355SUNNY_SENSOR_ID, wide_hw_info, 0xA0, imx355sunny_get_otpdata},
+	    {"imx355ofilm_mipi_raw_ii", 23, "OFILM", IMX355OFILM_SENSOR_ID, wide_hw_info, 0xA0, imx355ofilm_get_otpdata},
 	},
 	{
-	    {"ov02b10aac_mipi_raw_i", 21, "0123", OV02B10AAC_SENSOR_ID, macro_hw_info, 0xA4, ov02b10aac_get_otpdata},
-	    {"gc02m1ofilm_mipi_raw_ii", 23, "0124", GC02M1OFILM_SENSOR_ID, macro_hw_info, 0xA4, gc02m1ofilm_get_otpdata},
+	    {"ov02b10aac_mipi_raw_i", 21, "AAC", OV02B10AAC_SENSOR_ID, macro_hw_info, 0xA4, ov02b10aac_get_otpdata},
+	    {"gc02m1ofilm_mipi_raw_ii", 23, "OFILM", GC02M1OFILM_SENSOR_ID, macro_hw_info, 0xA4, gc02m1ofilm_get_otpdata},
 	}
 };
 
