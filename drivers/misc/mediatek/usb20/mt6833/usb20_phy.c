@@ -117,7 +117,7 @@ void usb_phy_tuning(void)
 		/* apply default value */
 		u2_vrt_ref = 5;
 		u2_term_ref = 5;
-		u2_enhance = 1;
+		u2_enhance = 3;
 
 		of_node = of_find_compatible_node(NULL,
 			NULL, "mediatek,phy_tuning");
