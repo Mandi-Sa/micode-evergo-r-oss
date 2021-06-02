@@ -2526,9 +2526,24 @@ static int mtk_nanohub_report_to_manager(struct data_unit_t *data)
 			event.timestamp = data->time_stamp;
 			event.sensor_type = id_to_type(data->sensor_type);
 			event.action = data->flush_action;
-			event.word[0] = data->sar_event.x_bias;
-			event.word[1] = data->sar_event.y_bias;
-			event.word[2] = data->sar_event.z_bias;
+			//event.word[0] = data->sar_event.x_bias;
+			//event.word[1] = data->sar_event.y_bias;
+			//event.word[2] = data->sar_event.z_bias;
+			event.word[0] = data->data[0];
+			event.word[1] = data->data[1];
+			event.word[2] = data->data[2];
+			printk("kernel sar cali data %d %d %d", event.word[0], event.word[1], event.word[2]);
+			break;
+		case ID_SAR_SECONDARY:
+		         event.timestamp = data->time_stamp;
+			event.sensor_type = id_to_type(data->sensor_type);
+			event.action = data->flush_action;
+			event.word[0] = data->data[0];
+			event.word[1] = data->data[1];
+			event.word[2] = data->data[2];
+			event.word[3] = data->data[3];
+			event.word[4] = data->data[4];
+			printk("kernel sar sec cali data %d %d %d %d %d", event.word[0], event.word[1], event.word[2], event.word[3], event.word[4]);
 			break;
 		case ID_OIS:
 			event.timestamp = data->time_stamp;
