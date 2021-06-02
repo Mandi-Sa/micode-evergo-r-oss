@@ -5677,6 +5677,7 @@ simtray {
 
 	mrdump_ext_rst: mrdump_ext_rst {
 		compatible = "mediatek, mrdump_ext_rst-eint";
+		force_mode = "SYSRST";
 		mode = "IRQ";
 		status = "okay";
 	};
