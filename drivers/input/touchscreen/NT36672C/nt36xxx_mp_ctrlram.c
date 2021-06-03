@@ -135,12 +135,14 @@ static char *lockdown_infor;
 #define WT_PROC_TOUCHSCREEN_FOLDER                   "touchscreen"
 #define WT_PROC_CTP_OPENSHORT_TEST_FILE            "ctp_openshort_test"
 #define WT_PROC_CTP_LOCKDOWN_INFO_FILE            "lockdown_info"
+#define WT_PROC_TP_INFO_FILE                                    "tp_info"
 
 struct proc_dir_entry *wt_proc_touchscreen_dir;
 
 struct proc_dir_entry *wt_proc_gmnode_file = NULL;
 struct proc_dir_entry *wt_proc_ctp_openshort_test_file = NULL;
 struct proc_dir_entry *wt_proc_ctp_lockdown_info_file = NULL;
+struct proc_dir_entry *wt_proc_tp_info_file = NULL;
 
 /*******************************************************
 Description:
@@ -1567,6 +1569,19 @@ void print_selftest_result(struct seq_file *m, int32_t TestResult, uint8_t Recor
 	nvt_mp_seq_printf(m, "\n");
 }
 
+static int32_t c_show_wt_proc_tp_info(struct seq_file *m, void *v){
+	NVT_LOG("panel lcm index is %d\n",parnel.lcm_index);
+	if(parnel.lcm_index == 0){
+		seq_printf(m, "TianMa Novatek 36672C");
+		seq_printf(m,"\n");
+	}else if (parnel.lcm_index == 1){
+		seq_printf(m, "COST Novatek 36672C");
+		seq_printf(m,"\n");
+	}
+	return 0;
+}
+
+
 static int32_t c_show_lockdown_info(struct seq_file *m, void *v)
 {
 	int char_size;
@@ -1774,6 +1789,13 @@ const struct seq_operations nvt_selftest_seq_ops = {
 	.next   = c_next,
 	.stop   = c_stop,
 	.show   = c_show_selftest
+};
+
+const struct seq_operations wt_proc_tp_info_ops = {
+	.start  = c_start,
+	.next   = c_next,
+	.stop   = c_stop,
+	.show   = c_show_wt_proc_tp_info
 };
 
 const struct seq_operations nvt_lockdown_info_ops = {
@@ -2052,6 +2074,20 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 
 	return seq_open(file, &nvt_selftest_seq_ops);
 }
+
+static int32_t wt_proc_tp_info_open(struct inode *inode, struct file *file)
+{
+	NVT_LOG("-----%s-------\n", __func__);
+	return seq_open(file,&wt_proc_tp_info_ops);
+}
+
+static const struct file_operations wt_proc_tp_info_fops = {
+	.owner = THIS_MODULE,
+	.open = wt_proc_tp_info_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = seq_release,
+};
 
 static const struct file_operations nvt_selftest_fops = {
 	.owner = THIS_MODULE,
@@ -2434,15 +2470,23 @@ int32_t nvt_mp_proc_init(void)
 	if (NVT_proc_selftest_entry == NULL) {
 		//NVT_ERR("create /proc/nvt_selftest Failed!\n");
 		NVT_ERR("create /proc/nvt_selftest Failed!\n");
-		return -1;
+		//return -1;
 	} else {
 		if(nvt_mp_buffer_init()) {
 			NVT_ERR("Allocate mp memory failed\n");
-			return -1;
+			//return -1;
 		}
 		else {
 			NVT_LOG("create /proc/nvt_selftest Succeeded!\n");
 		}
+		//return 0;
+	}
+
+	wt_proc_tp_info_file = proc_create(WT_PROC_TP_INFO_FILE, 0444, NULL, &wt_proc_tp_info_fops);
+	if(wt_proc_tp_info_file == NULL){
+		NVT_ERR("create /proc/tp_info\n");
+		return -1;
+	} else {
 		return 0;
 	}
 }
