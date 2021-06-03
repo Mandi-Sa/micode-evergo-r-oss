@@ -26,7 +26,7 @@
 		reg = <0>; //Same as CS ID
 		status = "okay";
 		//4800000,9600000,15000000,19200000
-		spi-max-frequency = <4800000>;
+		spi-max-frequency = <9600000>;
 
 		novatek,reset-gpio = <&pio 13 0x00>;
 		novatek,irq-gpio = <&pio 14 0x00>;
