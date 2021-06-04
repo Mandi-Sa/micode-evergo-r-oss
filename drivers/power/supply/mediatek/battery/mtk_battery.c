@@ -135,6 +135,8 @@ static enum power_supply_property battery_props[] = {
 	POWER_SUPPLY_PROP_BATTERY_TEMP,
 	POWER_SUPPLY_PROP_RESISTANCE_ID,
 	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+	//Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s
+	POWER_SUPPLY_PROP_SHUTDOWN_DELAY,
 
 };
 
@@ -426,6 +428,9 @@ void battery_update_psd(struct battery_data *bat_data)
 	bat_data->BAT_batt_temp = battery_get_bat_temperature();
 }
 
+//Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s
+#define SHUTDOWN_DELAY_VOL	3300
+extern bool mtk_shutdown_delay_enable;
 static int battery_get_property(struct power_supply *psy,
 	enum power_supply_property psp,
 	union power_supply_propval *val)
@@ -433,6 +438,12 @@ static int battery_get_property(struct power_supply *psy,
 	int ret = 0;
 	int fgcurrent = 0;
 	bool b_ischarging = 0;
+	/* +Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s*/
+	int vbat_mv;
+	static bool shutdown_delay_cancel;
+	static bool last_shutdown_delay;
+	static bool shutdown_delay;
+	/* -Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s*/
 
 	struct battery_data *data =
 		container_of(psy->desc, struct battery_data, psd);
@@ -458,7 +469,45 @@ static int battery_get_property(struct power_supply *psy,
 			val->intval = gm.fixed_uisoc;
 		else
 			val->intval = data->BAT_CAPACITY;
+		/* +Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s*/
+		if (mtk_shutdown_delay_enable) {
+			if (val->intval == 0) {
+				vbat_mv = battery_get_bat_voltage();
+				bm_err("shutdown_delay=%d,vbat_mv=%d,BAT_STATUS=%d,shutdown_delay_cancel=%d\n",
+					shutdown_delay,vbat_mv,data->BAT_STATUS,shutdown_delay_cancel);
+				if (vbat_mv > SHUTDOWN_DELAY_VOL
+					&& data->BAT_STATUS != POWER_SUPPLY_STATUS_CHARGING) {
+					shutdown_delay = true;
+					val->intval = 1;
+				} else if (data->BAT_STATUS == POWER_SUPPLY_STATUS_CHARGING
+								&& shutdown_delay) {
+					shutdown_delay = false;
+					shutdown_delay_cancel = true;
+					val->intval = 1;
+				} else {
+					shutdown_delay = false;
+					if (shutdown_delay_cancel)
+						val->intval = 1;
+				}
+			} else {
+				shutdown_delay = false;
+				shutdown_delay_cancel = false;
+			}
+
+			if (last_shutdown_delay != shutdown_delay) {
+				last_shutdown_delay = shutdown_delay;
+				if (data->psy)
+					power_supply_changed(data->psy);
+			}
+		}
+		/* -Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s*/
 		break;
+	/* +Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s*/
+	case POWER_SUPPLY_PROP_SHUTDOWN_DELAY:
+		val->intval = shutdown_delay;
+		break;
+	/* -Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s */
+
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
 		b_ischarging = gauge_get_current(&fgcurrent);
 		if (b_ischarging == false)

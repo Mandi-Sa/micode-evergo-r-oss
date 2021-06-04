@@ -275,6 +275,8 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(apdo_max),
 	//Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type
 	POWER_SUPPLY_ATTR(quick_charge_type),
+	//Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s
+	POWER_SUPPLY_ATTR(shutdown_delay),
 	/* Local extensions */
 	POWER_SUPPLY_ATTR(usb_hc),
 	POWER_SUPPLY_ATTR(usb_otg),
