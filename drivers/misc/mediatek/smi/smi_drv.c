@@ -386,6 +386,11 @@ static inline void smi_unit_disable_unprepare(const u32 id)
 {
 	mtk_smi_clk_disable(smi_dev[id]);
 	clk_disable_unprepare(smi_dev[id]->clks[0]);
+#if IS_ENABLED(CONFIG_MACH_MT6877)
+	if (ATOMR_CLK(id) < 0)
+		SMIDBG("LARB%d ref count < 0, please check ref count\n",
+			id);
+#endif
 }
 
 s32 smi_bus_disable_unprepare(const u32 id, const char *user)
