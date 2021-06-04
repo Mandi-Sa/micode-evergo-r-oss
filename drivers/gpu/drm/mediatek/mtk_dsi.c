@@ -1452,6 +1452,7 @@ static irqreturn_t mtk_dsi_irq_status(int irq, void *dev_id)
 			if (priv && mtk_drm_helper_get_opt(priv->helper_opt,
 				MTK_DRM_OPT_DSI_UNDERRUN_AEE)) {
 				if (dsi_underrun_trigger == 1) {
+					disp_met_set(NULL, 1);
 					DDPAEE(
 						"[IRQ] %s:buffer underrun,sys_time=%u\n",
 						mtk_dump_comp_str(
