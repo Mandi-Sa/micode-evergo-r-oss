@@ -926,6 +926,12 @@ static int dbg_cm_mgr_proc_show(struct seq_file *m, void *v)
 			cm_mgr_perf_timer_enable);
 	seq_printf(m, "cm_mgr_perf_force_enable %d\n",
 			cm_mgr_perf_force_enable);
+#ifdef USE_CM_USER_MODE
+	seq_printf(m, "cm_user_mode %d\n",
+			cm_user_mode);
+	seq_printf(m, "cm_user_active %d\n",
+			cm_user_active);
+#endif
 #ifdef USE_CPU_TO_DRAM_MAP
 	seq_printf(m, "cm_mgr_cpu_map_dram_enable %d\n",
 			cm_mgr_cpu_map_dram_enable);
@@ -1249,7 +1255,6 @@ out_fw:
 static ssize_t dbg_cm_mgr_proc_write(struct file *file,
 		const char __user *buffer, size_t count, loff_t *pos)
 {
-
 	int ret;
 	char *buf = (char *) __get_free_page(GFP_USER);
 	char cmd[64];
@@ -1276,6 +1281,22 @@ static ssize_t dbg_cm_mgr_proc_write(struct file *file,
 		ret = -EPERM;
 		goto out;
 	}
+
+#ifdef USE_CM_USER_MODE
+	if (!strcmp(cmd, "cm_user_mode")) {
+		cm_mgr_user_mode_set(val_1);
+		goto out;
+	}
+
+	if (cm_user_mode) {
+		if (cm_user_active)
+			cm_mgr_user_mode_cmd(0, cmd, val_1, val_2);
+		else
+			pr_info("skip cmd:%s for cm_user_mode: %d, active: %d\n",
+				cmd, cm_user_mode, cm_user_active);
+		goto out;
+	}
+#endif
 
 	if (!strcmp(cmd, "cm_mgr_opp_enable")) {
 		cm_mgr_opp_enable = val_1;

@@ -30,6 +30,7 @@
 /* #define USE_CPU_TO_DRAM_MAP */
 /* #define USE_CPU_TO_DRAM_MAP_NEW */
 #define USE_BCPU_WEIGHT
+#define USE_CM_USER_MODE /* POWER_HAL setting */
 
 #define CM_MGR_EMI_OPP 6
 #define CM_MGR_LOWER_OPP 7
@@ -65,6 +66,13 @@ extern int cpu_power_bcpu_weight_min0;
 extern int cpu_power_bcpu_weight_max1;
 extern int cpu_power_bcpu_weight_min1;
 #endif /* USE_BCPU_WEIGHT */
+
+#ifdef USE_CM_USER_MODE
+extern unsigned int cm_user_mode;
+extern unsigned int cm_user_active;
+extern void cm_mgr_user_mode_set(unsigned int mode);
+extern void cm_mgr_user_mode_cmd(int reset, char *cmd, unsigned int val_1, unsigned int val_2);
+#endif
 
 extern void __iomem *mcucfg_mp0_counter_base;
 
