@@ -182,6 +182,8 @@ enum power_supply_property {
 	POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE,
 	//Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s
 	POWER_SUPPLY_PROP_SHUTDOWN_DELAY,
+	//Bug664795,wangbin,wt.ADD,20210604,add real type node
+	POWER_SUPPLY_PROP_REAL_TYPE,
 	/* Local extensions */
 	POWER_SUPPLY_PROP_USB_HC,
 	POWER_SUPPLY_PROP_USB_OTG,
