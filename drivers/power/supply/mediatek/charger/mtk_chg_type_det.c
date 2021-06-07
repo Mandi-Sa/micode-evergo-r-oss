@@ -410,6 +410,11 @@ static int mt_usb_get_property(struct power_supply *psy,
 		val->intval = mt_get_quick_charge_type(mtk_chg);
 		break;
 	/* -Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type*/
+	/* +Bug664795,wangbin,wt.ADD,20210604,add real type node*/
+	case POWER_SUPPLY_PROP_REAL_TYPE:
+		val->intval = mtk_chg->chg_type;
+		break;
+	/* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 	default:
 		return -EINVAL;
 	}
@@ -452,6 +457,7 @@ static enum power_supply_property mt_usb_properties[] = {
 	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
 	POWER_SUPPLY_PROP_APDO_MAX,	// Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 	POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE, //Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type
+	POWER_SUPPLY_PROP_REAL_TYPE,//Bug664795,wangbin,wt.ADD,20210604,add real type node
 
 };
 

@@ -51,6 +51,13 @@ static const char * const power_supply_status_text[] = {
 	"Cmd discharging"
 };
 
+/* +Bug664795,wangbin,wt.ADD,20210604,add real type node*/
+static const char * const power_supply_usb_real_type_text[] = {
+	"Unknown", "USB", "USB_CDP", "NON_CHARGER", "USB_DCP", "APPLE_2_1A_CHARGER",
+	"APPLE_1_0A_CHARGER", "APPLE_0_5A_CHARGER", "WIRELESS_CHARGER", "PD_PPS"
+};
+/* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
+
 static const char * const power_supply_charge_type_text[] = {
 	"Unknown", "N/A", "Trickle", "Fast"
 };
@@ -98,6 +105,12 @@ static ssize_t power_supply_show_property(struct device *dev,
 			return ret;
 		}
 	}
+
+	/* +Bug664795,wangbin,wt.ADD,20210604,add real type node*/
+	if (off == POWER_SUPPLY_PROP_REAL_TYPE)
+		return sprintf(buf, "%s\n",
+			      power_supply_usb_real_type_text[value.intval]);
+	/* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 
 	if (off == POWER_SUPPLY_PROP_STATUS)
 		return sprintf(buf, "%s\n",
@@ -277,6 +290,8 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(quick_charge_type),
 	//Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s
 	POWER_SUPPLY_ATTR(shutdown_delay),
+	//Bug664795,wangbin,wt.ADD,20210604,add real type node
+	POWER_SUPPLY_ATTR(real_type),
 	/* Local extensions */
 	POWER_SUPPLY_ATTR(usb_hc),
 	POWER_SUPPLY_ATTR(usb_otg),
