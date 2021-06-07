@@ -244,6 +244,7 @@ page_owner=on loop.max_part=7";
 			label = "lcd-backlight";
 			max-brightness = <2047>;
 			led-bits = <11>;
+			trans-bits = <11>;
 			default-state = "on";
 		};
 	};
