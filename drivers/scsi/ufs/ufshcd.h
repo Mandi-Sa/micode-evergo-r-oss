@@ -674,6 +674,13 @@ enum ufs_crypto_state {
 	UFS_CRYPTO_HW_FBE_ENCRYPTED   = (1 << 3),
 };
 
+#ifdef CONFIG_UFS_CHECK
+typedef struct {
+	int total_gb;
+	int hpb_gb;
+	int wb_gb;
+} check_wb_hpb_t;
+#endif
 /**
  * struct ufs_hba - per adapter private structure
  * @mmio_base: UFSHCI base register address
@@ -1027,6 +1034,9 @@ struct ufs_hba {
 
 #if defined(CONFIG_SCSI_SKHPB)
 	struct scsi_device *sdev_ufs_lu[UFS_UPIU_MAX_GENERAL_LUN];
+#endif
+#ifdef CONFIG_UFS_CHECK
+	check_wb_hpb_t check;
 #endif
 
 #ifdef CONFIG_SCSI_UFS_CRYPTO
