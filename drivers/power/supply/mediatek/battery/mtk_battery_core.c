@@ -84,7 +84,9 @@
 /* +Extb HONGMI-84911,wangbin.wt,ADD,20210512,add battery info.*/
 #include <linux/hardware_info.h>
 
-static char* battery_name[] = {"S98016_SWD_4V45_5000mAh","S98016_CMX_4V45_5000mAh"};
+/* Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+#define    MTK_GET_BATTERY_ID_BY_AUTH
+static char* battery_name[] = {"S98016_SWD_4V45_5000mAh","S98016_CMX_4V45_5000mAh", "BATTERY_NOT_DEFAULT",};
 /* -Extb HONGMI-84911,wangbin.wt,ADD,20210512,add battery info.*/
 
 /* ============================================================ */
@@ -668,6 +670,29 @@ void fgauge_get_profile_id(void)
 {
 	gm.battery_id = 0;
 }
+/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+#elif defined(MTK_GET_BATTERY_ID_BY_AUTH)
+void fgauge_get_profile_id(void)
+{
+	union power_supply_propval pval = {0, };
+	struct power_supply *batt_verify;
+
+	batt_verify = power_supply_get_by_name("batt_verify");
+	if (!batt_verify) {
+		bm_err("Battery id wait\n");
+		gm.battery_id = 2;
+	} else {
+		power_supply_get_property(batt_verify, POWER_SUPPLY_PROP_MI_BATTERY_ID, &pval);
+		if (pval.intval == 0x57)
+			gm.battery_id = 0;
+		else if (pval.intval == 0x47)
+			gm.battery_id = 1;
+		else
+			gm.battery_id = 2;
+		bm_err("Battery id=(%d) mi_batt_id:%d\n",gm.battery_id, pval.intval);
+	}
+}
+/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
 #else
 void fgauge_get_profile_id(void)
 {

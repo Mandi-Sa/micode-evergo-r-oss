@@ -40,10 +40,11 @@
 
 static struct device_attribute power_supply_attrs[];
 
+/* +Bug651592 caijiaqi.wt,20210607,MODIFY Secret battery */
 static const char * const power_supply_type_text[] = {
 	"Unknown", "Battery", "UPS", "Mains", "USB",
 	"USB_DCP", "USB_CDP", "USB_ACA", "Wireless", "USB_C",
-	"USB_PD", "USB_PD_DRP", "BrickID"
+	"USB_PD", "USB_PD_DRP", "BrickID", "Batt_Verity"
 };
 
 static const char * const power_supply_status_text[] = {
@@ -251,6 +252,25 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(sc_fault_status),
 	POWER_SUPPLY_ATTR(sc_vbus_error_status),
 	/* Add by southchip for SC8551*/
+	/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+	POWER_SUPPLY_ATTR(romid),
+	POWER_SUPPLY_ATTR(ds_status),
+	POWER_SUPPLY_ATTR(pagenumber),
+	POWER_SUPPLY_ATTR(pagedata),
+	POWER_SUPPLY_ATTR(authen_result),
+	POWER_SUPPLY_ATTR(session_seed),
+	POWER_SUPPLY_ATTR(s_secret),
+	POWER_SUPPLY_ATTR(challenge),
+	POWER_SUPPLY_ATTR(auth_anon),
+	POWER_SUPPLY_ATTR(auth_bdconst),
+	POWER_SUPPLY_ATTR(page0_data),
+	POWER_SUPPLY_ATTR(page1_data),
+	POWER_SUPPLY_ATTR(verify_model_name),
+	POWER_SUPPLY_ATTR(chip_ok),
+	POWER_SUPPLY_ATTR(maxim_batt_cycle_count),
+	POWER_SUPPLY_ATTR(mi_battery_id),
+	POWER_SUPPLY_ATTR(batt_id_update),
+	/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
 	POWER_SUPPLY_ATTR(energy_full_design),
 	POWER_SUPPLY_ATTR(energy_empty_design),
 	POWER_SUPPLY_ATTR(energy_full),

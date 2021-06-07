@@ -61,6 +61,8 @@ obj-$(CONFIG_PCI_ENDPOINT_TEST)	+= pci_endpoint_test.o
 obj-$(CONFIG_UID_SYS_STATS)	+= uid_sys_stats.o
 obj-$(CONFIG_MEMORY_STATE_TIME)	+= memory_state_time.o
 obj-$(CONFIG_AW869X_HAPTIC) += aw869x_haptic/
+# Bug651592 caijiaqi.wt,20210607,ADD Secret battery
+obj-$(CONFIG_BATT_VERIFY_BY_DS28E16) += maxim/
 obj-$(CONFIG_MEDIATEK_SOLUTION) += mediatek/
 obj-y += mi-memory/
 obj-$(CONFIG_SIMTRAY_STATUS) += simtray.o

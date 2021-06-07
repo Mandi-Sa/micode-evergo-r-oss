@@ -5546,6 +5546,13 @@ simtray {
 		temp_t1_threshold = <0>;
 	};
 
+	/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+	onewire_gpio: onewire_gpio {
+	};
+	maxim_ds28e16: maxim_ds28e16 {
+	};
+	/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+
 	charger: charger {
 		compatible = "mediatek,charger";
 		algorithm_name = "SwitchCharging2";
@@ -5560,7 +5567,7 @@ simtray {
 
 		/* common */
 		battery_cv = <4350000>;
-		max_charger_voltage = <6500000>;
+		max_charger_voltage = <10500000>;
 		min_charger_voltage = <4600000>;
 
 		/* dynamic mivr */
