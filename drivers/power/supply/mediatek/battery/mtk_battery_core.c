@@ -1254,6 +1254,7 @@ static void fg_custom_part_ntc_table(const struct device_node *np,
 #endif
 }
 
+bool mtk_shutdown_delay_enable;
 void fg_custom_init_from_dts(struct platform_device *dev)
 {
 	struct device_node *np = dev->dev.of_node;
@@ -1267,6 +1268,8 @@ void fg_custom_init_from_dts(struct platform_device *dev)
 
 	bm_err("%s\n", __func__);
 
+	//Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s
+	mtk_shutdown_delay_enable = of_property_read_bool(np, "shutdown-delay-enable");
 	fg_read_dts_val(np, "MULTI_BATTERY", &(multi_battery), 1);
 	fg_read_dts_val(np, "ACTIVE_TABLE", &(active_table), 1);
 
