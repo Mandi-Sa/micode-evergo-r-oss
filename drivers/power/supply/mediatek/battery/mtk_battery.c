@@ -135,6 +135,8 @@ static enum power_supply_property battery_props[] = {
 	POWER_SUPPLY_PROP_BATTERY_TEMP,
 	POWER_SUPPLY_PROP_RESISTANCE_ID,
 	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+	/* Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+	POWER_SUPPLY_PROP_BATT_ID_UPDATE,
 	//Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s
 	POWER_SUPPLY_PROP_SHUTDOWN_DELAY,
 
@@ -595,7 +597,11 @@ static int battery_get_property(struct power_supply *psy,
 		val->intval = 0;
 		break;
 	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
-
+	/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+	case POWER_SUPPLY_PROP_BATT_ID_UPDATE:
+		val->intval = 0;
+		break;
+	/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
 	default:
 		ret = -EINVAL;
 		break;
@@ -603,6 +609,37 @@ static int battery_get_property(struct power_supply *psy,
 
 	return ret;
 }
+
+/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+static int battery_set_prop(struct power_supply *psy,
+	enum power_supply_property psp,
+	const union power_supply_propval *val)
+{
+	int ret;
+	switch (psp) {
+	case POWER_SUPPLY_PROP_BATT_ID_UPDATE:
+		fg_custom_init_from_header();
+		pr_err("set batt id prop %d\n", val->intval);
+	default:
+		pr_err("set prop %d is not supported in battery\n", psp);
+		ret = -EINVAL;
+		break;
+	}
+	return ret;
+}
+
+static int battery_prop_is_writeable(struct power_supply *psy,
+	enum power_supply_property psp)
+{
+	switch (psp) {
+	case POWER_SUPPLY_PROP_BATT_ID_UPDATE:
+		return 1;
+	default:
+		break;
+	}
+	return 0;
+}
+/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
 
 /* battery_data initialization */
 struct battery_data battery_main = {
@@ -612,6 +649,10 @@ struct battery_data battery_main = {
 		.properties = battery_props,
 		.num_properties = ARRAY_SIZE(battery_props),
 		.get_property = battery_get_property,
+		/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+		.set_property = battery_set_prop,
+		.property_is_writeable = battery_prop_is_writeable,
+		/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
 		},
 
 	.BAT_STATUS = POWER_SUPPLY_STATUS_DISCHARGING,

@@ -1043,8 +1043,24 @@ static void usb_psy_change_work(struct work_struct *work)
 {
 	int ret = 0;
 	union power_supply_propval propval;
+	/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+	struct power_supply *batt_verify;
+	bool safe_batt_falg = false;
+	/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
 	struct usbpd_pm *pdpm = container_of(work, struct usbpd_pm,
 					usb_psy_change_work);
+
+	/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+	batt_verify = power_supply_get_by_name("batt_verify");
+	if (batt_verify) {
+		power_supply_get_property(batt_verify,
+			POWER_SUPPLY_PROP_MI_BATTERY_ID, &propval);
+		if (propval.intval == 0x57 || propval.intval == 0x47)
+			safe_batt_falg = true;
+		pr_err("[SC manager] >> battery id %d safe flag  = %d\n",
+			propval.intval, safe_batt_falg);
+	}
+	/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
 
 	pr_err("[SC manager] >> usb change work\n");
 
@@ -1059,7 +1075,8 @@ static void usb_psy_change_work(struct work_struct *work)
 	pr_err("[SC manager] >> pd_active %d,  propval.intval %d\n",
 			pdpm->pd_active, propval.intval);
 
-	if (!pdpm->pd_active && propval.intval)
+	/* +Bug651592 caijiaqi.wt,20210607,MODIFY Secret battery */
+	if (!pdpm->pd_active && propval.intval && safe_batt_falg)
 		usbpd_pd_contact(pdpm, true);
 	else if (pdpm->pd_active && !propval.intval)
 		usbpd_pd_contact(pdpm, false);

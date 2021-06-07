@@ -75,5 +75,9 @@ bat_gm30: battery{
 	shutdown-delay-enable;
 /*	Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s*/
 #include "mt6833_battery_table.dtsi"
+/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+#include "mt6833_battery_table1.dtsi"
+#include "mt6833_battery_table2.dtsi"
+/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
 #include "mt6833_battery_prop_dim2_ext.dtsi"
 };
