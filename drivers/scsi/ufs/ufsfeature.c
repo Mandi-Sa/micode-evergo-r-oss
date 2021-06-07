@@ -44,6 +44,11 @@
 #include "ufshpb.h"
 #endif
 
+#ifdef CONFIG_UFS_CHECK
+#include <asm/unaligned.h>
+#include "ufs-check.h"
+#endif
+
 #define QUERY_REQ_TIMEOUT				1500 /* msec */
 
 static inline void ufsf_init_query(struct ufs_hba *hba,
@@ -238,12 +243,16 @@ static int ufsf_read_geo_desc(struct ufsf_feature *ufsf, u8 selector)
 {
 	u8 geo_buf[UFSF_QUERY_DESC_GEOMETRY_MAX_SIZE];
 	int ret;
+	u64 total_size = 0;
 
 	ret = ufsf_read_desc(ufsf->hba, QUERY_DESC_IDN_GEOMETRY, 0, selector,
 			     geo_buf, UFSF_QUERY_DESC_GEOMETRY_MAX_SIZE);
 	if (ret)
 		return ret;
-
+#ifdef CONFIG_UFS_CHECK
+	total_size = get_unaligned_be64(&geo_buf[0x04]);
+	fill_total_gb(ufsf->hba, total_size);
+#endif
 #if defined(CONFIG_UFSHPB)
 	if (ufsf->hpb_dev_info.hpb_device)
 		ufshpb_get_geo_info(&ufsf->hpb_dev_info, geo_buf);
@@ -287,8 +296,15 @@ static int ufsf_read_unit_desc(struct ufsf_feature *ufsf,
 		if (ret == -ENOMEM)
 			goto out;
 	}
+
 #endif
 out:
+#if (defined(CONFIG_UFSHPB) || defined(CONFIG_UFSTW)) && defined(CONFIG_UFS_CHECK)
+	if (lun == 2 && ufsf->hba->card->wmanufacturerid != UFS_VENDOR_SKHYNIX) {
+		if (check_wb_hpb_size(ufsf->hba) == -1)
+			check_hpb_and_tw_provsion(ufsf->hba);
+	}
+#endif
 	return ret;
 }
 
