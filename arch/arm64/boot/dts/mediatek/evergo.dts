@@ -500,6 +500,14 @@
 	status = "okay";
 };
 /* GPS GPIO standardization end */
+
+/*BSP.memory - 2021.03.01 check WB&&HPB size */
+&ufshci {
+	disable-hpb;
+	disable-wb;
+};
+/*end modify*/
+
 // #include "mediatek/cust_mt6833_camera.dtsi"
 #include "mediatek/cust_evergo_camera.dtsi"
 #include <evergo/cust.dtsi>
