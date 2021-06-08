@@ -140,7 +140,12 @@ struct usbpd_pm {
 
 	bool	pd_active;
 	bool	pps_supported;
+	/* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
+	bool	pps_temp_flag;
 
+	int	chg_curr_flag;
+	int	chg_vbat_flag;
+	/* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 	int	request_voltage;
 	int	request_current;
 

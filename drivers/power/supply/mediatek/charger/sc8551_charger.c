@@ -1670,7 +1670,7 @@ static int sc8551_charger_get_property(struct power_supply *psy,
 	int ret;
 	u8 reg_val;
 
-	sc_dbg(">>>>>psp = %d\n", psp);
+//	sc_dbg(">>>>>psp = %d\n", psp);
 
 	switch (psp) {
 	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
