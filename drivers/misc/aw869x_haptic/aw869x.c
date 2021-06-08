@@ -3981,6 +3981,22 @@ static ssize_t aw869x_bullet_nr_store(struct device *dev,
 	return count;
 }
 
+//+Bug651592,chenrui1.wt,ADD,20210607,add lra_ic_vendor node
+static ssize_t aw869x_lra_ic_vendor_show(struct device *dev,
+				      struct device_attribute *attr,
+				      char *buf)
+{
+	return sprintf(buf, "AW\n");
+}
+
+static ssize_t aw869x_lra_ic_vendor_store(struct device *dev,
+				       struct device_attribute *attr,
+				       const char *buf, size_t count)
+{
+	return -1;
+}
+//-Bug651592,chenrui1.wt,ADD,20210607,add lra_ic_vendor node
+
 static DEVICE_ATTR(state, S_IWUSR | S_IRUGO, aw869x_state_show,
 		   aw869x_state_store);
 static DEVICE_ATTR(duration, S_IWUSR | S_IRUGO, aw869x_duration_show,
@@ -4041,6 +4057,10 @@ static DEVICE_ATTR(gun_type, S_IWUSR | S_IRUGO, aw869x_gun_type_show,
 		   aw869x_gun_type_store);
 static DEVICE_ATTR(bullet_nr, S_IWUSR | S_IRUGO, aw869x_bullet_nr_show,
 		   aw869x_bullet_nr_store);
+//+Bug651592,chenrui1.wt,ADD,20210607,add lra_ic_vendor node
+static DEVICE_ATTR(lra_ic_vendor, S_IWUSR | S_IRUGO, aw869x_lra_ic_vendor_show,
+		   aw869x_lra_ic_vendor_store);
+//-Bug651592,chenrui1.wt,ADD,20210607,add lra_ic_vendor node
 
 static struct attribute *aw869x_vibrator_attributes[] = {
 	&dev_attr_state.attr,
@@ -4074,6 +4094,8 @@ static struct attribute *aw869x_vibrator_attributes[] = {
 	&dev_attr_haptic_audio_time.attr,
 	&dev_attr_gun_type.attr,
 	&dev_attr_bullet_nr.attr,
+	//Bug651592,chenrui1.wt,ADD,20210607,add lra_ic_vendor node
+	&dev_attr_lra_ic_vendor.attr,
 	NULL
 };
 
