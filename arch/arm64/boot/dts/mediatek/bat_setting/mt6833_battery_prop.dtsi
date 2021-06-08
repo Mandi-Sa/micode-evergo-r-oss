@@ -72,6 +72,12 @@ bat_gm30: battery{
 /* Table numbers per battery*/
 	MULTI_TEMP_GAUGE0 = <(1)>;
 /* Multi gauge0 enable*/
+	shutdown-delay-enable;
+/*	Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s*/
 #include "mt6833_battery_table.dtsi"
+/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+#include "mt6833_battery_table1.dtsi"
+#include "mt6833_battery_table2.dtsi"
+/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
 #include "mt6833_battery_prop_dim2_ext.dtsi"
 };

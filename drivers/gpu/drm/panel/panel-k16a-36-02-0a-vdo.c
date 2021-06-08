@@ -466,8 +466,8 @@ static struct mtk_panel_params ext_params = {
 	.physical_height_um = PHYSICAL_HEIGHT/1000,
 	.pll_clk = 535,
 	//.vfp_low_power = VFP_45HZ,
-	.cust_esd_check = 0,
-	.esd_check_enable = 0,
+	.cust_esd_check = 1,
+	.esd_check_enable = 1,
 	.lcm_esd_check_table[0] = {
 		.cmd = 0x0A, .count = 1, .para_list[0] = 0x9C,
 	},
@@ -486,10 +486,7 @@ static struct mtk_panel_params ext_params = {
 		.vact_timing_fps = 90,
 #endif
 	},
-	.phy_timcon = {
-		.hs_zero = 35,
-		.hs_trail = 26,
-	},
+
 };
 
 static struct mtk_panel_params ext_params_90hz = {
@@ -497,8 +494,8 @@ static struct mtk_panel_params ext_params_90hz = {
 	.physical_height_um = PHYSICAL_HEIGHT/1000,
 	.pll_clk = 535,
 	//.vfp_low_power = VFP_60HZ,
-	.cust_esd_check = 0,
-	.esd_check_enable = 0,
+	.cust_esd_check = 1,
+	.esd_check_enable = 1,
 	.lcm_esd_check_table[0] = {
 
 		.cmd = 0x0A, .count = 1, .para_list[0] = 0x9C,
@@ -518,10 +515,7 @@ static struct mtk_panel_params ext_params_90hz = {
 		.vact_timing_fps = 90,
 #endif
 	},
-	.phy_timcon = {
-		.hs_zero = 35,
-		.hs_trail = 26,
-	},
+
 };
 
 
@@ -707,9 +701,6 @@ static int tianma_get_modes(struct drm_panel *panel)
 	drm_mode_set_name(mode2);
 	mode2->type = DRM_MODE_TYPE_DRIVER;
 	drm_mode_probed_add(panel->connector, mode2);
-
-	panel->connector->display_info.width_mm = 68;
-	panel->connector->display_info.height_mm = 150;
 
 	return 1;
 }

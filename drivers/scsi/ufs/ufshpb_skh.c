@@ -51,6 +51,9 @@
 #include "ufshcd.h"
 #include "ufshpb_skh.h"
 #include <asm/unaligned.h>
+#ifdef CONFIG_UFS_CHECK
+#include "ufs-check.h"
+#endif
 
 u32 skhpb_debug_mask = SKHPB_LOG_ERR | SKHPB_LOG_INFO;
 //u32 skhpb_debug_mask = SKHPB_LOG_ERR | SKHPB_LOG_INFO | SKHPB_LOG_DEBUG | SKHPB_LOG_HEX;
@@ -2383,6 +2386,12 @@ static int skhpb_init(struct ufs_hba *hba)
 		if (lu_desc.lu_hpb_enable == false)
 			continue;
 
+#ifdef CONFIG_UFS_CHECK
+		fill_hpb_gb(hba, lu_desc.lu_max_active_hpb_regions, func_desc.hpb_region_size);
+
+		if (check_wb_hpb_size(hba) == -1)
+			check_hpb_and_tw_provsion(hba);
+#endif
 		hba->skhpb_lup[lun] = kzalloc(sizeof(struct skhpb_lu),
 								GFP_KERNEL);
 		if (!hba->skhpb_lup[lun]) {

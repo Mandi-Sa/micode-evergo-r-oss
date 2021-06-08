@@ -73,6 +73,57 @@
 	};
 };
 
+/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+&pio {
+	/* default: GPIO53, output, high */
+	onewire_gpio_active: onewire_gpio_active@gpio53 {
+		pins_cmd_dat {
+			pinmux = <PINMUX_GPIO53__FUNC_GPIO53>;
+			slew-rate = <1>;
+			bias-disable;
+			drive-strength = <MTK_DRIVE_4mA>;
+			output-high;
+		};
+	};
+
+	onewire_gpio_sleep: onewire_gpio_sleep@gpio53 {
+		pins_cmd_dat {
+			pinmux = <PINMUX_GPIO53__FUNC_GPIO53>;
+			slew-rate = <1>;
+			bias-disable;
+			drive-strength = <MTK_DRIVE_4mA>;
+			output-high;
+		};
+	};
+};
+
+&onewire_gpio {
+	compatible = "xiaomi,onewire_gpio";
+	label = "xm_onewire";
+	xiaomi,version = <1>;
+	xiaomi,ow_gpio = <&pio 53 0x00>;
+	xiaomi,gpio_number = <53>;//
+	mi,onewire-gpio-dir-addr = <0x10005010>;//
+	mi,onewire-gpio-dir-set-addr = <0x10005014>;//
+	mi,onewire-gpio-dir-clr-addr = <0x10005018>;//
+	mi,onewire-gpio-dout-addr = <0x10005110>;//
+	mi,onewire-gpio-dout-set-addr = <0x10005114>;//
+	mi,onewire-gpio-dout-clr-addr = <0x10005118>;//
+	mi,onewire-gpio-din-addr = <0x10005210>;//
+	pinctrl-names = "onewire_active", "onewire_sleep";
+	pinctrl-0 = <&onewire_gpio_active>;
+	pinctrl-1 = <&onewire_gpio_sleep>;
+	status = "okay";
+};
+
+&maxim_ds28e16 {
+	compatible = "maxim,ds28e16";
+	label = "max_ds28e16";
+	maxim,version = <1>;
+	status = "okay";
+};
+/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+
 #ifndef CONFIG_FPGA_EARLY_PORTING
 &pio {
 	mtkfb_pins_lcd_bias_enp1: lcd_bias_enp1_gpio {
@@ -449,6 +500,14 @@
 	status = "okay";
 };
 /* GPS GPIO standardization end */
+
+/*BSP.memory - 2021.03.01 check WB&&HPB size */
+&ufshci {
+	disable-hpb;
+	disable-wb;
+};
+/*end modify*/
+
 // #include "mediatek/cust_mt6833_camera.dtsi"
 #include "mediatek/cust_evergo_camera.dtsi"
 #include <evergo/cust.dtsi>

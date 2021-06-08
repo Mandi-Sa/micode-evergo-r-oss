@@ -312,6 +312,7 @@ enum device_desc_param {
 
 enum geometry_desc_param {
 	GEOMETRY_DESC_SEGMENT_SIZE			= 0x0D,
+	GEOMETRY_DESC_UNIT_SIZE				= 0x11,
 	GEOMETRY_DESC_PARAM_DEV_CAP			= 0x4,
 #if defined(CONFIG_UFSHPB) || defined(CONFIG_SCSI_SKHPB)
 	GEOMETRY_DESC_HPB_REGION_SIZE			= 0x48,
