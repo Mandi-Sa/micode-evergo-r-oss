@@ -30,6 +30,8 @@
 #define NVT_DIFF "nvt_diff"
 #define NVT_PEN_DIFF "nvt_pen_diff"
 
+#define MI_RAW "tp_data_dump"
+
 #define BUS_TRANSFER_LENGTH  256
 
 #define NORMAL_MODE 0x00
@@ -41,6 +43,7 @@
 
 static uint8_t xdata_tmp[5000] = {0};
 static int32_t xdata[2500] = {0};
+static int32_t xdata_mi[2500] = {0};
 static int32_t xdata_pen_tip_x[256] = {0};
 static int32_t xdata_pen_tip_y[256] = {0};
 static int32_t xdata_pen_ring_x[256] = {0};
@@ -264,6 +267,97 @@ void nvt_read_mdata(uint32_t xdata_addr, uint32_t xdata_btn_addr)
 	nvt_set_page(ts->mmap->EVENT_BUF_ADDR);
 }
 
+/******************************************************
+Description:
+	Novatek touchscreen read meta data function for mi.
+
+return:
+	n.a.
+******************************************************/
+void nvt_mi_read_mdata(uint32_t xdata_addr, uint32_t xdata_btn_addr)
+{
+	int32_t i = 0;
+	int32_t j = 0;
+	int32_t k = 0;
+	uint8_t buf[BUS_TRANSFER_LENGTH + 2] = {0};
+	uint32_t head_addr = 0;
+	int32_t dummy_len = 0;
+	int32_t data_len = 0;
+	int32_t residual_len = 0;
+
+	//---set xdata sector address & length---
+	head_addr = xdata_addr - (xdata_addr % XDATA_SECTOR_SIZE);
+	dummy_len = xdata_addr - head_addr;
+	data_len = ts->x_num * ts->y_num * 2;
+	residual_len = (head_addr + dummy_len + data_len) % XDATA_SECTOR_SIZE;
+
+	//printk("head_addr=0x%05X, dummy_len=0x%05X, data_len=0x%05X, residual_len=0x%05X\n", head_addr, dummy_len, data_len, residual_len);
+
+	//read xdata : step 1
+	for (i = 0; i < ((dummy_len + data_len) / XDATA_SECTOR_SIZE); i++) {
+		//---change xdata index---
+		nvt_set_page(head_addr + XDATA_SECTOR_SIZE * i);
+
+		//---read xdata by BUS_TRANSFER_LENGTH
+		for (j = 0; j < (XDATA_SECTOR_SIZE / BUS_TRANSFER_LENGTH); j++) {
+			//---read data---
+			buf[0] = BUS_TRANSFER_LENGTH * j;
+			CTP_SPI_READ(ts->client, buf, BUS_TRANSFER_LENGTH + 1);
+
+			//---copy buf to xdata_tmp---
+			for (k = 0; k < BUS_TRANSFER_LENGTH; k++) {
+				xdata_tmp[XDATA_SECTOR_SIZE * i + BUS_TRANSFER_LENGTH * j + k] = buf[k + 1];
+				//printk("0x%02X, 0x%04X\n", buf[k+1], (XDATA_SECTOR_SIZE*i + BUS_TRANSFER_LENGTH*j + k));
+			}
+		}
+		//printk("addr=0x%05X\n", (head_addr+XDATA_SECTOR_SIZE*i));
+	}
+
+	//read xdata : step2
+	if (residual_len != 0) {
+		//---change xdata index---
+		nvt_set_page(xdata_addr + data_len - residual_len);
+
+		//---read xdata by BUS_TRANSFER_LENGTH
+		for (j = 0; j < (residual_len / BUS_TRANSFER_LENGTH + 1); j++) {
+			//---read data---
+			buf[0] = BUS_TRANSFER_LENGTH * j;
+			CTP_SPI_READ(ts->client, buf, BUS_TRANSFER_LENGTH + 1);
+
+			//---copy buf to xdata_tmp---
+			for (k = 0; k < BUS_TRANSFER_LENGTH; k++) {
+				xdata_tmp[(dummy_len + data_len - residual_len) + BUS_TRANSFER_LENGTH * j + k] = buf[k + 1];
+				//printk("0x%02X, 0x%04x\n", buf[k+1], ((dummy_len+data_len-residual_len) + BUS_TRANSFER_LENGTH*j + k));
+			}
+		}
+		//printk("addr=0x%05X\n", (xdata_addr+data_len-residual_len));
+	}
+
+	//---remove dummy data and 2bytes-to-1data---
+	for (i = 0; i < (data_len / 2); i++) {
+		xdata_mi[i] = (int16_t)(xdata_tmp[dummy_len + i * 2] + 256 * xdata_tmp[dummy_len + i * 2 + 1]);
+	}
+
+#if TOUCH_KEY_NUM > 0
+	//read button xdata : step3
+	//---change xdata index---
+	nvt_set_page(xdata_btn_addr);
+
+	//---read data---
+	buf[0] = (xdata_btn_addr & 0xFF);
+	CTP_SPI_READ(ts->client, buf, (TOUCH_KEY_NUM * 2 + 1));
+
+	//---2bytes-to-1data---
+	for (i = 0; i < TOUCH_KEY_NUM; i++) {
+		xdata_mi[ts->x_num * ts->y_num + i] = (int16_t)(buf[1 + i * 2] + 256 * buf[1 + i * 2 + 1]);
+	}
+#endif
+
+	//---set xdata_mi index to EVENT BUF ADDR---
+	nvt_set_page(ts->mmap->EVENT_BUF_ADDR);
+}
+
+
 /*******************************************************
 Description:
     Novatek touchscreen get meta data function.
@@ -397,6 +491,45 @@ static int32_t c_show(struct seq_file *m, void *v)
 	return 0;
 }
 
+
+static int32_t c_mi_show(struct seq_file *m, void *v)
+{
+	int32_t i = 0;
+	int32_t j = 0;
+
+	NVT_LOG("+++++++++C_show begain+++++++++++");
+	for (i = 0; i < ts->y_num; i++) {
+		for (j = 0; j < ts->x_num; j++) {
+			seq_printf(m, "%5d, ", xdata[i * ts->x_num + j]);
+		}
+		seq_puts(m, "\n");
+	}
+
+	seq_printf(m, "******up is rawdata  and below is diff*****");
+	seq_puts(m, "\n");
+
+	for (i = 0; i < ts->y_num; i++) {
+		for (j = 0; j < ts->x_num; j++) {
+			seq_printf(m, "%5d, ", xdata_mi[i * ts->x_num + j]);
+		}
+		seq_puts(m, "\n");
+	}
+#if TOUCH_KEY_NUM > 0
+	for (i = 0; i < TOUCH_KEY_NUM; i++) {
+		seq_printf(m, "%5d, ", xdata[ts->x_num * ts->y_num + i]);
+	}
+	seq_puts(m, "\n");
+
+	for (i = 0; i < TOUCH_KEY_NUM; i++) {
+		seq_printf(m, "%5d, ", xdata_mi[ts->x_num * ts->y_num + i]);
+	}
+	seq_puts(m, "\n");
+#endif
+
+	seq_printf(m, "\n\n");
+	NVT_LOG("+++++++++C_show end+++++++++++");
+	return 0;
+}
 /*******************************************************
 Description:
 	Novatek pen 1D diff xdata sequence print show
@@ -489,6 +622,13 @@ const struct seq_operations nvt_seq_ops = {
 	.next   = c_next,
 	.stop   = c_stop,
 	.show   = c_show
+};
+
+const struct seq_operations nvt_mi_seq_ops = {
+	.start  = c_start,
+	.next   = c_next,
+	.stop   = c_stop,
+	.show   = c_mi_show
 };
 
 const struct seq_operations nvt_pen_diff_seq_ops = {
@@ -651,6 +791,62 @@ static const struct file_operations nvt_raw_fops = {
 	.release = seq_release,
 };
 
+
+static int32_t nvt_mi_raw_open(struct inode *inode, struct file *file)
+{
+	if (mutex_lock_interruptible(&ts->lock)) {
+		return -ERESTARTSYS;
+	}
+
+	NVT_LOG("++\n");
+
+#if NVT_TOUCH_ESD_PROTECT
+	nvt_esd_check_enable(false);
+#endif /* #if NVT_TOUCH_ESD_PROTECT */
+
+	if (nvt_clear_fw_status()) {
+		mutex_unlock(&ts->lock);
+		return -EAGAIN;
+	}
+
+	nvt_change_mode(TEST_MODE_2);
+
+	if (nvt_check_fw_status()) {
+		mutex_unlock(&ts->lock);
+		return -EAGAIN;
+	}
+
+	if (nvt_get_fw_info()) {
+		mutex_unlock(&ts->lock);
+		return -EAGAIN;
+	}
+
+	if (nvt_get_fw_pipe() == 0){
+		nvt_read_mdata(ts->mmap->RAW_PIPE0_ADDR, ts->mmap->RAW_BTN_PIPE0_ADDR);
+		nvt_mi_read_mdata(ts->mmap->DIFF_PIPE0_ADDR, ts->mmap->DIFF_BTN_PIPE0_ADDR);
+	}
+	else{
+		nvt_read_mdata(ts->mmap->RAW_PIPE1_ADDR, ts->mmap->RAW_BTN_PIPE1_ADDR);
+		nvt_mi_read_mdata(ts->mmap->DIFF_PIPE1_ADDR, ts->mmap->DIFF_BTN_PIPE1_ADDR);
+	}
+	nvt_change_mode(NORMAL_MODE);
+
+	mutex_unlock(&ts->lock);
+
+	NVT_LOG("--\n");
+
+	seq_open(file, &nvt_mi_seq_ops);
+	return 0;
+}
+
+static const struct file_operations nvt_mi_raw_fops = {
+	.owner = THIS_MODULE,
+	.open = nvt_mi_raw_open,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = seq_release,
+};
+
 /*******************************************************
 Description:
 	Novatek touchscreen /proc/nvt_diff open function.
@@ -808,6 +1004,14 @@ int32_t nvt_extra_proc_init(void)
 	}
 
 	NVT_proc_raw_entry = proc_create(NVT_RAW, 0444, NULL,&nvt_raw_fops);
+	if (NVT_proc_raw_entry == NULL) {
+		NVT_ERR("create proc/%s Failed!\n", NVT_RAW);
+		return -ENOMEM;
+	} else {
+		NVT_LOG("create proc/%s Succeeded!\n", NVT_RAW);
+	}
+
+	NVT_proc_raw_entry = proc_create(MI_RAW, 0444, NULL,&nvt_mi_raw_fops);
 	if (NVT_proc_raw_entry == NULL) {
 		NVT_ERR("create proc/%s Failed!\n", NVT_RAW);
 		return -ENOMEM;
