@@ -195,7 +195,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.pre_delay_frame = 2,	/* enter preview delay frame num */
 	.video_delay_frame = 1,	/* enter video delay frame num */
 
-	.isp_driving_current = ISP_DRIVING_8MA,	/* mclk driving current */
+	.isp_driving_current = ISP_DRIVING_4MA,	/* ISP_DRIVING_8MA mclk driving current */
 
 	/* sensor_interface_type */
 	.sensor_interface_type = SENSOR_INTERFACE_TYPE_MIPI,
