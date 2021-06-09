@@ -74,7 +74,7 @@ static int trip_temp[10] = { 120000, 110000, 100000, 90000, 80000,
 				70000, 65000, 60000, 55000, 50000 };
 
 static struct thermal_zone_device *thz_dev;
-static int mtkts_lcdthermal_debug_log;
+static int backlight_therm_debug_log;
 static int kernelmode;
 static int g_THERMAL_TRIP[10] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -101,21 +101,21 @@ static int polling_trip_temp2 = 20000;
 static int polling_factor1 = 5000;
 static int polling_factor2 = 10000;
 
-int lcdthermal_cur_temp = 1;
+int backlight_therm_cur_temp = 1;
 
 
-#define MTKTS_LCDTHERMAL_TEMP_CRIT 60000	/* 60.000 degree Celsius */
+#define MTKTS_BACKLIGHT_THERM_TEMP_CRIT 60000	/* 60.000 degree Celsius */
 
-#define mtkts_lcdthermal_dprintk(fmt, args...)   \
+#define backlight_therm_dprintk(fmt, args...)   \
 do {                                    \
-	if (mtkts_lcdthermal_debug_log) {                \
-		pr_debug("[Thermal/TZ/LCDTHERMAL]" fmt, ##args); \
+	if (backlight_therm_debug_log) {                \
+		pr_debug("[Thermal/TZ/BACKLIGHT_THERM]" fmt, ##args); \
 	}                                   \
 } while (0)
 
 
-#define mtkts_lcdthermal_printk(fmt, args...) \
-pr_notice("[Thermal/TZ/LCDTHERMAL]" fmt, ##args)
+#define backlight_therm_printk(fmt, args...) \
+pr_notice("[Thermal/TZ/BACKLIGHT_THERM]" fmt, ##args)
 
 #if defined(CONFIG_MEDIATEK_MT6577_AUXADC)
 struct iio_channel *thermistor_ch5;
@@ -143,24 +143,24 @@ static int g_ADC_channel;
  *}
  */
 
-struct LCDTHERMAL_TEMPERATURE {
-	__s32 LCDTHERMAL_Temp;
+struct BACKLIGHT_THERM_TEMPERATURE {
+	__s32 BACKLIGHT_THERM_Temp;
 	__s32 TemperatureR;
 };
 
-static int g_RAP_pull_up_R = LCDTHERMAL_RAP_PULL_UP_R;
-static int g_TAP_over_critical_low = LCDTHERMAL_TAP_OVER_CRITICAL_LOW;
-static int g_RAP_pull_up_voltage = LCDTHERMAL_RAP_PULL_UP_VOLTAGE;
-static int g_RAP_ntc_table = LCDTHERMAL_RAP_NTC_TABLE;
-static int g_RAP_ADC_channel = LCDTHERMAL_RAP_ADC_CHANNEL;
-static int g_lcdthermal_TemperatureR;
-/* LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table[] = {0}; */
+static int g_RAP_pull_up_R = BACKLIGHT_THERM_RAP_PULL_UP_R;
+static int g_TAP_over_critical_low = BACKLIGHT_THERM_TAP_OVER_CRITICAL_LOW;
+static int g_RAP_pull_up_voltage = BACKLIGHT_THERM_RAP_PULL_UP_VOLTAGE;
+static int g_RAP_ntc_table = BACKLIGHT_THERM_RAP_NTC_TABLE;
+static int g_RAP_ADC_channel = BACKLIGHT_THERM_RAP_ADC_CHANNEL;
+static int g_backlight_therm_TemperatureR;
+/* BACKLIGHT_THERM_TEMPERATURE BACKLIGHT_THERM_Temperature_Table[] = {0}; */
 
-static struct LCDTHERMAL_TEMPERATURE *LCDTHERMAL_Temperature_Table;
+static struct BACKLIGHT_THERM_TEMPERATURE *BACKLIGHT_THERM_Temperature_Table;
 static int ntc_tbl_size;
 
 /* AP_NTC_BL197 */
-static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table1[] = {
+static struct BACKLIGHT_THERM_TEMPERATURE BACKLIGHT_THERM_Temperature_Table1[] = {
 	{-40, 74354},		/* FIX_ME */
 	{-35, 74354},		/* FIX_ME */
 	{-30, 74354},		/* FIX_ME */
@@ -198,7 +198,7 @@ static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table1[] = {
 };
 
 /* AP_NTC_TSM_1 */
-static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table2[] = {
+static struct BACKLIGHT_THERM_TEMPERATURE BACKLIGHT_THERM_Temperature_Table2[] = {
 	{-40, 70603},		/* FIX_ME */
 	{-35, 70603},		/* FIX_ME */
 	{-30, 70603},		/* FIX_ME */
@@ -236,7 +236,7 @@ static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table2[] = {
 };
 
 /* AP_NTC_10_SEN_1 */
-static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table3[] = {
+static struct BACKLIGHT_THERM_TEMPERATURE BACKLIGHT_THERM_Temperature_Table3[] = {
 	{-40, 74354},		/* FIX_ME */
 	{-35, 74354},		/* FIX_ME */
 	{-30, 74354},		/* FIX_ME */
@@ -275,7 +275,7 @@ static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table3[] = {
 
 #if 0
 /* AP_NTC_10 */
-static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table4[] = {
+static struct BACKLIGHT_THERM_TEMPERATURE BACKLIGHT_THERM_Temperature_Table4[] = {
 	{-20, 68237},
 	{-15, 53650},
 	{-10, 42506},
@@ -296,7 +296,7 @@ static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table4[] = {
 };
 #else
 /* AP_NTC_10(TSM0A103F34D1RZ) */
-static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table4[] = {
+static struct BACKLIGHT_THERM_TEMPERATURE BACKLIGHT_THERM_Temperature_Table4[] = {
 	{-40, 188500},
 	{-35, 144290},
 	{-30, 111330},
@@ -335,7 +335,7 @@ static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table4[] = {
 #endif
 
 /* AP_NTC_47 */
-static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table5[] = {
+static struct BACKLIGHT_THERM_TEMPERATURE BACKLIGHT_THERM_Temperature_Table5[] = {
 	{-40, 483954},		/* FIX_ME */
 	{-35, 483954},		/* FIX_ME */
 	{-30, 483954},		/* FIX_ME */
@@ -374,7 +374,7 @@ static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table5[] = {
 
 
 /* NTCG104EF104F(100K) */
-static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table6[] = {
+static struct BACKLIGHT_THERM_TEMPERATURE BACKLIGHT_THERM_Temperature_Table6[] = {
 	{-40, 4251000},
 	{-35, 3005000},
 	{-30, 2149000},
@@ -412,7 +412,7 @@ static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table6[] = {
 };
 
 /* SDNT0603C104F4250FTF(100K) */
-static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table7[] = {
+static struct BACKLIGHT_THERM_TEMPERATURE BACKLIGHT_THERM_Temperature_Table7[] = {
 	{-40, 4229000},
 	{-35, 3132000},
 	{-30, 2236000},
@@ -450,7 +450,7 @@ static struct LCDTHERMAL_TEMPERATURE LCDTHERMAL_Temperature_Table7[] = {
 };
 
 /* convert register to temperature  */
-static __s32 mtkts_lcdthermal_thermistor_conver_temp(__s32 Res)
+static __s32 backlight_therm_thermistor_conver_temp(__s32 Res)
 {
 	int i = 0;
 	int asize = 0;
@@ -459,40 +459,40 @@ static __s32 mtkts_lcdthermal_thermistor_conver_temp(__s32 Res)
 #ifdef APPLY_PRECISE_BTS_TEMP
 	TAP_Value = TAP_Value * 1000;
 #endif
-	asize = (ntc_tbl_size / sizeof(struct LCDTHERMAL_TEMPERATURE));
+	asize = (ntc_tbl_size / sizeof(struct BACKLIGHT_THERM_TEMPERATURE));
 
-	/* mtkts_lcdthermal_dprintk("mtkts_lcdthermal_thermistor_conver_temp() :
+	/* backlight_therm_dprintk("backlight_therm_thermistor_conver_temp() :
 	 * asize = %d, Res = %d\n",asize,Res);
 	 */
-	if (Res >= LCDTHERMAL_Temperature_Table[0].TemperatureR) {
+	if (Res >= BACKLIGHT_THERM_Temperature_Table[0].TemperatureR) {
 		TAP_Value = -40;	/* min */
 #ifdef APPLY_PRECISE_BTS_TEMP
 		TAP_Value = TAP_Value * 1000;
 #endif
-	} else if (Res <= LCDTHERMAL_Temperature_Table[asize - 1].TemperatureR) {
+	} else if (Res <= BACKLIGHT_THERM_Temperature_Table[asize - 1].TemperatureR) {
 		TAP_Value = 125;	/* max */
 #ifdef APPLY_PRECISE_BTS_TEMP
 		TAP_Value = TAP_Value * 1000;
 #endif
 	} else {
-		RES1 = LCDTHERMAL_Temperature_Table[0].TemperatureR;
-		TMP1 = LCDTHERMAL_Temperature_Table[0].LCDTHERMAL_Temp;
-		/* mtkts_lcdthermal_dprintk("%d : RES1 = %d,TMP1 = %d\n",
+		RES1 = BACKLIGHT_THERM_Temperature_Table[0].TemperatureR;
+		TMP1 = BACKLIGHT_THERM_Temperature_Table[0].BACKLIGHT_THERM_Temp;
+		/* backlight_therm_dprintk("%d : RES1 = %d,TMP1 = %d\n",
 		 * __LINE__,RES1,TMP1);
 		 */
 
 		for (i = 0; i < asize; i++) {
-			if (Res >= LCDTHERMAL_Temperature_Table[i].TemperatureR) {
-				RES2 = LCDTHERMAL_Temperature_Table[i].TemperatureR;
-				TMP2 = LCDTHERMAL_Temperature_Table[i].LCDTHERMAL_Temp;
-				/* mtkts_lcdthermal_dprintk("%d :i=%d, RES2 = %d,
+			if (Res >= BACKLIGHT_THERM_Temperature_Table[i].TemperatureR) {
+				RES2 = BACKLIGHT_THERM_Temperature_Table[i].TemperatureR;
+				TMP2 = BACKLIGHT_THERM_Temperature_Table[i].BACKLIGHT_THERM_Temp;
+				/* backlight_therm_dprintk("%d :i=%d, RES2 = %d,
 				 * TMP2 = %d\n",__LINE__,i,RES2,TMP2);
 				 */
 				break;
 			}
-			RES1 = LCDTHERMAL_Temperature_Table[i].TemperatureR;
-			TMP1 = LCDTHERMAL_Temperature_Table[i].LCDTHERMAL_Temp;
-			/* mtkts_lcdthermal_dprintk("%d :i=%d, RES1 = %d,TMP1 = %d\n",
+			RES1 = BACKLIGHT_THERM_Temperature_Table[i].TemperatureR;
+			TMP1 = BACKLIGHT_THERM_Temperature_Table[i].BACKLIGHT_THERM_Temp;
+			/* backlight_therm_dprintk("%d :i=%d, RES1 = %d,TMP1 = %d\n",
 			 * __LINE__,i,RES1,TMP1);
 			 */
 		}
@@ -510,11 +510,11 @@ static __s32 mtkts_lcdthermal_thermistor_conver_temp(__s32 Res)
 
 /* convert ADC_AP_temp_volt to register */
 /*Volt to Temp formula same with 6589*/
-static __s32 mtk_ts_lcdthermal_volt_to_temp(__u32 dwVolt)
+static __s32 mtk_ts_backlight_therm_volt_to_temp(__u32 dwVolt)
 {
 	__s32 TRes;
 	__u64 dwVCriAP = 0;
-	__s32 LCDTHERMAL_TMP = -100;
+	__s32 BACKLIGHT_THERM_TMP = -100;
 	__u64 dwVCriAP2 = 0;
 	/* SW workaround-----------------------------------------------------
 	 * dwVCriAP = (TAP_OVER_CRITICAL_LOW * 1800) /
@@ -538,15 +538,15 @@ static __s32 mtk_ts_lcdthermal_volt_to_temp(__u32 dwVolt)
 					(g_RAP_pull_up_voltage - dwVolt);
 	}
 	/* ------------------------------------------------------------------ */
-	g_lcdthermal_TemperatureR = TRes;
+	g_backlight_therm_TemperatureR = TRes;
 
 	/* convert register to temperature */
-	LCDTHERMAL_TMP = mtkts_lcdthermal_thermistor_conver_temp(TRes);
+	BACKLIGHT_THERM_TMP = backlight_therm_thermistor_conver_temp(TRes);
 
-	return LCDTHERMAL_TMP;
+	return BACKLIGHT_THERM_TMP;
 }
 
-static int get_hw_lcdthermal_temp(void)
+static int get_hw_backlight_therm_temp(void)
 {
 
 
@@ -562,7 +562,7 @@ static int get_hw_lcdthermal_temp(void)
 #if defined(CONFIG_MEDIATEK_MT6577_AUXADC)
 	ret = iio_read_channel_processed(thermistor_ch5, &val);
 	if (ret < 0) {
-		mtkts_lcdthermal_printk("Busy/Timeout, IIO ch read failed %d\n", ret);
+		backlight_therm_printk("Busy/Timeout, IIO ch read failed %d\n", ret);
 		return ret;
 	}
 
@@ -574,7 +574,7 @@ static int get_hw_lcdthermal_temp(void)
 #endif
 
 	if (IMM_IsAdcInitReady() == 0) {
-		mtkts_lcdthermal_printk(
+		backlight_therm_printk(
 			"[thermal_auxadc_get_data]: AUXADC is not ready\n");
 		return 0;
 	}
@@ -611,12 +611,12 @@ static int get_hw_lcdthermal_temp(void)
 
 #if defined(APPLY_AUXADC_CALI_DATA)
 		ret += auxadc_cali_temp;
-		mtkts_lcdthermal_dprintk(
+		backlight_therm_dprintk(
 			"[thermal_auxadc_get_data(AUX_IN5_NTC)]: ret_temp=%d\n",
 			auxadc_cali_temp);
 #else
 		ret += ret_temp;
-		mtkts_lcdthermal_dprintk(
+		backlight_therm_dprintk(
 			"[thermal_auxadc_get_data(AUX_IN5_NTC)]: ret_temp=%d\n",
 			ret_temp);
 #endif
@@ -632,53 +632,53 @@ static int get_hw_lcdthermal_temp(void)
 #endif /*CONFIG_MEDIATEK_MT6577_AUXADC*/
 
 	/* ret = ret*1800/4096;//82's ADC power */
-	pr_info("lcdthermaltery output mV = %d\n", ret);
-	output = mtk_ts_lcdthermal_volt_to_temp(ret);
-	pr_info("LCDTHERMAL output temperature = %d\n", output);
+	pr_info("backlight_thermtery output mV = %d\n", ret);
+	output = mtk_ts_backlight_therm_volt_to_temp(ret);
+	pr_info("BACKLIGHT_THERM output temperature = %d\n", output);
 	return output;
 }
 
-static DEFINE_MUTEX(LCDTHERMAL_lock);
-/*int ts_lcdthermal_at_boot_time = 0;*/
-int mtkts_lcdthermal_get_hw_temp(void)
+static DEFINE_MUTEX(BACKLIGHT_THERM_lock);
+/*int ts_backlight_therm_at_boot_time = 0;*/
+int backlight_therm_get_hw_temp(void)
 {
 	int t_ret = 0;
 	int t_ret2 = 0;
 
-	mutex_lock(&LCDTHERMAL_lock);
+	mutex_lock(&BACKLIGHT_THERM_lock);
 
-	/* get HW lcdthermal temp (TSlcdthermal) */
-	/* cat /sys/class/power_supply/lcdthermal/lcdthermal_temp */
-	t_ret = get_hw_lcdthermal_temp();
+	/* get HW backlight_therm temp (TSbacklight_therm) */
+	/* cat /sys/class/power_supply/backlight_therm/backlight_therm_temp */
+	t_ret = get_hw_backlight_therm_temp();
 #ifndef APPLY_PRECISE_BTS_TEMP
 	t_ret = t_ret * 1000;
 #endif
-	mutex_unlock(&LCDTHERMAL_lock);
+	mutex_unlock(&BACKLIGHT_THERM_lock);
 
 	if ((tsatm_thermal_get_catm_type() == 2) &&
 		(tsdctm_thermal_get_ttj_on() == 0)) {
 		t_ret2 = wakeup_ta_algo(TA_CATMPLUS_TTJ);
 
 		if (t_ret2 < 0)
-			pr_notice("[Thermal/TZ/LCDTHERMAL]wakeup_ta_algo %d\n",
+			pr_notice("[Thermal/TZ/BACKLIGHT_THERM]wakeup_ta_algo %d\n",
 				t_ret2);
 	}
 
-	lcdthermal_cur_temp = t_ret;
+	backlight_therm_cur_temp = t_ret;
 
 	if (t_ret > 40000)	/* abnormal high temp */
-		mtkts_lcdthermal_printk("T_lcdthermal=%d\n", t_ret);
+		backlight_therm_printk("T_backlight_therm=%d\n", t_ret);
 
-	mtkts_lcdthermal_dprintk("[%s] T_lcdthermal, %d\n", __func__, t_ret);
+	backlight_therm_dprintk("[%s] T_backlight_therm, %d\n", __func__, t_ret);
 	return t_ret;
 }
 
-static int mtkts_lcdthermal_get_temp(struct thermal_zone_device *thermal, int *t)
+static int backlight_therm_get_temp(struct thermal_zone_device *thermal, int *t)
 {
-	*t = mtkts_lcdthermal_get_hw_temp();
+	*t = backlight_therm_get_hw_temp();
 
 	/* if ((int) *t > 52000) */
-	/* mtkts_lcdthermal_dprintk("T=%d\n", (int) *t); */
+	/* backlight_therm_dprintk("T=%d\n", (int) *t); */
 
 #ifdef CONFIG_LVTS_DYNAMIC_ENABLE_REBOOT
 	if (*t > DYNAMIC_REBOOT_TRIP_TEMP)
@@ -697,153 +697,153 @@ static int mtkts_lcdthermal_get_temp(struct thermal_zone_device *thermal, int *t
 	return 0;
 }
 
-static int mtkts_lcdthermal_bind(
+static int backlight_therm_bind(
 struct thermal_zone_device *thermal, struct thermal_cooling_device *cdev)
 {
 	int table_val = 0;
 
 	if (!strcmp(cdev->type, g_bind0)) {
 		table_val = 0;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind1)) {
 		table_val = 1;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind2)) {
 		table_val = 2;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind3)) {
 		table_val = 3;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind4)) {
 		table_val = 4;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind5)) {
 		table_val = 5;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind6)) {
 		table_val = 6;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind7)) {
 		table_val = 7;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind8)) {
 		table_val = 8;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind9)) {
 		table_val = 9;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else {
 		return 0;
 	}
 
 	if (mtk_thermal_zone_bind_cooling_device(thermal, table_val, cdev)) {
-		mtkts_lcdthermal_dprintk(
+		backlight_therm_dprintk(
 			"[%s] error binding cooling dev\n", __func__);
 		return -EINVAL;
 	}
 
-	mtkts_lcdthermal_dprintk("[%s] binding OK, %d\n", __func__, table_val);
+	backlight_therm_dprintk("[%s] binding OK, %d\n", __func__, table_val);
 	return 0;
 }
 
-static int mtkts_lcdthermal_unbind(struct thermal_zone_device *thermal,
+static int backlight_therm_unbind(struct thermal_zone_device *thermal,
 			    struct thermal_cooling_device *cdev)
 {
 	int table_val = 0;
 
 	if (!strcmp(cdev->type, g_bind0)) {
 		table_val = 0;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind1)) {
 		table_val = 1;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind2)) {
 		table_val = 2;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind3)) {
 		table_val = 3;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind4)) {
 		table_val = 4;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind5)) {
 		table_val = 5;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind6)) {
 		table_val = 6;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind7)) {
 		table_val = 7;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind8)) {
 		table_val = 8;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else if (!strcmp(cdev->type, g_bind9)) {
 		table_val = 9;
-		mtkts_lcdthermal_dprintk("[%s] %s\n", __func__, cdev->type);
+		backlight_therm_dprintk("[%s] %s\n", __func__, cdev->type);
 	} else
 		return 0;
 
 	if (thermal_zone_unbind_cooling_device(thermal, table_val, cdev)) {
-		mtkts_lcdthermal_dprintk(
+		backlight_therm_dprintk(
 			"[%s] error unbinding cooling dev\n", __func__);
 		return -EINVAL;
 	}
 
-	mtkts_lcdthermal_dprintk("[%s] unbinding OK\n", __func__);
+	backlight_therm_dprintk("[%s] unbinding OK\n", __func__);
 	return 0;
 }
 
-static int mtkts_lcdthermal_get_mode(
+static int backlight_therm_get_mode(
 struct thermal_zone_device *thermal, enum thermal_device_mode *mode)
 {
 	*mode = (kernelmode) ? THERMAL_DEVICE_ENABLED : THERMAL_DEVICE_DISABLED;
 	return 0;
 }
 
-static int mtkts_lcdthermal_set_mode(
+static int backlight_therm_set_mode(
 struct thermal_zone_device *thermal, enum thermal_device_mode mode)
 {
 	kernelmode = mode;
 	return 0;
 }
 
-static int mtkts_lcdthermal_get_trip_type(
+static int backlight_therm_get_trip_type(
 struct thermal_zone_device *thermal, int trip, enum thermal_trip_type *type)
 {
 	*type = g_THERMAL_TRIP[trip];
 	return 0;
 }
 
-static int mtkts_lcdthermal_get_trip_temp(
+static int backlight_therm_get_trip_temp(
 struct thermal_zone_device *thermal, int trip, int *temp)
 {
 	*temp = trip_temp[trip];
 	return 0;
 }
 
-static int mtkts_lcdthermal_get_crit_temp(
+static int backlight_therm_get_crit_temp(
 struct thermal_zone_device *thermal, int *temperature)
 {
-	*temperature = MTKTS_LCDTHERMAL_TEMP_CRIT;
+	*temperature = MTKTS_BACKLIGHT_THERM_TEMP_CRIT;
 	return 0;
 }
 
 /* bind callback functions to thermalzone */
-static struct thermal_zone_device_ops mtkts_LCDTHERMAL_dev_ops = {
-	.bind = mtkts_lcdthermal_bind,
-	.unbind = mtkts_lcdthermal_unbind,
-	.get_temp = mtkts_lcdthermal_get_temp,
-	.get_mode = mtkts_lcdthermal_get_mode,
-	.set_mode = mtkts_lcdthermal_set_mode,
-	.get_trip_type = mtkts_lcdthermal_get_trip_type,
-	.get_trip_temp = mtkts_lcdthermal_get_trip_temp,
-	.get_crit_temp = mtkts_lcdthermal_get_crit_temp,
+static struct thermal_zone_device_ops mtkts_BACKLIGHT_THERM_dev_ops = {
+	.bind = backlight_therm_bind,
+	.unbind = backlight_therm_unbind,
+	.get_temp = backlight_therm_get_temp,
+	.get_mode = backlight_therm_get_mode,
+	.set_mode = backlight_therm_set_mode,
+	.get_trip_type = backlight_therm_get_trip_type,
+	.get_trip_temp = backlight_therm_get_trip_temp,
+	.get_crit_temp = backlight_therm_get_crit_temp,
 };
 
 
 
-static int mtkts_lcdthermal_read(struct seq_file *m, void *v)
+static int backlight_therm_read(struct seq_file *m, void *v)
 {
 
 	seq_printf(m,
@@ -881,15 +881,15 @@ static int mtkts_lcdthermal_read(struct seq_file *m, void *v)
 	return 0;
 }
 
-static int mtkts_lcdthermal_register_thermal(void);
-static void mtkts_lcdthermal_unregister_thermal(void);
+static int backlight_therm_register_thermal(void);
+static void backlight_therm_unregister_thermal(void);
 
-static ssize_t mtkts_lcdthermal_write(
+static ssize_t backlight_therm_write(
 struct file *file, const char __user *buffer, size_t count, loff_t *data)
 {
 	int len = 0, i;
 
-	struct mtktslcdthermal_data {
+	struct backlight_therm_data {
 		int trip[10];
 		int t_type[10];
 		char bind0[20], bind1[20], bind2[20], bind3[20], bind4[20];
@@ -898,208 +898,208 @@ struct file *file, const char __user *buffer, size_t count, loff_t *data)
 		char desc[512];
 	};
 
-	struct mtktslcdthermal_data *ptr_mtktslcdthermal_data = kmalloc(
-					sizeof(*ptr_mtktslcdthermal_data), GFP_KERNEL);
+	struct backlight_therm_data *ptr_backlight_therm_data = kmalloc(
+					sizeof(*ptr_backlight_therm_data), GFP_KERNEL);
 
-	if (ptr_mtktslcdthermal_data == NULL)
+	if (ptr_backlight_therm_data == NULL)
 		return -ENOMEM;
 
 
-	len = (count < (sizeof(ptr_mtktslcdthermal_data->desc) - 1)) ?
-				count : (sizeof(ptr_mtktslcdthermal_data->desc) - 1);
+	len = (count < (sizeof(ptr_backlight_therm_data->desc) - 1)) ?
+				count : (sizeof(ptr_backlight_therm_data->desc) - 1);
 
-	if (copy_from_user(ptr_mtktslcdthermal_data->desc, buffer, len)) {
-		kfree(ptr_mtktslcdthermal_data);
+	if (copy_from_user(ptr_backlight_therm_data->desc, buffer, len)) {
+		kfree(ptr_backlight_therm_data);
 		return 0;
 	}
 
-	ptr_mtktslcdthermal_data->desc[len] = '\0';
+	ptr_backlight_therm_data->desc[len] = '\0';
 
 	if (sscanf
-	    (ptr_mtktslcdthermal_data->desc,
+	    (ptr_backlight_therm_data->desc,
 	     "%d %d %d %19s %d %d %19s %d %d %19s %d %d %19s %d %d %19s %d %d %19s %d %d %19s %d %d %19s %d %d %19s %d %d %19s %d",
 		&num_trip,
-		&ptr_mtktslcdthermal_data->trip[0], &ptr_mtktslcdthermal_data->t_type[0],
-		ptr_mtktslcdthermal_data->bind0,
-		&ptr_mtktslcdthermal_data->trip[1], &ptr_mtktslcdthermal_data->t_type[1],
-		ptr_mtktslcdthermal_data->bind1,
-		&ptr_mtktslcdthermal_data->trip[2], &ptr_mtktslcdthermal_data->t_type[2],
-		ptr_mtktslcdthermal_data->bind2,
-		&ptr_mtktslcdthermal_data->trip[3], &ptr_mtktslcdthermal_data->t_type[3],
-		ptr_mtktslcdthermal_data->bind3,
-		&ptr_mtktslcdthermal_data->trip[4], &ptr_mtktslcdthermal_data->t_type[4],
-		ptr_mtktslcdthermal_data->bind4,
-		&ptr_mtktslcdthermal_data->trip[5], &ptr_mtktslcdthermal_data->t_type[5],
-		ptr_mtktslcdthermal_data->bind5,
-		&ptr_mtktslcdthermal_data->trip[6], &ptr_mtktslcdthermal_data->t_type[6],
-		ptr_mtktslcdthermal_data->bind6,
-		&ptr_mtktslcdthermal_data->trip[7], &ptr_mtktslcdthermal_data->t_type[7],
-		ptr_mtktslcdthermal_data->bind7,
-		&ptr_mtktslcdthermal_data->trip[8], &ptr_mtktslcdthermal_data->t_type[8],
-		ptr_mtktslcdthermal_data->bind8,
-		&ptr_mtktslcdthermal_data->trip[9], &ptr_mtktslcdthermal_data->t_type[9],
-		ptr_mtktslcdthermal_data->bind9,
-		&ptr_mtktslcdthermal_data->time_msec) == 32) {
+		&ptr_backlight_therm_data->trip[0], &ptr_backlight_therm_data->t_type[0],
+		ptr_backlight_therm_data->bind0,
+		&ptr_backlight_therm_data->trip[1], &ptr_backlight_therm_data->t_type[1],
+		ptr_backlight_therm_data->bind1,
+		&ptr_backlight_therm_data->trip[2], &ptr_backlight_therm_data->t_type[2],
+		ptr_backlight_therm_data->bind2,
+		&ptr_backlight_therm_data->trip[3], &ptr_backlight_therm_data->t_type[3],
+		ptr_backlight_therm_data->bind3,
+		&ptr_backlight_therm_data->trip[4], &ptr_backlight_therm_data->t_type[4],
+		ptr_backlight_therm_data->bind4,
+		&ptr_backlight_therm_data->trip[5], &ptr_backlight_therm_data->t_type[5],
+		ptr_backlight_therm_data->bind5,
+		&ptr_backlight_therm_data->trip[6], &ptr_backlight_therm_data->t_type[6],
+		ptr_backlight_therm_data->bind6,
+		&ptr_backlight_therm_data->trip[7], &ptr_backlight_therm_data->t_type[7],
+		ptr_backlight_therm_data->bind7,
+		&ptr_backlight_therm_data->trip[8], &ptr_backlight_therm_data->t_type[8],
+		ptr_backlight_therm_data->bind8,
+		&ptr_backlight_therm_data->trip[9], &ptr_backlight_therm_data->t_type[9],
+		ptr_backlight_therm_data->bind9,
+		&ptr_backlight_therm_data->time_msec) == 32) {
 
 		down(&sem_mutex);
-		mtkts_lcdthermal_dprintk(
-			"[%s] mtkts_lcdthermal_unregister_thermal\n", __func__);
+		backlight_therm_dprintk(
+			"[%s] backlight_therm_unregister_thermal\n", __func__);
 
-		mtkts_lcdthermal_unregister_thermal();
+		backlight_therm_unregister_thermal();
 
 		if (num_trip < 0 || num_trip > 10) {
 			#ifdef CONFIG_MTK_AEE_FEATURE
 			aee_kernel_warning_api(__FILE__, __LINE__,
-					DB_OPT_DEFAULT, "mtkts_lcdthermal_write",
+					DB_OPT_DEFAULT, "backlight_therm_write",
 					"Bad argument");
 			#endif
-			mtkts_lcdthermal_dprintk("[%s] bad argument\n", __func__);
-			kfree(ptr_mtktslcdthermal_data);
+			backlight_therm_dprintk("[%s] bad argument\n", __func__);
+			kfree(ptr_backlight_therm_data);
 			up(&sem_mutex);
 			return -EINVAL;
 		}
 
 		for (i = 0; i < num_trip; i++)
-			g_THERMAL_TRIP[i] = ptr_mtktslcdthermal_data->t_type[i];
+			g_THERMAL_TRIP[i] = ptr_backlight_therm_data->t_type[i];
 
 		g_bind0[0] = g_bind1[0] = g_bind2[0] = g_bind3[0]
 			= g_bind4[0] = g_bind5[0] = g_bind6[0]
 			= g_bind7[0] = g_bind8[0] = g_bind9[0] = '\0';
 
 		for (i = 0; i < 20; i++) {
-			g_bind0[i] = ptr_mtktslcdthermal_data->bind0[i];
-			g_bind1[i] = ptr_mtktslcdthermal_data->bind1[i];
-			g_bind2[i] = ptr_mtktslcdthermal_data->bind2[i];
-			g_bind3[i] = ptr_mtktslcdthermal_data->bind3[i];
-			g_bind4[i] = ptr_mtktslcdthermal_data->bind4[i];
-			g_bind5[i] = ptr_mtktslcdthermal_data->bind5[i];
-			g_bind6[i] = ptr_mtktslcdthermal_data->bind6[i];
-			g_bind7[i] = ptr_mtktslcdthermal_data->bind7[i];
-			g_bind8[i] = ptr_mtktslcdthermal_data->bind8[i];
-			g_bind9[i] = ptr_mtktslcdthermal_data->bind9[i];
+			g_bind0[i] = ptr_backlight_therm_data->bind0[i];
+			g_bind1[i] = ptr_backlight_therm_data->bind1[i];
+			g_bind2[i] = ptr_backlight_therm_data->bind2[i];
+			g_bind3[i] = ptr_backlight_therm_data->bind3[i];
+			g_bind4[i] = ptr_backlight_therm_data->bind4[i];
+			g_bind5[i] = ptr_backlight_therm_data->bind5[i];
+			g_bind6[i] = ptr_backlight_therm_data->bind6[i];
+			g_bind7[i] = ptr_backlight_therm_data->bind7[i];
+			g_bind8[i] = ptr_backlight_therm_data->bind8[i];
+			g_bind9[i] = ptr_backlight_therm_data->bind9[i];
 		}
 
-		mtkts_lcdthermal_dprintk(
+		backlight_therm_dprintk(
 			"[%s] g_THERMAL_TRIP_0=%d,g_THERMAL_TRIP_1=%d,g_THERMAL_TRIP_2=%d,",
 			__func__,
 			g_THERMAL_TRIP[0], g_THERMAL_TRIP[1],
 			g_THERMAL_TRIP[2]);
 
-		mtkts_lcdthermal_dprintk(
+		backlight_therm_dprintk(
 			"g_THERMAL_TRIP_3=%d,g_THERMAL_TRIP_4=%d,g_THERMAL_TRIP_5=%d,g_THERMAL_TRIP_6=%d,",
 			g_THERMAL_TRIP[3], g_THERMAL_TRIP[4],
 			g_THERMAL_TRIP[5], g_THERMAL_TRIP[6]);
 
-		mtkts_lcdthermal_dprintk(
+		backlight_therm_dprintk(
 			"g_THERMAL_TRIP_7=%d,g_THERMAL_TRIP_8=%d,g_THERMAL_TRIP_9=%d,\n",
 			g_THERMAL_TRIP[7], g_THERMAL_TRIP[8],
 			g_THERMAL_TRIP[9]);
 
-		mtkts_lcdthermal_dprintk(
+		backlight_therm_dprintk(
 			"[%s] cooldev0=%s,cooldev1=%s,cooldev2=%s,cooldev3=%s,cooldev4=%s,",
 			__func__,
 			g_bind0, g_bind1, g_bind2, g_bind3, g_bind4);
 
-		mtkts_lcdthermal_dprintk(
+		backlight_therm_dprintk(
 			"cooldev5=%s,cooldev6=%s,cooldev7=%s,cooldev8=%s,cooldev9=%s\n",
 			g_bind5, g_bind6, g_bind7, g_bind8, g_bind9);
 
 		for (i = 0; i < num_trip; i++)
-			trip_temp[i] = ptr_mtktslcdthermal_data->trip[i];
+			trip_temp[i] = ptr_backlight_therm_data->trip[i];
 
-		interval = ptr_mtktslcdthermal_data->time_msec / 1000;
+		interval = ptr_backlight_therm_data->time_msec / 1000;
 
-		mtkts_lcdthermal_dprintk(
+		backlight_therm_dprintk(
 			"[%s] trip_0_temp=%d,trip_1_temp=%d,trip_2_temp=%d,trip_3_temp=%d,",
 			__func__,
 			trip_temp[0], trip_temp[1], trip_temp[2], trip_temp[3]);
 
-		mtkts_lcdthermal_dprintk(
+		backlight_therm_dprintk(
 			"trip_4_temp=%d,trip_5_temp=%d,trip_6_temp=%d,trip_7_temp=%d,trip_8_temp=%d,",
 			trip_temp[4], trip_temp[5], trip_temp[6],
 			trip_temp[7], trip_temp[8]);
 
-		mtkts_lcdthermal_dprintk("trip_9_temp=%d,time_ms=%d\n",
+		backlight_therm_dprintk("trip_9_temp=%d,time_ms=%d\n",
 			trip_temp[9], interval * 1000);
 
-		mtkts_lcdthermal_dprintk(
-			"[%s] mtkts_lcdthermal_register_thermal\n", __func__);
+		backlight_therm_dprintk(
+			"[%s] backlight_therm_register_thermal\n", __func__);
 
-		mtkts_lcdthermal_register_thermal();
+		backlight_therm_register_thermal();
 		up(&sem_mutex);
-		kfree(ptr_mtktslcdthermal_data);
-		/* lcdthermal_write_flag=1; */
+		kfree(ptr_backlight_therm_data);
+		/* backlight_therm_write_flag=1; */
 		return count;
 	}
 
-	mtkts_lcdthermal_dprintk("[%s] bad argument\n", __func__);
+	backlight_therm_dprintk("[%s] bad argument\n", __func__);
     #ifdef CONFIG_MTK_AEE_FEATURE
 	aee_kernel_warning_api(__FILE__, __LINE__, DB_OPT_DEFAULT,
-							"mtkts_lcdthermal_write",
+							"backlight_therm_write",
 							"Bad argument");
     #endif
-	kfree(ptr_mtktslcdthermal_data);
+	kfree(ptr_backlight_therm_data);
 	return -EINVAL;
 }
 
-void mtkts_lcdthermal_prepare_table(int table_num)
+void backlight_therm_prepare_table(int table_num)
 {
 
 	switch (table_num) {
-	case 1:		/* lcdthermal_NTC_BL197 */
-		LCDTHERMAL_Temperature_Table = LCDTHERMAL_Temperature_Table1;
-		ntc_tbl_size = sizeof(LCDTHERMAL_Temperature_Table1);
+	case 1:		/* backlight_therm_NTC_BL197 */
+		BACKLIGHT_THERM_Temperature_Table = BACKLIGHT_THERM_Temperature_Table1;
+		ntc_tbl_size = sizeof(BACKLIGHT_THERM_Temperature_Table1);
 		break;
-	case 2:		/* lcdthermal_NTC_TSM_1 */
-		LCDTHERMAL_Temperature_Table = LCDTHERMAL_Temperature_Table2;
-		ntc_tbl_size = sizeof(LCDTHERMAL_Temperature_Table2);
+	case 2:		/* backlight_therm_NTC_TSM_1 */
+		BACKLIGHT_THERM_Temperature_Table = BACKLIGHT_THERM_Temperature_Table2;
+		ntc_tbl_size = sizeof(BACKLIGHT_THERM_Temperature_Table2);
 		break;
-	case 3:		/* lcdthermal_NTC_10_SEN_1 */
-		LCDTHERMAL_Temperature_Table = LCDTHERMAL_Temperature_Table3;
-		ntc_tbl_size = sizeof(LCDTHERMAL_Temperature_Table3);
+	case 3:		/* backlight_therm_NTC_10_SEN_1 */
+		BACKLIGHT_THERM_Temperature_Table = BACKLIGHT_THERM_Temperature_Table3;
+		ntc_tbl_size = sizeof(BACKLIGHT_THERM_Temperature_Table3);
 		break;
-	case 4:		/* lcdthermal_NTC_10 */
-		LCDTHERMAL_Temperature_Table = LCDTHERMAL_Temperature_Table4;
-		ntc_tbl_size = sizeof(LCDTHERMAL_Temperature_Table4);
+	case 4:		/* backlight_therm_NTC_10 */
+		BACKLIGHT_THERM_Temperature_Table = BACKLIGHT_THERM_Temperature_Table4;
+		ntc_tbl_size = sizeof(BACKLIGHT_THERM_Temperature_Table4);
 		break;
-	case 5:		/* lcdthermal_NTC_47 */
-		LCDTHERMAL_Temperature_Table = LCDTHERMAL_Temperature_Table5;
-		ntc_tbl_size = sizeof(LCDTHERMAL_Temperature_Table5);
+	case 5:		/* backlight_therm_NTC_47 */
+		BACKLIGHT_THERM_Temperature_Table = BACKLIGHT_THERM_Temperature_Table5;
+		ntc_tbl_size = sizeof(BACKLIGHT_THERM_Temperature_Table5);
 		break;
 	case 6:		/* NTCG104EF104F */
-		LCDTHERMAL_Temperature_Table = LCDTHERMAL_Temperature_Table6;
-		ntc_tbl_size = sizeof(LCDTHERMAL_Temperature_Table6);
+		BACKLIGHT_THERM_Temperature_Table = BACKLIGHT_THERM_Temperature_Table6;
+		ntc_tbl_size = sizeof(BACKLIGHT_THERM_Temperature_Table6);
 		break;
 	case 7:		/* NCP15WF104F03RC */
-		LCDTHERMAL_Temperature_Table = LCDTHERMAL_Temperature_Table7;
-		ntc_tbl_size = sizeof(LCDTHERMAL_Temperature_Table7);
+		BACKLIGHT_THERM_Temperature_Table = BACKLIGHT_THERM_Temperature_Table7;
+		ntc_tbl_size = sizeof(BACKLIGHT_THERM_Temperature_Table7);
 		break;
-	default:		/* lcdthermal_NTC_10 */
-		LCDTHERMAL_Temperature_Table = LCDTHERMAL_Temperature_Table4;
-		ntc_tbl_size = sizeof(LCDTHERMAL_Temperature_Table4);
+	default:		/* backlight_therm_NTC_10 */
+		BACKLIGHT_THERM_Temperature_Table = BACKLIGHT_THERM_Temperature_Table4;
+		ntc_tbl_size = sizeof(BACKLIGHT_THERM_Temperature_Table4);
 		break;
 	}
 
-	pr_notice("[Thermal/TZ/LCDTHERMAL] %s table_num=%d\n", __func__, table_num);
+	pr_notice("[Thermal/TZ/BACKLIGHT_THERM] %s table_num=%d\n", __func__, table_num);
 
 #if 0
 	{
 		int i = 0;
 
 		for (i = 0; i < (ntc_tbl_size
-			/ sizeof(struct LCDTHERMAL_TEMPERATURE)); i++) {
+			/ sizeof(struct BACKLIGHT_THERM_TEMPERATURE)); i++) {
 			pr_notice(
-				"LCDTHERMAL_Temperature_Table[%d].lcdthermalteryTemp =%d\n", i,
-				LCDTHERMAL_Temperature_Table[i].LCDTHERMAL_Temp);
+				"BACKLIGHT_THERM_Temperature_Table[%d].backlight_thermteryTemp =%d\n", i,
+				BACKLIGHT_THERM_Temperature_Table[i].BACKLIGHT_THERM_Temp);
 			pr_notice(
-				"LCDTHERMAL_Temperature_Table[%d].TemperatureR=%d\n",
-				i, LCDTHERMAL_Temperature_Table[i].TemperatureR);
+				"BACKLIGHT_THERM_Temperature_Table[%d].TemperatureR=%d\n",
+				i, BACKLIGHT_THERM_Temperature_Table[i].TemperatureR);
 		}
 	}
 #endif
 }
 
-static int mtkts_lcdthermal_param_read(struct seq_file *m, void *v)
+static int backlight_therm_param_read(struct seq_file *m, void *v)
 {
 	seq_printf(m, "%d\n", g_RAP_pull_up_R);
 	seq_printf(m, "%d\n", g_RAP_pull_up_voltage);
@@ -1114,11 +1114,11 @@ static int mtkts_lcdthermal_param_read(struct seq_file *m, void *v)
 }
 
 
-static ssize_t mtkts_lcdthermal_param_write(
+static ssize_t backlight_therm_param_write(
 struct file *file, const char __user *buffer, size_t count, loff_t *data)
 {
 	int len = 0;
-	struct mtktslcdthermal_param_data {
+	struct backlight_therm_param_data {
 		char desc[512];
 		char pull_R[10], pull_V[10];
 		char overcrilow[16];
@@ -1127,84 +1127,84 @@ struct file *file, const char __user *buffer, size_t count, loff_t *data)
 		unsigned int adc_channel;
 	};
 
-	struct mtktslcdthermal_param_data *ptr_mtktslcdthermal_parm_data;
+	struct backlight_therm_param_data *ptr_backlight_therm_parm_data;
 
-	ptr_mtktslcdthermal_parm_data = kmalloc(
-				sizeof(*ptr_mtktslcdthermal_parm_data), GFP_KERNEL);
+	ptr_backlight_therm_parm_data = kmalloc(
+				sizeof(*ptr_backlight_therm_parm_data), GFP_KERNEL);
 
-	if (ptr_mtktslcdthermal_parm_data == NULL)
+	if (ptr_backlight_therm_parm_data == NULL)
 		return -ENOMEM;
 
 	/* external pin: 0/1/12/13/14/15, can't use pin:2/3/4/5/6/7/8/9/10/11,
 	 *choose "adc_channel=11" to check if there is any param input
 	 */
-	ptr_mtktslcdthermal_parm_data->adc_channel = 11;
+	ptr_backlight_therm_parm_data->adc_channel = 11;
 
-	len = (count < (sizeof(ptr_mtktslcdthermal_parm_data->desc) - 1)) ?
-			count : (sizeof(ptr_mtktslcdthermal_parm_data->desc) - 1);
+	len = (count < (sizeof(ptr_backlight_therm_parm_data->desc) - 1)) ?
+			count : (sizeof(ptr_backlight_therm_parm_data->desc) - 1);
 
-	if (copy_from_user(ptr_mtktslcdthermal_parm_data->desc, buffer, len)) {
-		kfree(ptr_mtktslcdthermal_parm_data);
+	if (copy_from_user(ptr_backlight_therm_parm_data->desc, buffer, len)) {
+		kfree(ptr_backlight_therm_parm_data);
 		return 0;
 	}
 
-	ptr_mtktslcdthermal_parm_data->desc[len] = '\0';
+	ptr_backlight_therm_parm_data->desc[len] = '\0';
 
-	mtkts_lcdthermal_dprintk("[%s]\n", __func__);
+	backlight_therm_dprintk("[%s]\n", __func__);
 
 	if (sscanf
-	    (ptr_mtktslcdthermal_parm_data->desc, "%9s %d %9s %d %15s %d %9s %d %d",
-		ptr_mtktslcdthermal_parm_data->pull_R, &ptr_mtktslcdthermal_parm_data->valR,
-		ptr_mtktslcdthermal_parm_data->pull_V, &ptr_mtktslcdthermal_parm_data->valV,
-		ptr_mtktslcdthermal_parm_data->overcrilow,
-		&ptr_mtktslcdthermal_parm_data->over_cri_low,
-		ptr_mtktslcdthermal_parm_data->NTC_TABLE,
-		&ptr_mtktslcdthermal_parm_data->ntc_table,
-		&ptr_mtktslcdthermal_parm_data->adc_channel) >= 8) {
+	    (ptr_backlight_therm_parm_data->desc, "%9s %d %9s %d %15s %d %9s %d %d",
+		ptr_backlight_therm_parm_data->pull_R, &ptr_backlight_therm_parm_data->valR,
+		ptr_backlight_therm_parm_data->pull_V, &ptr_backlight_therm_parm_data->valV,
+		ptr_backlight_therm_parm_data->overcrilow,
+		&ptr_backlight_therm_parm_data->over_cri_low,
+		ptr_backlight_therm_parm_data->NTC_TABLE,
+		&ptr_backlight_therm_parm_data->ntc_table,
+		&ptr_backlight_therm_parm_data->adc_channel) >= 8) {
 
-		if (!strcmp(ptr_mtktslcdthermal_parm_data->pull_R, "PUP_R")) {
-			g_RAP_pull_up_R = ptr_mtktslcdthermal_parm_data->valR;
-			mtkts_lcdthermal_dprintk("g_RAP_pull_up_R=%d\n",
+		if (!strcmp(ptr_backlight_therm_parm_data->pull_R, "PUP_R")) {
+			g_RAP_pull_up_R = ptr_backlight_therm_parm_data->valR;
+			backlight_therm_dprintk("g_RAP_pull_up_R=%d\n",
 							g_RAP_pull_up_R);
 		} else {
-			mtkts_lcdthermal_printk(
+			backlight_therm_printk(
 				"[%s] bad PUP_R argument\n", __func__);
-			kfree(ptr_mtktslcdthermal_parm_data);
+			kfree(ptr_backlight_therm_parm_data);
 			return -EINVAL;
 		}
 
-		if (!strcmp(ptr_mtktslcdthermal_parm_data->pull_V, "PUP_VOLT")) {
-			g_RAP_pull_up_voltage = ptr_mtktslcdthermal_parm_data->valV;
-			mtkts_lcdthermal_dprintk("g_Rat_pull_up_voltage=%d\n",
+		if (!strcmp(ptr_backlight_therm_parm_data->pull_V, "PUP_VOLT")) {
+			g_RAP_pull_up_voltage = ptr_backlight_therm_parm_data->valV;
+			backlight_therm_dprintk("g_Rat_pull_up_voltage=%d\n",
 							g_RAP_pull_up_voltage);
 		} else {
-			mtkts_lcdthermal_printk(
+			backlight_therm_printk(
 				"[%s] bad PUP_VOLT argument\n", __func__);
-			kfree(ptr_mtktslcdthermal_parm_data);
+			kfree(ptr_backlight_therm_parm_data);
 			return -EINVAL;
 		}
 
-		if (!strcmp(ptr_mtktslcdthermal_parm_data->overcrilow,
+		if (!strcmp(ptr_backlight_therm_parm_data->overcrilow,
 			"OVER_CRITICAL_L")) {
 			g_TAP_over_critical_low =
-					ptr_mtktslcdthermal_parm_data->over_cri_low;
-			mtkts_lcdthermal_dprintk("g_TAP_over_critical_low=%d\n",
+					ptr_backlight_therm_parm_data->over_cri_low;
+			backlight_therm_dprintk("g_TAP_over_critical_low=%d\n",
 						g_TAP_over_critical_low);
 		} else {
-			mtkts_lcdthermal_printk(
+			backlight_therm_printk(
 				"[%s] bad OVERCRIT_L argument\n", __func__);
-			kfree(ptr_mtktslcdthermal_parm_data);
+			kfree(ptr_backlight_therm_parm_data);
 			return -EINVAL;
 		}
 
-		if (!strcmp(ptr_mtktslcdthermal_parm_data->NTC_TABLE, "NTC_TABLE")) {
-			g_RAP_ntc_table = ptr_mtktslcdthermal_parm_data->ntc_table;
-			mtkts_lcdthermal_dprintk("g_RAP_ntc_table=%d\n",
+		if (!strcmp(ptr_backlight_therm_parm_data->NTC_TABLE, "NTC_TABLE")) {
+			g_RAP_ntc_table = ptr_backlight_therm_parm_data->ntc_table;
+			backlight_therm_dprintk("g_RAP_ntc_table=%d\n",
 							g_RAP_ntc_table);
 		} else {
-			mtkts_lcdthermal_printk(
+			backlight_therm_printk(
 				"[%s] bad NTC_TABLE argument\n", __func__);
-			kfree(ptr_mtktslcdthermal_parm_data);
+			kfree(ptr_backlight_therm_parm_data);
 			return -EINVAL;
 		}
 
@@ -1212,8 +1212,8 @@ struct file *file, const char __user *buffer, size_t count, loff_t *data)
 		 * can't use pin:2/3/4/5/6/7/8/9/10/11,
 		 * choose "adc_channel=11" to check if there is any param input
 		 */
-		if ((ptr_mtktslcdthermal_parm_data->adc_channel >= 2)
-		&& (ptr_mtktslcdthermal_parm_data->adc_channel <= 11))
+		if ((ptr_backlight_therm_parm_data->adc_channel >= 2)
+		&& (ptr_backlight_therm_parm_data->adc_channel <= 11))
 			/* check unsupport pin value, if unsupport,
 			 * set channel = 1 as default setting.
 			 */
@@ -1222,43 +1222,43 @@ struct file *file, const char __user *buffer, size_t count, loff_t *data)
 			/* check if there is any param input,
 			 * if not using default g_RAP_ADC_channel:1
 			 */
-			if (ptr_mtktslcdthermal_parm_data->adc_channel != 11)
+			if (ptr_backlight_therm_parm_data->adc_channel != 11)
 				g_RAP_ADC_channel =
-					ptr_mtktslcdthermal_parm_data->adc_channel;
+					ptr_backlight_therm_parm_data->adc_channel;
 			else
 				g_RAP_ADC_channel = AUX_IN5_NTC;
 		}
-		mtkts_lcdthermal_dprintk("adc_channel=%d\n",
-					ptr_mtktslcdthermal_parm_data->adc_channel);
-		mtkts_lcdthermal_dprintk("g_RAP_ADC_channel=%d\n",
+		backlight_therm_dprintk("adc_channel=%d\n",
+					ptr_backlight_therm_parm_data->adc_channel);
+		backlight_therm_dprintk("g_RAP_ADC_channel=%d\n",
 						g_RAP_ADC_channel);
 
-		mtkts_lcdthermal_prepare_table(g_RAP_ntc_table);
+		backlight_therm_prepare_table(g_RAP_ntc_table);
 
-		kfree(ptr_mtktslcdthermal_parm_data);
+		kfree(ptr_backlight_therm_parm_data);
 		return count;
 	}
 
-	mtkts_lcdthermal_printk("[%s] bad argument\n", __func__);
-	kfree(ptr_mtktslcdthermal_parm_data);
+	backlight_therm_printk("[%s] bad argument\n", __func__);
+	kfree(ptr_backlight_therm_parm_data);
 	return -EINVAL;
 }
 
-/* int  mtkts_lcdthermal_register_cooler(void)
+/* int  backlight_therm_register_cooler(void)
  * {
  *  cooling devices
  *  cl_dev_sysrst = mtk_thermal_cooling_device_register(
- *  "mtktslcdthermaltery-sysrst", NULL,
- *  &mtkts_lcdthermal_cooling_sysrst_ops);
+ *  "backlight_thermtery-sysrst", NULL,
+ *  &backlight_therm_cooling_sysrst_ops);
  *  return 0;
  * }
  */
 
 #if 0
-static void mtkts_lcdthermal_cancel_thermal_timer(void)
+static void backlight_therm_cancel_thermal_timer(void)
 {
 	/* cancel timer
-	 * mtkts_lcdthermal_printk("mtkts_lcdthermal_cancel_thermal_timer\n");
+	 * backlight_therm_printk("backlight_therm_cancel_thermal_timer\n");
 
 	 * stop thermal framework polling when entering deep idle
 
@@ -1273,9 +1273,9 @@ static void mtkts_lcdthermal_cancel_thermal_timer(void)
 }
 
 
-static void mtkts_lcdthermal_start_thermal_timer(void)
+static void backlight_therm_start_thermal_timer(void)
 {
-	/* mtkts_lcdthermal_printk("mtkts_lcdthermal_start_thermal_timer\n");
+	/* backlight_therm_printk("backlight_therm_start_thermal_timer\n");
 	 * resume thermal framework polling when leaving deep idle
 	 *
 	 *if (thz_dev != NULL && interval != 0)
@@ -1286,28 +1286,28 @@ static void mtkts_lcdthermal_start_thermal_timer(void)
 }
 #endif
 
-static int mtkts_lcdthermal_register_thermal(void)
+static int backlight_therm_register_thermal(void)
 {
-	mtkts_lcdthermal_dprintk("[%s]\n", __func__);
+	backlight_therm_dprintk("[%s]\n", __func__);
 
 	/* trips : trip 0~1 */
-	thz_dev = mtk_thermal_zone_device_register("mtktslcdthermal", num_trip, NULL,
-						&mtkts_LCDTHERMAL_dev_ops, 0, 0, 0,
+	thz_dev = mtk_thermal_zone_device_register("backlight_therm", num_trip, NULL,
+						&mtkts_BACKLIGHT_THERM_dev_ops, 0, 0, 0,
 						interval * 1000);
 
 	return 0;
 }
 
-/* void mtkts_lcdthermal_unregister_cooler(void) */
+/* void backlight_therm_unregister_cooler(void) */
 /* { */
 	/* if (cl_dev_sysrst) { */
 	/* mtk_thermal_cooling_device_unregister(cl_dev_sysrst); */
 	/* cl_dev_sysrst = NULL; */
 	/* } */
 /* } */
-static void mtkts_lcdthermal_unregister_thermal(void)
+static void backlight_therm_unregister_thermal(void)
 {
-	mtkts_lcdthermal_dprintk("[%s]\n", __func__);
+	backlight_therm_dprintk("[%s]\n", __func__);
 
 	if (thz_dev) {
 		mtk_thermal_zone_device_unregister(thz_dev);
@@ -1315,37 +1315,37 @@ static void mtkts_lcdthermal_unregister_thermal(void)
 	}
 }
 
-static int mtkts_lcdthermal_open(struct inode *inode, struct file *file)
+static int backlight_therm_open(struct inode *inode, struct file *file)
 {
-	return single_open(file, mtkts_lcdthermal_read, NULL);
+	return single_open(file, backlight_therm_read, NULL);
 }
 
-static const struct file_operations mtkts_lcdthermal_fops = {
+static const struct file_operations backlight_therm_fops = {
 	.owner = THIS_MODULE,
-	.open = mtkts_lcdthermal_open,
+	.open = backlight_therm_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
-	.write = mtkts_lcdthermal_write,
+	.write = backlight_therm_write,
 	.release = single_release,
 };
 
 
-static int mtkts_lcdthermal_param_open(struct inode *inode, struct file *file)
+static int backlight_therm_param_open(struct inode *inode, struct file *file)
 {
-	return single_open(file, mtkts_lcdthermal_param_read, NULL);
+	return single_open(file, backlight_therm_param_read, NULL);
 }
 
-static const struct file_operations mtkts_lcdthermal_param_fops = {
+static const struct file_operations backlight_therm_param_fops = {
 	.owner = THIS_MODULE,
-	.open = mtkts_lcdthermal_param_open,
+	.open = backlight_therm_param_open,
 	.read = seq_read,
 	.llseek = seq_lseek,
-	.write = mtkts_lcdthermal_param_write,
+	.write = backlight_therm_param_write,
 	.release = single_release,
 };
 
 #if defined(CONFIG_MEDIATEK_MT6577_AUXADC)
-static int mtkts_lcdthermal_probe(struct platform_device *pdev)
+static int backlight_therm_probe(struct platform_device *pdev)
 {
 	int err = 0;
 	int ret = 0;
@@ -1353,7 +1353,7 @@ static int mtkts_lcdthermal_probe(struct platform_device *pdev)
 	pr_info("[%s]\n", __func__);
 
 	if (!pdev->dev.of_node) {
-		mtkts_lcdthermal_printk("[%s] Only DT based supported\n",
+		backlight_therm_printk("[%s] Only DT based supported\n",
 			__func__);
 		return -ENODEV;
 	}
@@ -1367,13 +1367,13 @@ static int mtkts_lcdthermal_probe(struct platform_device *pdev)
 	thermistor_ch5 = iio_channel_get(&pdev->dev, "thermistor-ch5");
 	ret = IS_ERR(thermistor_ch5);
 	if (ret) {
-		mtkts_lcdthermal_printk("[%s] fail to get auxadc iio ch5: %d\n",
+		backlight_therm_printk("[%s] fail to get auxadc iio ch5: %d\n",
 			__func__, ret);
 		return ret;
 	}
 
 	g_ADC_channel = thermistor_ch5->channel->channel;
-	mtkts_lcdthermal_printk("[%s]get auxadc iio ch: %d\n", __func__,
+	backlight_therm_printk("[%s]get auxadc iio ch: %d\n", __func__,
 		thermistor_ch5->channel->channel);
 
 	return err;
@@ -1387,10 +1387,10 @@ const struct of_device_id mt_thermistor_of_match6[2] = {
 #endif
 
 #define THERMAL_THERMISTOR_NAME    "mtboard-thermistor6"
-static struct platform_driver mtk_thermal_lcdthermal_driver = {
+static struct platform_driver mtk_thermal_backlight_therm_driver = {
 	.remove = NULL,
 	.shutdown = NULL,
-	.probe = mtkts_lcdthermal_probe,
+	.probe = backlight_therm_probe,
 	.suspend = NULL,
 	.resume = NULL,
 	.driver = {
@@ -1403,62 +1403,62 @@ static struct platform_driver mtk_thermal_lcdthermal_driver = {
 #endif /*CONFIG_MEDIATEK_MT6577_AUXADC*/
 
 
-static int __init mtkts_lcdthermal_init(void)
+static int __init backlight_therm_init(void)
 {
 	struct proc_dir_entry *entry = NULL;
-	struct proc_dir_entry *mtkts_lcdthermal_dir = NULL;
+	struct proc_dir_entry *backlight_therm_dir = NULL;
 #if defined(CONFIG_MEDIATEK_MT6577_AUXADC)
 	int err = 0;
 #endif
 
-	mtkts_lcdthermal_dprintk("[%s]\n", __func__);
+	backlight_therm_dprintk("[%s]\n", __func__);
 
 
 #if defined(CONFIG_MEDIATEK_MT6577_AUXADC)
-	err = platform_driver_register(&mtk_thermal_lcdthermal_driver);
+	err = platform_driver_register(&mtk_thermal_backlight_therm_driver);
 	if (err) {
-		mtkts_lcdthermal_printk("thermal driver callback register failed.\n");
+		backlight_therm_printk("thermal driver callback register failed.\n");
 		return err;
 	}
 #endif
 
 	/* setup default table */
-	mtkts_lcdthermal_prepare_table(g_RAP_ntc_table);
+	backlight_therm_prepare_table(g_RAP_ntc_table);
 
-	mtkts_lcdthermal_dir = mtk_thermal_get_proc_drv_therm_dir_entry();
-	if (!mtkts_lcdthermal_dir) {
-		mtkts_lcdthermal_dprintk("[%s]: mkdir /proc/driver/thermal failed\n",
+	backlight_therm_dir = mtk_thermal_get_proc_drv_therm_dir_entry();
+	if (!backlight_therm_dir) {
+		backlight_therm_dprintk("[%s]: mkdir /proc/driver/thermal failed\n",
 								__func__);
 	} else {
-		entry = proc_create("tzlcdthermal", 0664, mtkts_lcdthermal_dir,
-							&mtkts_lcdthermal_fops);
+		entry = proc_create("tzbacklight_therm", 0664, backlight_therm_dir,
+							&backlight_therm_fops);
 		if (entry)
 			proc_set_user(entry, uid, gid);
 
-		entry = proc_create("tzlcdthermal_param", 0664, mtkts_lcdthermal_dir,
-							&mtkts_lcdthermal_param_fops);
+		entry = proc_create("tzbacklight_therm_param", 0664, backlight_therm_dir,
+							&backlight_therm_param_fops);
 		if (entry)
 			proc_set_user(entry, uid, gid);
 
 	}
 
-	mtkts_lcdthermal_register_thermal();
+	backlight_therm_register_thermal();
 #if 0
-	mtkTTimer_register("mtktslcdthermal", mtkts_lcdthermal_start_thermal_timer,
-					mtkts_lcdthermal_cancel_thermal_timer);
+	mtkTTimer_register("backlight_therm", backlight_therm_start_thermal_timer,
+					backlight_therm_cancel_thermal_timer);
 #endif
 	return 0;
 }
 
-static void __exit mtkts_lcdthermal_exit(void)
+static void __exit backlight_therm_exit(void)
 {
-	mtkts_lcdthermal_dprintk("[%s]\n", __func__);
-	mtkts_lcdthermal_unregister_thermal();
+	backlight_therm_dprintk("[%s]\n", __func__);
+	backlight_therm_unregister_thermal();
 #if 0
-	mtkTTimer_unregister("mtktslcdthermal");
+	mtkTTimer_unregister("backlight_therm");
 #endif
-	/* mtkts_lcdthermal_unregister_cooler(); */
+	/* backlight_therm_unregister_cooler(); */
 }
 
-module_init(mtkts_lcdthermal_init);
-module_exit(mtkts_lcdthermal_exit);
+module_init(backlight_therm_init);
+module_exit(backlight_therm_exit);
