@@ -58,6 +58,10 @@ static int cm_mgr_loop_count;
 static int cm_mgr_dram_level;
 static int cm_mgr_loop;
 static int total_bw_value;
+#ifdef USE_CM_USER_MODE
+unsigned int cm_user_mode;
+unsigned int cm_user_active;
+#endif
 #ifdef USE_BCPU_WEIGHT
 int cpu_power_bcpu_weight_max = 350;
 int cpu_power_bcpu_weight_min = 100;
