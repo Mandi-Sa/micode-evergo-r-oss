@@ -1207,23 +1207,23 @@
             </gpio102>
             <gpio103>
                 <eint_mode>false</eint_mode>
-                <def_mode>1</def_mode>
+                <def_mode>3</def_mode>
                 <inpull_en>true</inpull_en>
                 <inpull_selhigh>true</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
-                <varName0>GPIO_I2C3_SCA_PIN</varName0>
+                <varName0>GPIO_SENSOR0_I2C_SCL</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio103>
             <gpio104>
                 <eint_mode>false</eint_mode>
-                <def_mode>1</def_mode>
+                <def_mode>3</def_mode>
                 <inpull_en>true</inpull_en>
                 <inpull_selhigh>true</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
-                <varName0>GPIO_I2C3_SDA_PIN</varName0>
+                <varName0>GPIO_SENSOR0_I2C_SDA</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio104>
