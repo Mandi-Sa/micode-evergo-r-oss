@@ -397,34 +397,6 @@
 	};
 };
 
-/* nfc st54h  start */
-&pio {
-	pinctrl_state_mode_spi: pinctrl_state_mode_spi {
-        pins_cmd_dat {
-			pinmux = <PINMUX_GPIO26__FUNC_SPI0_MI>,
-				<PINMUX_GPIO25__FUNC_SPI0_MO>,
-				<PINMUX_GPIO23__FUNC_SPI0_CLK>,
-				<PINMUX_GPIO24__FUNC_SPI0_CSB>;
-			drive-strength = <2>;
-		};
-	};
-
-&spi0 {
-        status = "okay";
-	st54spi@0 {
-		compatible = "st,st54spi";
-		reg = <0>;
-		spi-max-frequency = <10000000>;
-                gpio-power_nreset = <88>;
-		gpio-power_nreset-std = <&pio 88 0x0>;
-                power_mode = "ST54J";
-		pinctrl-names = "pinctrl_state_mode_spi", "pinctrl_state_mode_idle";
-		pinctrl-0 = <&pinctrl_state_mode_spi>;
-		pinctrl-1 = <&pinctrl_state_mode_idle>;
-	};
-};
-
-/* st54h  end */
 /* GPS GPIO standardization start */
 &pio {
 	gps_pins_default: gps_default {
