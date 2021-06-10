@@ -296,6 +296,8 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(shutdown_delay),
 	//Bug664795,wangbin,wt.ADD,20210604,add real type node
 	POWER_SUPPLY_ATTR(real_type),
+	//Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp
+	POWER_SUPPLY_ATTR(charger_temp),
 	/* Local extensions */
 	POWER_SUPPLY_ATTR(usb_hc),
 	POWER_SUPPLY_ATTR(usb_otg),
