@@ -143,6 +143,8 @@ static enum power_supply_property battery_props[] = {
 	POWER_SUPPLY_PROP_BATT_ID_UPDATE,
 	//Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s
 	POWER_SUPPLY_PROP_SHUTDOWN_DELAY,
+	//Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp
+	POWER_SUPPLY_PROP_CHARGER_TEMP,
 
 };
 
@@ -515,6 +517,26 @@ static int mtk_get_prop_soc_decimal(int *val)
 }
 /* -Extb HONGMI-84841,wangbin,wt,ADD,20210608,add decimal soc*/
 
+/* +Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp*/
+int get_charger_pump_temp()
+{
+	int ret;
+	union power_supply_propval val = {0,};
+	struct power_supply *charger_dev;
+
+	charger_dev = power_supply_get_by_name("sc8551-standalone");
+	if (!charger_dev){
+		charger_dev = power_supply_get_by_name("ln8000-standalone");
+		if (!charger_dev){
+			pr_info("%s:get ln8000-standalone fail\n",__func__);
+			return 0;
+		}
+	}
+	ret = power_supply_get_property(charger_dev,POWER_SUPPLY_PROP_SC_DIE_TEMPERATURE, &val);
+	return val.intval;
+}
+/* -Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp*/
+
 //Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s
 #define SHUTDOWN_DELAY_VOL	3300
 extern bool mtk_shutdown_delay_enable;
@@ -594,6 +616,11 @@ static int battery_get_property(struct power_supply *psy,
 		val->intval = shutdown_delay;
 		break;
 	/* -Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s */
+	/* +Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp*/
+	case POWER_SUPPLY_PROP_CHARGER_TEMP:
+		val->intval = get_charger_pump_temp();
+		break;
+	/* -Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp*/
 
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
 		b_ischarging = gauge_get_current(&fgcurrent);
