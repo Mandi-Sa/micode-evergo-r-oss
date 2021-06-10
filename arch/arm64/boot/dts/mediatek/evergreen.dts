@@ -397,6 +397,17 @@
 	};
 };
 
+/* nfc st54h  start */
+&pio {
+	pinctrl_state_mode_spi: pinctrl_state_mode_spi {
+        pins_cmd_dat {
+			pinmux = <PINMUX_GPIO26__FUNC_SPI0_MI>,
+				<PINMUX_GPIO25__FUNC_SPI0_MO>,
+				<PINMUX_GPIO23__FUNC_SPI0_CLK>,
+				<PINMUX_GPIO24__FUNC_SPI0_CSB>;
+			drive-strength = <2>;
+		};
+	};
 
 &spi0 {
         status = "okay";

@@ -543,6 +543,11 @@ config SIMTRAY_STATUS
 	help
 	  Say 'y' here to support SIM tray GPIO detection
 
+config DEBUG_POLICY
+	bool "Enable DebugPolicy Proc Interface"
+	help
+	Provide a interface for reading debug policy status
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"

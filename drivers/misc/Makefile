@@ -66,6 +66,8 @@ obj-$(CONFIG_BATT_VERIFY_BY_DS28E16) += maxim/
 obj-$(CONFIG_MEDIATEK_SOLUTION) += mediatek/
 obj-y += mi-memory/
 obj-$(CONFIG_SIMTRAY_STATUS) += simtray.o
+#lizhenyu.wt 2021-0531
+obj-$(CONFIG_DEBUG_POLICY) += debug_policy.o
 
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_core.o
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_bugs.o

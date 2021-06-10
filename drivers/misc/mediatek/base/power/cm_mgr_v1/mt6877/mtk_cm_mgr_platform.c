@@ -1116,3 +1116,82 @@ void cm_mgr_ddr_setting_init(void)
 	}
 #endif
 }
+
+#ifdef USE_CM_USER_MODE
+void cm_mgr_user_mode_set(unsigned int mode)
+{
+	/* reset to default if active before*/
+	if (cm_user_active && !mode)
+		cm_mgr_user_mode_cmd(1, NULL, 0, 0);
+
+	if (((0x1 << cm_mgr_idx) & mode) != 0)
+		cm_user_active = 1;
+	else
+		cm_user_active = 0;
+
+	cm_user_mode = mode;
+
+	pr_info("#@# %s(%d) cm_user_mode: %d active:%d (mode=%d idx=%d)\n",
+		__func__, __LINE__, cm_user_mode, cm_user_active, mode, cm_mgr_idx);
+}
+
+void cm_mgr_user_mode_cmd(int reset, char *cmd, unsigned int val_1,
+							unsigned int val_2)
+{
+	int i;
+
+	if (reset) {
+		if (cm_mgr_idx == CM_MGR_LP4) {
+			for (i = 0; i < CM_MGR_EMI_OPP; i++) {
+				cpu_power_ratio_up[i] = cpu_power_ratio_up0[i];
+				cpu_power_ratio_down[i] = cpu_power_ratio_down0[i];
+				debounce_times_down_adb[i] = debounce_times_down_adb0[i];
+			}
+		} else if (cm_mgr_idx == CM_MGR_LP5) {
+			for (i = 0; i < CM_MGR_EMI_OPP; i++) {
+				cpu_power_ratio_up[i] = cpu_power_ratio_up1[i];
+				cpu_power_ratio_down[i] = cpu_power_ratio_down1[i];
+				debounce_times_down_adb[i] = debounce_times_down_adb1[i];
+			}
+		} else {
+			pr_info("#@# %s(%d) cm_mgr_idx: %d unknown\n",
+					__func__, __LINE__, cm_mgr_idx);
+		}
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
+		for (i = 0; i < CM_MGR_EMI_OPP; i++) {
+			cm_mgr_to_sspm_command(IPI_CM_MGR_CPU_POWER_RATIO_UP,
+				i << 16 | cpu_power_ratio_up[i]);
+			cm_mgr_to_sspm_command(IPI_CM_MGR_CPU_POWER_RATIO_DOWN,
+				i << 16 | cpu_power_ratio_down[i]);
+			cm_mgr_to_sspm_command(IPI_CM_MGR_DEBOUNCE_DOWN,
+				i << 16 | debounce_times_down_adb[i]);
+		}
+#endif
+	} else {
+		if (!strcmp(cmd, "cpu_power_ratio_up")) {
+			if (val_1 < CM_MGR_EMI_OPP)
+				cpu_power_ratio_up[val_1] = val_2;
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
+			cm_mgr_to_sspm_command(IPI_CM_MGR_CPU_POWER_RATIO_UP,
+				val_1 << 16 | val_2);
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT */
+		} else if (!strcmp(cmd, "cpu_power_ratio_down")) {
+			if (val_1 < CM_MGR_EMI_OPP)
+				cpu_power_ratio_down[val_1] = val_2;
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
+			cm_mgr_to_sspm_command(IPI_CM_MGR_CPU_POWER_RATIO_DOWN,
+				val_1 << 16 | val_2);
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT */
+		} else if (!strcmp(cmd, "debounce_times_down_adb")) {
+			if (val_1 < CM_MGR_EMI_OPP)
+				debounce_times_down_adb[val_1] = val_2;
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
+			cm_mgr_to_sspm_command(IPI_CM_MGR_DEBOUNCE_DOWN,
+				val_1 << 16 | val_2);
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT */
+		} else {
+			pr_info("cmd:%s not support for user mode\n", cmd);
+		}
+	}
+}
+#endif /* USE_CM_USER_MODE */
