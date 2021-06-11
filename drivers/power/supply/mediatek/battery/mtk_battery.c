@@ -4136,7 +4136,7 @@ static ssize_t store_Power_Off_Voltage(
 static ssize_t show_input_suspend(struct device *dev,
 		struct device_attribute *attr, char *buf)
 {
-	return -1;
+	return sprintf(buf, "%u\n", gm.input_suspend);
 }
 
 static ssize_t store_input_suspend(struct device *dev,
@@ -4154,6 +4154,7 @@ static ssize_t store_input_suspend(struct device *dev,
 			val = 0;
 		}
 		val = (val > 0) ? 0 : 1;
+		gm.input_suspend = !val;
 		if (gm.pbat_consumer != NULL) {
 			charger_manager_enable_charging(gm.pbat_consumer,0, val);
 			charger_manager_enable_charging(gm.pbat_consumer,1, val);
@@ -4786,9 +4787,11 @@ static int __init battery_probe(struct platform_device *dev)
 		gm.bat_nb.notifier_call = battery_callback;
 		register_charger_manager_notifier(gm.pbat_consumer, &gm.bat_nb);
 	}
-	//Extb HONGMI-84891,chenrui1.wt,20210512,ADD,add input_suspend API for running test
+	//+Extb HONGMI-84891,chenrui1.wt,20210512,ADD,add input_suspend API for running test
+	gm.input_suspend = false;
 	ret = device_create_file(&battery_main.psy->dev, &dev_attr_input_suspend);
-	
+	//-Extb HONGMI-84891,chenrui1.wt,20210512,ADD,add input_suspend API for running test
+
 	/* +Bug653766,wangbin.wt,add,20210514,add start/stop API for running test */
 	ret = device_create_file(&battery_main.psy->dev, &dev_attr_StopCharging_Test);
 	ret = device_create_file(&battery_main.psy->dev, &dev_attr_StartCharging_Test);
