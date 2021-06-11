@@ -207,6 +207,8 @@ enum power_supply_property {
 	POWER_SUPPLY_PROP_SHUTDOWN_DELAY,
 	//Bug664795,wangbin,wt.ADD,20210604,add real type node
 	POWER_SUPPLY_PROP_REAL_TYPE,
+	//Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp
+	POWER_SUPPLY_PROP_CHARGER_TEMP,
 	/* Local extensions */
 	POWER_SUPPLY_PROP_USB_HC,
 	POWER_SUPPLY_PROP_USB_OTG,
