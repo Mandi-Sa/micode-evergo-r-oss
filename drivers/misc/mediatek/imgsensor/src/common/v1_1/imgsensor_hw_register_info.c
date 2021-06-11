@@ -113,6 +113,10 @@ IMGSENSOR_HQ_REGISTER_INFO cam_hwinfo[MAX_IMGSENSOR_NUM][MAX_VENDOR_COUNT] = {
 	{
 	    {"ov02b10aac_mipi_raw_i", 21, "AAC", OV02B10AAC_SENSOR_ID, macro_hw_info, 0xA4, ov02b10aac_get_otpdata},
 	    {"gc02m1ofilm_mipi_raw_ii", 23, "OFILM", GC02M1OFILM_SENSOR_ID, macro_hw_info, 0xA4, gc02m1ofilm_get_otpdata},
+	},
+	{
+	    {"ov02b10aac_mipi_raw_i", 21, "AAC", OV02B10AAC_SENSOR_ID, macro_hw_info, 0xA4, ov02b10aac_get_otpdata},
+	    {"gc02m1ofilm_mipi_raw_ii", 23, "OFILM", GC02M1OFILM_SENSOR_ID, macro_hw_info, 0xA4, gc02m1ofilm_get_otpdata},
 	}
 };
 
@@ -177,7 +181,7 @@ MINT8 imgsensor_sensor_hw_register(struct IMGSENSOR_SENSOR *psensor, MUINT32 sen
 		wide_cam_fuseid[ret-2] = '\0';
 	}
 		break;
-	case 3: {
+	case 4: {
 		strncpy(macro_cam_name,cam_hwinfo[j][search_index].psensor_name,cam_hwinfo[j][search_index].nameNumber+1);
 		strncpy(macro_cam_moduleid,cam_hwinfo[j][search_index].moduleid,5);
 		macro_cam_sensorid[0] = macro_hw_info[0];
