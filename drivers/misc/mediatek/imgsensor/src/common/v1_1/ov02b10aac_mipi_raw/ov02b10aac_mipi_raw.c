@@ -90,7 +90,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.exp_step = 2,
 	.gain_step = 1,
 	.gain_type = 1,
-	.max_frame_length = 0x7fff,//max framelength by sensor register's limitation
+	.max_frame_length = 0x7ff8,//max framelength by sensor register's limitation
 	.ae_shut_delay_frame = 0,    //shutter delay frame for AE cycle, 2 frame with ispGain_delay-shut_delay=2-0=2
 	.ae_sensor_gain_delay_frame = 0,//sensor gain delay frame for AE cycle,2 frame with ispGain_delay-sensor_gain_delay=2-0=2
 	.ae_ispGain_delay_frame = 2,//isp gain delay frame for AE cycle
@@ -380,7 +380,7 @@ static kal_uint16 set_gain(kal_uint16 gain)
 {
 	kal_uint8  iReg;
 
-	if((gain >= 0x40) && (gain <= (15*0x40))) //base gain = 0x40
+	if((gain >= 0x40) && (gain <= (15.5*0x40))) //base gain = 0x40
 	{
 		iReg = 0x10 * gain/BASEGAIN;        //change mtk gain base to aptina gain base
 

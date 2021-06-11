@@ -378,43 +378,24 @@
      };
 
    };
-
-/* nfc st54h  start */
+/* st54h  start */
 &pio {
 	pinctrl_state_mode_spi: pinctrl_state_mode_spi {
-        pins_cmd_dat {
-			pinmux = <PINMUX_GPIO26__FUNC_SPI0_MI>,
-				<PINMUX_GPIO25__FUNC_SPI0_MO>,
-				<PINMUX_GPIO23__FUNC_SPI0_CLK>,
-				<PINMUX_GPIO24__FUNC_SPI0_CSB>;
-			drive-strength = <2>;
+		pins_cmd_dat {
+			pinmux = <PINMUX_GPIO24__FUNC_SPI0_CSB>;
+			bias-disable;
 		};
 	};
-
+};
+&pio {
 	pinctrl_state_mode_idle: pinctrl_state_mode_idle {
-        pins_cmd_dat {
-			pinmux = <PINMUX_GPIO26__FUNC_SPI0_MI>,
-				<PINMUX_GPIO25__FUNC_SPI0_MO>,
-				<PINMUX_GPIO23__FUNC_SPI0_CLK>,
-				<PINMUX_GPIO24__FUNC_SPI0_CSB>;
+		pins_cmd_dat {
+			pinmux = <PINMUX_GPIO24__FUNC_GPIO24>;
                         input-enable;
                         bias-pull-down;
 		};
 	};
 };
-&spi0 {
-	st54h_spi@0 {
-		compatible = "st,st54spi";
-                power_mode = "ST54J";
-                gpio-power_nreset = <88>;
-		gpio-power_nreset-std = <&pio 88 0x0>;
-		pinctrl-names = "pinctrl_state_mode_spi", "pinctrl_state_mode_idle";
-		pinctrl-0 = <&pinctrl_state_mode_spi>;
-		pinctrl-1 = <&pinctrl_state_mode_idle>;
-		status = "okay";
-	};
-};
-/* nfc st54h  end */
 
 /* GPS GPIO standardization start */
 &pio {
@@ -510,6 +491,7 @@
 		};
 	};
 };
+
 &spi5 {
 	fpc_spi@0 {
 		compatible = "fpc,fpc_spi";
