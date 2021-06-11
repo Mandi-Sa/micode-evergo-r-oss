@@ -359,9 +359,9 @@
                 <def_mode>1</def_mode>
                 <inpull_en>false</inpull_en>
                 <inpull_selhigh>false</inpull_selhigh>
-                <def_dir>IN</def_dir>
+                <def_dir>OUT</def_dir>
                 <out_high>false</out_high>
-                <varName0>GPIO_JTAG_TCK_PIN</varName0>
+                <varName0>GPIO_SPI0_CK_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio23>
@@ -370,18 +370,20 @@
                 <def_mode>1</def_mode>
                 <inpull_en>false</inpull_en>
                 <inpull_selhigh>false</inpull_selhigh>
-                <def_dir>IN</def_dir>
+                <def_dir>OUT</def_dir>
                 <out_high>false</out_high>
+                <varName0>GPIO_SPI0_CS_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio24>
             <gpio25>
                 <eint_mode>false</eint_mode>
                 <def_mode>1</def_mode>
-                <inpull_en>false</inpull_en>
+                <inpull_en>true</inpull_en>
                 <inpull_selhigh>false</inpull_selhigh>
-                <def_dir>IN</def_dir>
+                <def_dir>OUT</def_dir>
                 <out_high>false</out_high>
+                <varName0>GPIO_SPI0_MOSI_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio25>
@@ -389,9 +391,10 @@
                 <eint_mode>false</eint_mode>
                 <def_mode>1</def_mode>
                 <inpull_en>true</inpull_en>
-                <inpull_selhigh>false</inpull_selhigh>
+                <inpull_selhigh>true</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
+                <varName0>GPIO_SPI0_MISO_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio26>
@@ -1204,23 +1207,23 @@
             </gpio102>
             <gpio103>
                 <eint_mode>false</eint_mode>
-                <def_mode>1</def_mode>
+                <def_mode>3</def_mode>
                 <inpull_en>true</inpull_en>
                 <inpull_selhigh>true</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
-                <varName0>GPIO_I2C3_SCA_PIN</varName0>
+                <varName0>GPIO_SENSOR0_I2C_SCL</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio103>
             <gpio104>
                 <eint_mode>false</eint_mode>
-                <def_mode>1</def_mode>
+                <def_mode>3</def_mode>
                 <inpull_en>true</inpull_en>
                 <inpull_selhigh>true</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
-                <varName0>GPIO_I2C3_SDA_PIN</varName0>
+                <varName0>GPIO_SENSOR0_I2C_SDA</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio104>

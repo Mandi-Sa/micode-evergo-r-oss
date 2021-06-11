@@ -128,6 +128,10 @@ static enum power_supply_property battery_props[] = {
 	POWER_SUPPLY_PROP_CHARGE_COUNTER,
 	POWER_SUPPLY_PROP_TEMP,
 	POWER_SUPPLY_PROP_CAPACITY_LEVEL,
+	/* +Extb HONGMI-84841,wangbin,wt,ADD,20210608,add decimal soc*/
+	POWER_SUPPLY_PROP_SOC_DECIMAL,
+	POWER_SUPPLY_PROP_SOC_DECIMAL_RATE,
+	/* -Extb HONGMI-84841,wangbin,wt,ADD,20210608,add decimal soc*/
 	POWER_SUPPLY_PROP_TIME_TO_FULL_NOW,
 	POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN,
 	/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
@@ -139,6 +143,8 @@ static enum power_supply_property battery_props[] = {
 	POWER_SUPPLY_PROP_BATT_ID_UPDATE,
 	//Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s
 	POWER_SUPPLY_PROP_SHUTDOWN_DELAY,
+	//Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp
+	POWER_SUPPLY_PROP_CHARGER_TEMP,
 
 };
 
@@ -430,6 +436,107 @@ void battery_update_psd(struct battery_data *bat_data)
 	bat_data->BAT_batt_temp = battery_get_bat_temperature();
 }
 
+/* +Extb HONGMI-84841,wangbin,wt,ADD,20210608,add decimal soc*/
+static int mtk_get_prop_soc_decimal_rate(int *val)
+{
+	static int mtk_soc_decimal_rate[24] = {0,32,10,30,20,28,30,28,40,28,50,28,60,28,70,28,80,28,90,26,95,10,99,5};
+
+
+
+	static int *dec_rate_seq = &mtk_soc_decimal_rate[0];
+	static int dec_rate_len = 24;
+
+	int i, soc = 0;
+
+	soc = fg_cust_data.ui_old_soc / 100; ;
+
+	for (i = 0; i < dec_rate_len; i += 2) {
+		if (soc < dec_rate_seq[i]) {
+			*val = dec_rate_seq[i - 1];
+			return soc;
+		}
+	}
+
+	*val = dec_rate_seq[dec_rate_len - 1];
+
+	return soc;
+}
+
+static int mtk_get_prop_soc_decimal(int *val)
+{
+	int dec_rate, soc_dec, soc, hal_soc, rc = 0;
+	static int last_val = 0, last_soc_dec = 0, last_hal_soc = 0;
+	union power_supply_propval pval = {0,};
+	static struct power_supply *battery_psy = NULL;
+
+	if (battery_psy == NULL)
+	battery_psy = power_supply_get_by_name("battery");
+
+	if(battery_psy == NULL)
+		return -1;
+	rc = power_supply_get_property(battery_psy, POWER_SUPPLY_PROP_CAPACITY, &pval);
+	if (rc < 0) {
+		pr_err("Failed to get hal_soc, rc=%d\n", rc);
+	}
+	hal_soc = pval.intval;
+	pr_err("szw:real_soc =%d\n",fg_cust_data.ui_old_soc);
+	soc_dec = fg_cust_data.ui_old_soc % 100;
+	soc = mtk_get_prop_soc_decimal_rate(&dec_rate);
+	pr_debug("debug soc_dec=%d dec_rate=%d last_val=%d last_soc_dec=%d last_hal_soc=%d\n",
+			soc_dec, dec_rate, last_val, last_soc_dec, last_hal_soc);
+
+	if (soc_dec >= 0 && soc_dec < (50 - dec_rate))
+		*val = soc_dec + 50;
+	else if (soc_dec >= (50 - dec_rate) && soc_dec < 50)
+		*val = soc_dec + 50 - dec_rate;
+	else
+		*val = soc_dec -50;
+
+	if (last_hal_soc == hal_soc) {
+		if ((last_val > *val && hal_soc != soc) || (last_soc_dec == soc_dec && hal_soc == soc)) {
+			if (last_val > 50)
+				*val = last_val + (100 - last_val - dec_rate) / 2;
+			else
+				*val = last_val + dec_rate / 4;
+		} else if (last_val > *val) {
+			*val = last_val;
+		}
+	}
+
+	if (last_val != *val)
+		last_val = *val;
+	if (last_soc_dec != soc_dec)
+		last_soc_dec = soc_dec;
+	if (last_hal_soc != hal_soc)
+		last_hal_soc = hal_soc;
+
+	pr_debug("debug val=%d soc_dec=%d sys_soc=%d dec_rate=%d soc=%d hal_soc=%d last_val=%d last_soc_dec=%d last_hal_soc=%d\n",
+			*val, soc_dec, dec_rate, soc, hal_soc, last_val, last_soc_dec, last_hal_soc);
+
+	return 0;
+}
+/* -Extb HONGMI-84841,wangbin,wt,ADD,20210608,add decimal soc*/
+
+/* +Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp*/
+int get_charger_pump_temp()
+{
+	int ret;
+	union power_supply_propval val = {0,};
+	struct power_supply *charger_dev;
+
+	charger_dev = power_supply_get_by_name("sc8551-standalone");
+	if (!charger_dev){
+		charger_dev = power_supply_get_by_name("ln8000-standalone");
+		if (!charger_dev){
+			pr_info("%s:get ln8000-standalone fail\n",__func__);
+			return 0;
+		}
+	}
+	ret = power_supply_get_property(charger_dev,POWER_SUPPLY_PROP_SC_DIE_TEMPERATURE, &val);
+	return val.intval;
+}
+/* -Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp*/
+
 //Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s
 #define SHUTDOWN_DELAY_VOL	3300
 extern bool mtk_shutdown_delay_enable;
@@ -509,6 +616,11 @@ static int battery_get_property(struct power_supply *psy,
 		val->intval = shutdown_delay;
 		break;
 	/* -Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s */
+	/* +Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp*/
+	case POWER_SUPPLY_PROP_CHARGER_TEMP:
+		val->intval = get_charger_pump_temp();
+		break;
+	/* -Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp*/
 
 	case POWER_SUPPLY_PROP_CURRENT_NOW:
 		b_ischarging = gauge_get_current(&fgcurrent);
@@ -539,6 +651,13 @@ static int battery_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_CAPACITY_LEVEL:
 		val->intval = check_cap_level(data->BAT_CAPACITY);
 		break;
+	/* +Extb HONGMI-84841,wangbin,wt,ADD,20210608, add decimal soc*/
+	case POWER_SUPPLY_PROP_SOC_DECIMAL_RATE:
+		mtk_get_prop_soc_decimal_rate(&val->intval);
+	case	POWER_SUPPLY_PROP_SOC_DECIMAL:
+		mtk_get_prop_soc_decimal(&val->intval);
+		break;
+	/* -Extb HONGMI-84841,wangbin,wt,ADD,20210608, add decimal soc*/
 	case POWER_SUPPLY_PROP_TIME_TO_FULL_NOW:
 		/* full or unknown must return 0 */
 		ret = check_cap_level(data->BAT_CAPACITY);

@@ -14,8 +14,10 @@
 #define PCA_PPS_CMD_RETRY_COUNT	2
 
 #define BATT_MAX_CHG_VOLT		4450
-#define BATT_FAST_CHG_CURR		5000
-#define BUS_OVP_THRESHOLD		9500
+/* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
+#define BATT_FAST_CHG_CURR		6000
+#define BUS_OVP_THRESHOLD		10500
+/* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 
 #define BUS_VOLT_INIT_UP		300
 
@@ -24,6 +26,30 @@
 #define BUS_VOLT_LOOP_LMT		BUS_OVP_THRESHOLD
 
 #define PM_WORK_RUN_INTERVAL		200
+
+/* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
+#define CHARGE_PUMP_TEMP_MIN    150
+#define CHARGE_PUMP_TEMP_MAX    450
+#define CHARGE_PUMP_TEMP1       360
+#define CHARGE_PUMP_TEMP2       380
+#define CHARGE_PUMP_TEMP3       390
+#define CHARGE_PUMP_TEMP4       410
+#define CHARGE_PUMP_TEMP5       430
+#define CHARGE_PUMP_CURR1       6000
+#define CHARGE_PUMP_CURR2       5000
+#define CHARGE_PUMP_CURR3       4500
+#define CHARGE_PUMP_CURR4       3500
+#define CHARGE_PUMP_CURR5       3000
+#define BATTERY_VOLT_CURR1      6000
+#define BATTERY_VOLT_CURR2      5400
+#define BATTERY_VOLT_CURR3      3900
+#define CHG_PUMP_CUR_VOLT1      4250
+#define CHG_PUMP_CUR_VOLT2      4450
+#define CHG_PUMP_CUR_VOLT3      4480
+#define CHG_PUMP_CUR_OFFSET     100
+#define CHG_VBAT_CURR_STEP1     1
+#define CHG_VBAT_CURR_STEP2     2
+/* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 
 enum {
 	PM_ALGO_RET_OK,
@@ -593,6 +619,10 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 		pdpm->pps_supported = false;
 
 	if (pdpm->pps_supported) {
+		/* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
+		pdpm->chg_vbat_flag = 0;
+		pdpm->chg_curr_flag = 0;
+		/* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 		pr_notice("PPS supported, preferred APDO pos:%d, max volt:%d, current:%d\n",
 				pdpm->apdo_selected_pdo,
 				pdpm->apdo_max_volt,
@@ -625,6 +655,82 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 
 #define TAPER_TIMEOUT	(5000 / PM_WORK_RUN_INTERVAL)
 #define IBUS_CHANGE_TIMEOUT  (500 / PM_WORK_RUN_INTERVAL)
+
+/* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
+static int battery_sw_jeita(struct usbpd_pm *pdpm)
+{
+	int step_ibat = 0;
+	int step_vbat = 0;
+	int bat_temp = 0;
+	struct power_supply *battery_psy;
+	union power_supply_propval pval = {0, };
+
+	battery_psy = power_supply_get_by_name("battery");
+	power_supply_get_property(battery_psy,
+		POWER_SUPPLY_PROP_TEMP, &pval);
+	bat_temp = pval.intval;
+	if (bat_temp >= CHARGE_PUMP_TEMP_MIN && bat_temp <= CHARGE_PUMP_TEMP_MAX) {
+		pdpm->pps_temp_flag = true;
+		if (pdpm->chg_vbat_flag < CHG_VBAT_CURR_STEP1) {
+			if (pdpm->cp.ibat_curr < pm_config.bat_curr_lp_lmt)
+				step_vbat = pm_config.fc2_steps;
+			else if (pdpm->cp.ibat_curr > pm_config.bat_curr_lp_lmt + CHG_PUMP_CUR_OFFSET)
+				step_vbat = -pm_config.fc2_steps;
+		}
+		if (pdpm->cp.vbat_volt > CHG_PUMP_CUR_VOLT1 && pdpm->chg_vbat_flag < CHG_VBAT_CURR_STEP2) {
+			pdpm->chg_vbat_flag = CHG_VBAT_CURR_STEP1;
+			if (pdpm->cp.ibat_curr < BATTERY_VOLT_CURR2)
+				step_vbat = pm_config.fc2_steps;
+			else if (pdpm->cp.ibat_curr >  BATTERY_VOLT_CURR2 + CHG_PUMP_CUR_OFFSET)
+				step_vbat = -pm_config.fc2_steps;
+		}
+		if (pdpm->cp.vbat_volt > CHG_PUMP_CUR_VOLT2) {
+			pdpm->chg_vbat_flag = CHG_VBAT_CURR_STEP2;
+			if (pdpm->cp.ibat_curr < BATTERY_VOLT_CURR3)
+				step_vbat = pm_config.fc2_steps;
+			else if (pdpm->cp.ibat_curr > BATTERY_VOLT_CURR3 + CHG_PUMP_CUR_OFFSET)
+				step_vbat = -pm_config.fc2_steps;
+		}
+		if (bat_temp < CHARGE_PUMP_TEMP2 && !pdpm->chg_curr_flag) {
+			if (pdpm->cp.ibat_curr < CHARGE_PUMP_CURR1)
+				step_ibat = pm_config.fc2_steps;
+			else if (pdpm->cp.ibat_curr >  CHARGE_PUMP_CURR1 + CHG_PUMP_CUR_OFFSET)
+				step_ibat = -pm_config.fc2_steps;
+		}
+		if (bat_temp >= CHARGE_PUMP_TEMP2) {
+			pdpm->chg_curr_flag = CHG_VBAT_CURR_STEP1;
+			if (pdpm->cp.ibat_curr < CHARGE_PUMP_CURR2)
+				step_ibat = pm_config.fc2_steps;
+			else if (pdpm->cp.ibat_curr >  CHARGE_PUMP_CURR2 + CHG_PUMP_CUR_OFFSET)
+				step_ibat = -pm_config.fc2_steps;
+		}
+		if (bat_temp >= CHARGE_PUMP_TEMP3) {
+			if (pdpm->cp.ibat_curr < CHARGE_PUMP_CURR3)
+				step_ibat = pm_config.fc2_steps;
+			else if (pdpm->cp.ibat_curr >  CHARGE_PUMP_CURR3 + CHG_PUMP_CUR_OFFSET)
+				step_ibat = -pm_config.fc2_steps;
+		}
+		if (bat_temp >= CHARGE_PUMP_TEMP4) {
+			if (pdpm->cp.ibat_curr < CHARGE_PUMP_CURR4)
+				step_ibat = pm_config.fc2_steps;
+			else if (pdpm->cp.ibat_curr >  CHARGE_PUMP_CURR4 + CHG_PUMP_CUR_OFFSET)
+				step_ibat = -pm_config.fc2_steps;
+		}
+		if (bat_temp >= CHARGE_PUMP_TEMP5) {
+			if (pdpm->cp.ibat_curr < CHARGE_PUMP_CURR5)
+				step_ibat = pm_config.fc2_steps;
+			else if (pdpm->cp.ibat_curr >  CHARGE_PUMP_CURR5 + CHG_PUMP_CUR_OFFSET)
+				step_ibat = -pm_config.fc2_steps;
+		}
+	} else {
+		pdpm->pps_temp_flag = false;
+	}
+	pr_err(">>>>temp %d pdpm->cp.ibus_curr %d step_ibat %d, step_vbat %d\n",
+		bat_temp, pdpm->cp.ibus_curr, step_ibat, step_vbat);
+	return min(step_vbat, step_ibat);
+}
+/* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
+
 static int usbpd_pm_fc2_charge_algo(struct usbpd_pm *pdpm)
 {
 	int steps;
@@ -660,13 +766,14 @@ static int usbpd_pm_fc2_charge_algo(struct usbpd_pm *pdpm)
 	else if (pdpm->cp.vbat_volt < pm_config.bat_volt_lp_lmt - 7)
 		step_vbat = pm_config.fc2_steps;;
 
-
 	/* battery charge current loop*/
 	if (pdpm->cp.ibat_curr < pm_config.bat_curr_lp_lmt)
 		step_ibat = pm_config.fc2_steps;
 	else if (pdpm->cp.ibat_curr > pm_config.bat_curr_lp_lmt + 100)
 		step_ibat = -pm_config.fc2_steps;
 
+	/* Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
+	step_ibat = battery_sw_jeita(pdpm);
 
 	/* bus current loop*/
 	ibus_total = pdpm->cp.ibus_curr ;//+ pdpm->sw.ibus_curr;
@@ -924,11 +1031,13 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 		}
 #endif
 //-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
+		/* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 		/*stop second charge pump if either of ibus is lower than 750ma during CV*/
-		if (pm_config.cp_sec_enable && pdpm->cp_sec.charge_enabled 
+		if((pm_config.cp_sec_enable && pdpm->cp_sec.charge_enabled
 				&& pdpm->cp.vbat_volt > pm_config.bat_volt_lp_lmt - 50
-				&& (pdpm->cp.ibus_curr < 750 || pdpm->cp_sec.ibus_curr < 750)) {
-			pr_notice("second cp is disabled due to ibus < 750mA\n");
+				&& (pdpm->cp.ibus_curr < 750 || pdpm->cp_sec.ibus_curr < 750)) || !pdpm->pps_temp_flag) {
+		/* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
+			pr_notice("second cp is disabled due to ibus < 750mA or temp high\n");
 			usbpd_pm_enable_cp_sec(pdpm, false);
 			usbpd_pm_check_cp_sec_enabled(pdpm);
 			pdpm->cp_sec_stopped = true;
@@ -1004,6 +1113,10 @@ static void usbpd_pm_disconnect(struct usbpd_pm *pdpm)
     }
 
     pdpm->pps_supported = false;
+    /* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
+    pdpm->chg_vbat_flag = 0;
+    pdpm->chg_curr_flag = 0;
+    /* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
     pdpm->apdo_selected_pdo = 0;
 	//+Extb HOMGMI-84843,chenrui1.wt,ADD,20210514add adpo_max node
 	pval.intval = 0;

@@ -58,16 +58,16 @@
 #define BTSNRPA_RAP_ADC_CHANNEL		AUX_IN2_NTC
 
 /* +bug 651594, xuxinyu, ADD, 20210512, S98016AA1 add new NTC configs. */
-#define LCDTHERMAL_RAP_PULL_UP_R		100000 /* 100K, pull up resister */
+#define BACKLIGHT_THERM_RAP_PULL_UP_R		100000 /* 100K, pull up resister */
 
-#define LCDTHERMAL_TAP_OVER_CRITICAL_LOW	4397119 /* base on 100K NTC temp
+#define BACKLIGHT_THERM_TAP_OVER_CRITICAL_LOW	4397119 /* base on 100K NTC temp
 						 * default value -40 deg
 						 */
-#define LCDTHERMAL_RAP_PULL_UP_VOLTAGE		1800 /* 1.8V ,pull up voltage */
+#define BACKLIGHT_THERM_RAP_PULL_UP_VOLTAGE		1800 /* 1.8V ,pull up voltage */
 
-#define LCDTHERMAL_RAP_NTC_TABLE		7 /* default is NCP15WF104F03RC(100K) */
+#define BACKLIGHT_THERM_RAP_NTC_TABLE		7 /* default is NCP15WF104F03RC(100K) */
 
-#define LCDTHERMAL_RAP_ADC_CHANNEL		AUX_IN5_NTC /* default is 0 */
+#define BACKLIGHT_THERM_RAP_ADC_CHANNEL		AUX_IN5_NTC /* default is 0 */
 /* +bug 651594, xuxinyu, ADD, 20210512, S98016AA1 add new NTC configs. */
 extern int IMM_GetOneChannelValue(int dwChannel, int data[4], int *rawdata);
 extern int IMM_IsAdcInitReady(void);
