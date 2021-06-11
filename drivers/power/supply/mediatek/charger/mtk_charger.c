@@ -371,13 +371,15 @@ static int _charger_manager_enable_charging(struct charger_consumer *consumer,
 
 		if (en == false) {
 			_mtk_charger_do_charging(info, en);
-			pdata->disable_charging_count++;
+			//+Extb HONGMI-84891,chenrui1.wt,MODIYF,20210611,modify input_suspend API for running test
+			//pdata->disable_charging_count++;
 		} else {
-			if (pdata->disable_charging_count == 1) {
+			//if (pdata->disable_charging_count == 1) {
 				_mtk_charger_do_charging(info, en);
-				pdata->disable_charging_count = 0;
-			} else if (pdata->disable_charging_count > 1)
-				pdata->disable_charging_count--;
+			//	pdata->disable_charging_count = 0;
+			//} else if (pdata->disable_charging_count > 1)
+			//	pdata->disable_charging_count--;
+			//-Extb HONGMI-84891,chenrui1.wt,MODIYF,20210611,modify input_suspend API for running test
 		}
 		chr_err("%s: dev:%s idx:%d en:%d cnt:%d\n", __func__,
 			dev_name(consumer->dev), idx, en,
