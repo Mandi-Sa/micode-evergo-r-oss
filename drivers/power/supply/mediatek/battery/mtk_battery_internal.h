@@ -943,6 +943,8 @@ struct mtk_battery {
 	struct battery_temperature_table rbat;
 
 	struct fgd_cmd_param_t_custom fg_data;
+	//Extb HONGMI-84891,chenrui1.wt,20210610,ADD,add input_suspend API for running test
+	bool input_suspend;
 };
 
 
