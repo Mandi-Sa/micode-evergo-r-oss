@@ -299,12 +299,14 @@
         cam0_vcama-supply = <&wl2866d_avdd1>;
 	cam0_vcamio-supply = <&mt_pmic_vtp_ldo_reg>;
         cam1_vcama-supply = <&wl2866d_avdd2>;
-	cam2_vcama-supply = <&wl2866d_avdd2>;
+	cam1_vcamd-supply = <&wl2866d_dvdd2>;
 	cam1_vcamio-supply = <&mt_pmic_vcamio_ldo_reg>;
+	cam2_vcama-supply = <&wl2866d_avdd2>;
+	cam2_vcamd-supply = <&wl2866d_dvdd2>;
 	cam2_vcamio-supply = <&mt_pmic_vcamio_ldo_reg>;
 
 
-        cam4_vcama-supply = <&wl2866d_avdd1>;
+        cam4_vcama-supply = <&wl2866d_avdd2>;
 	cam4_vcamio-supply = <&mt_pmic_vcamio_ldo_reg>;
 
 	status = "okay";
