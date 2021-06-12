@@ -830,6 +830,9 @@ static int csot_probe(struct mipi_dsi_device *dsi)
 
 #endif
 	lcd_dvdd_ldo = devm_regulator_get_optional(dev, "lcd_dvdd");
+	ret = regulator_enable(lcd_dvdd_ldo);
+	if (ret < 0)
+		pr_err("enable regulator lcd_dvdd_ldo fail, ret = %d\n", ret);
 
 	pr_info("%s- wt,csot,nt36672c,cphy,vdo,90hz\n", __func__);
 	return ret;

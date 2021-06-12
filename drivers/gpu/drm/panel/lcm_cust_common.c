@@ -110,8 +110,16 @@ int lm36273_brightness_set(int level)
 	level = level * 2047 / 255 * 180 / 255;
 	int LSB_tmp = level & 0x7;
 	int MSB_tmp = (level >> 3) & 0xFF;
+
 	_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, LSB_tmp);
 	_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, MSB_tmp);
+	if (level == 0 && g_lm36273_led.level != 0) {
+		_lcm_i2c_write_bytes(LP36273_DISP_BL_ENABLE, 0x0);
+	} else if (level > 0 && g_lm36273_led.level == 0) {
+		_lcm_i2c_write_bytes(LP36273_DISP_BL_ENABLE, 0x17);
+		_lcm_i2c_write_bytes(LP36273_DISP_BC2, 0xcd);
+	}
+
 	pr_info("%s backlight = -%d\n", __func__, level);
 	g_lm36273_led.level = level;
 	return 0;
