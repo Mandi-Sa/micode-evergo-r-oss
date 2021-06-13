@@ -44,7 +44,8 @@ static struct device_attribute power_supply_attrs[];
 static const char * const power_supply_type_text[] = {
 	"Unknown", "Battery", "UPS", "Mains", "USB",
 	"USB_DCP", "USB_CDP", "USB_ACA", "Wireless", "USB_C",
-	"USB_PD", "USB_PD_DRP", "BrickID", "Batt_Verity"
+	"USB_PD", "USB_PD_DRP", "BrickID", "Batt_Verity",
+        "USB_FLOAT", "USB_HVDCP"
 };
 
 static const char * const power_supply_status_text[] = {
@@ -54,8 +55,10 @@ static const char * const power_supply_status_text[] = {
 
 /* +Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 static const char * const power_supply_usb_real_type_text[] = {
-	"Unknown", "USB", "USB_CDP", "NON_CHARGER", "USB_DCP", "APPLE_2_1A_CHARGER",
-	"APPLE_1_0A_CHARGER", "APPLE_0_5A_CHARGER", "WIRELESS_CHARGER", "PD_PPS"
+	"Unknown", "Battery", "UPS", "Mains", "USB",
+	"USB_DCP", "USB_CDP", "USB_ACA", "Wireless", "USB_C",
+	"USB_PD", "USB_PD_DRP", "BrickID", "Batt_Verity",
+        "USB_FLOAT", "USB_HVDCP"
 };
 /* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 
