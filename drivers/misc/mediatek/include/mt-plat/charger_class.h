@@ -141,6 +141,8 @@ struct charger_ops {
 	/* charger type detection */
 	int (*enable_chg_type_det)(struct charger_device *dev, bool en);
 
+	/* QC20 rerun apsd */
+	int (*rerun_apsd)(struct charger_device *dev, bool en);
 	/* run AICL */
 	int (*run_aicl)(struct charger_device *dev, u32 *uA);
 
@@ -257,6 +259,8 @@ extern int charger_dev_enable_powerpath(
 extern int charger_dev_enable_safety_timer(
 	struct charger_device *charger_dev, bool en);
 extern int charger_dev_enable_chg_type_det(
+	struct charger_device *charger_dev, bool en);
+extern int charger_dev_rerun_apsd(
 	struct charger_device *charger_dev, bool en);
 extern int charger_dev_enable_otg(
 	struct charger_device *charger_dev, bool en);

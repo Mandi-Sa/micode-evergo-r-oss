@@ -92,6 +92,9 @@ struct mt6360_pmu_chg_info {
 	enum charger_type chg_type;
 	bool pwr_rdy;
 	bool bc12_en;
+	bool rerun_apsd;
+	bool hvdcp_disable;
+	bool otg_enable;
 #ifdef CONFIG_TCPC_CLASS
 	bool tcpc_attach;
 #else
@@ -108,6 +111,7 @@ struct mt6360_pmu_chg_info {
 	/* unfinish pe pattern */
 	struct workqueue_struct *pe_wq;
 	struct work_struct pe_work;
+	struct delayed_work get_hvdcp_work;
 	u8 ctd_dischg_status;
 };
 
@@ -466,6 +470,7 @@ static int __maybe_unused mt6360_is_dcd_tout_enable(
 }
 #endif
 
+#define	DP_DM_CTL_N		0x00
 static int __mt6360_enable_usbchgen(struct mt6360_pmu_chg_info *mpci, bool en)
 {
 	int i, ret = 0;
@@ -520,6 +525,17 @@ static int __mt6360_enable_usbchgen(struct mt6360_pmu_chg_info *mpci, bool en)
 			dev_info(mpci->dev, "%s: CDP free\n", __func__);
 	}
 	mt6360_set_usbsw_state(mpci, usbsw);
+
+	if (mpci->rerun_apsd) {
+		ret = mt6360_pmu_reg_write(mpci->mpi, MT6360_PMU_DPDM_CTRL, DP_DM_CTL_N);
+		dev_info(mpci->dev, "%s: clear DP_DM_CTRL for rerun apsd.\n",__func__);
+		msleep(50);
+		ret = mt6360_pmu_reg_update_bits(mpci->mpi, MT6360_PMU_DEVICE_TYPE,
+					 MT6360_MASK_USBCHGEN, 0);
+		dev_info(mpci->dev, "%s: MT6360_PMU_DEVICE_TYPE 0 for rerun apsd.\n",__func__);
+		msleep(50);
+	}
+
 	ret = mt6360_pmu_reg_update_bits(mpci->mpi, MT6360_PMU_DEVICE_TYPE,
 					 MT6360_MASK_USBCHGEN, en ? 0xff : 0);
 	if (ret >= 0)
@@ -563,6 +579,90 @@ static int mt6360_chgdet_pre_process(struct mt6360_pmu_chg_info *mpci)
 	return __mt6360_enable_usbchgen(mpci, attach);
 }
 
+#define	DP_06_DM_06		0x16
+#define	DP_33_DM_06		0x18
+#define	HVDCP_VBUS_LOW_LIMIT	3000
+#define	HVDCP_VBUS_HIGH_LIMIT	7200
+#define	HVDCP_DPDM_DELAY_1S	1500
+bool test_flag = false;
+static int mt6360_get_vbus(struct charger_device *chg_dev, u32 *vbus);
+static void mt6360_get_hvdcp_work(struct work_struct *work)
+{
+	int ret, i;
+	u32 vbus;
+	struct mt6360_pmu_chg_info *mpci = container_of(work,
+			struct mt6360_pmu_chg_info, get_hvdcp_work.work);
+
+	if (!mpci->attach) {
+		mpci->chg_type = CHARGER_UNKNOWN;
+		dev_info(mpci->dev, "%s: mpci->attach=0, stop hvdcp_work.\n", __func__);
+		goto out;
+	}
+
+	test_flag = true;
+
+	if (!mpci->hvdcp_disable) {
+		ret = mt6360_pmu_reg_write(mpci->mpi,
+					MT6360_PMU_DPDM_CTRL, DP_33_DM_06);
+		msleep(300);
+	} else {
+		dev_info(mpci->dev, "%s: hvdcp_disable.\n", __func__);
+		mpci->chg_type = STANDARD_CHARGER;
+		goto out;
+	}
+
+	for (i = 0; i < 3; i++) {
+		if (!mpci->attach) {
+			mpci->chg_type = CHARGER_UNKNOWN;
+			dev_info(mpci->dev, "%s: mpci->attach=0, stop hvdcp_work.\n", __func__);
+			goto out;
+		}
+
+		ret = mt6360_get_vbus(mpci->chg_dev, &vbus);
+		if (ret < 0) {
+			dev_err(mpci->dev, "%s: get vbus adc fail\n", __func__);
+		}
+		vbus = vbus / 1000;
+		dev_info(mpci->dev, "%s:%d: get vbus=%d.\n", __func__, i, vbus);
+		if (vbus > HVDCP_VBUS_HIGH_LIMIT)
+			break;
+		msleep(30);
+	}
+
+	if (mpci->attach) {
+		if (vbus > HVDCP_VBUS_HIGH_LIMIT) {
+			mpci->chg_type = HVDCP_CHARGER;
+			dev_info(mpci->dev, "%s: Get QC2 succ.\n", __func__);
+		} else if (vbus > HVDCP_VBUS_LOW_LIMIT) {
+			ret = mt6360_pmu_reg_write(mpci->mpi,
+					MT6360_PMU_DPDM_CTRL, DP_06_DM_06);
+			mpci->chg_type = STANDARD_CHARGER;
+			dev_info(mpci->dev, "%s: No QC2, Get DCP.\n", __func__);
+		} else {
+			mpci->chg_type = CHARGER_UNKNOWN;
+			ret = mt6360_pmu_reg_write(mpci->mpi,
+					MT6360_PMU_DPDM_CTRL, DP_DM_CTL_N);
+			dev_info(mpci->dev, "%s:next: No Vbus, plug out.\n", __func__);
+			ret = __mt6360_enable_usbchgen(mpci, false);
+			if (ret < 0)
+				dev_notice(mpci->dev, "%s: disable chgdet fail\n",
+					   __func__);
+		}
+	} else {
+		mpci->chg_type = CHARGER_UNKNOWN;
+		dev_info(mpci->dev, "%s: mpci->attach=0, stop hvdcp_work.\n", __func__);
+	}
+
+out:
+	test_flag = false;
+	ret = mt6360_psy_online_changed(mpci);
+	if (ret < 0)
+		dev_err(mpci->dev, "%s: report psy online fail\n", __func__);
+	ret = mt6360_psy_chg_type_changed(mpci);
+	dev_info(mpci->dev, "%s: Update psy_chg_type:%d.\n",
+			__func__, mpci->chg_type);
+}
+
 static int mt6360_chgdet_post_process(struct mt6360_pmu_chg_info *mpci)
 {
 	int ret = 0;
@@ -574,19 +674,27 @@ static int mt6360_chgdet_post_process(struct mt6360_pmu_chg_info *mpci)
 #else
 	attach = mpci->pwr_rdy;
 #endif /* CONFIG_TCPC_CLASS */
-	if (mpci->attach == attach) {
-		dev_info(mpci->dev, "%s: attach(%d) is the same\n",
+
+	/* Plug out during BC12 */
+	if (!attach) {
+		mpci->attach = attach;
+		dev_info(mpci->dev, "%s: mpci->attach=%d.\n", __func__, mpci->attach);
+		ret = mt6360_pmu_reg_write(mpci->mpi,
+				MT6360_PMU_DPDM_CTRL, DP_DM_CTL_N);
+		mpci->chg_type = CHARGER_UNKNOWN;
+		goto out;
+	}
+
+	dev_info(mpci->dev, "%s: rerun_apsd=%d.\n", __func__, mpci->rerun_apsd);
+	if (mpci->attach == attach && !mpci->rerun_apsd) {
+		dev_info(mpci->dev, "%s: attach(%d) is the same, needn't rerun_apsd.\n",
 				    __func__, attach);
 		inform_psy = !attach;
 		goto out;
 	}
 	mpci->attach = attach;
-	dev_info(mpci->dev, "%s: attach = %d\n", __func__, attach);
-	/* Plug out during BC12 */
-	if (!attach) {
-		mpci->chg_type = CHARGER_UNKNOWN;
-		goto out;
-	}
+	dev_info(mpci->dev, "%s: mpci->attach=%d.\n", __func__, mpci->attach);
+
 	/* Plug in */
 	ret = mt6360_pmu_reg_read(mpci->mpi, MT6360_PMU_USB_STATUS1);
 	if (ret < 0)
@@ -606,7 +714,16 @@ static int mt6360_chgdet_post_process(struct mt6360_pmu_chg_info *mpci)
 		mpci->chg_type = CHARGING_HOST;
 		break;
 	case MT6360_CHG_TYPE_DCP:
-		mpci->chg_type = STANDARD_CHARGER;
+		if (!mpci->hvdcp_disable) {
+			mpci->chg_type = CHECK_HV;
+			dev_info(mpci->dev, "%s: start QC2 retry.\n", __func__);
+			if (!delayed_work_pending(&mpci->get_hvdcp_work))
+				schedule_delayed_work(&mpci->get_hvdcp_work,
+						msecs_to_jiffies(HVDCP_DPDM_DELAY_1S));
+		} else {
+			mpci->chg_type = STANDARD_CHARGER;
+			dev_info(mpci->dev, "%s: hvdcp_disable.\n", __func__);
+		}
 		break;
 	}
 out:
@@ -615,13 +732,21 @@ out:
 		if (ret < 0)
 			dev_notice(mpci->dev, "%s: disable chgdet fail\n",
 				   __func__);
-	} else if (mpci->chg_type != STANDARD_CHARGER)
+	} else if (mpci->chg_type != STANDARD_CHARGER
+			&& mpci->chg_type != CHECK_HV
+			&& mpci->chg_type != HVDCP_CHARGER)
 		mt6360_set_usbsw_state(mpci, MT6360_USBSW_USB);
 	if (!inform_psy)
 		return ret;
 	ret = mt6360_psy_online_changed(mpci);
 	if (ret < 0)
 		dev_err(mpci->dev, "%s: report psy online fail\n", __func__);
+
+	if (mpci->rerun_apsd) {
+		mpci->rerun_apsd = false;
+		dev_info(mpci->dev, "%s: clear rerun_apsd.\n", __func__);
+	}
+
 	return mt6360_psy_chg_type_changed(mpci);
 }
 #endif /* CONFIG_MT6360_PMU_CHARGER_TYPE_DETECT */
@@ -1421,6 +1546,7 @@ static int mt6360_enable_otg(struct charger_device *chg_dev, bool en)
 	struct mt6360_pmu_chg_info *mpci = charger_get_data(chg_dev);
 	int ret = 0;
 
+	mpci->otg_enable = en;
 	dev_dbg(mpci->dev, "%s: en = %d\n", __func__, en);
 	ret = mt6360_enable_wdt(mpci, en ? true : false);
 	if (ret < 0) {
@@ -1486,8 +1612,8 @@ static int mt6360_enable_chg_type_det(struct charger_device *chg_dev, bool en)
 
 	dev_info(mpci->dev, "%s\n", __func__);
 	mutex_lock(&mpci->chgdet_lock);
-	if (mpci->tcpc_attach == en) {
-		dev_info(mpci->dev, "%s attach(%d) is the same\n",
+	if (mpci->tcpc_attach == en && !mpci->rerun_apsd) {
+		dev_info(mpci->dev, "%s attach(%d) is the same, needn't rerun apsd.\n",
 			 __func__, mpci->tcpc_attach);
 		goto out;
 	}
@@ -1497,6 +1623,33 @@ static int mt6360_enable_chg_type_det(struct charger_device *chg_dev, bool en)
 out:
 	mutex_unlock(&mpci->chgdet_lock);
 #endif /* CONFIG_MT6360_PMU_CHARGER_TYPE_DETECT && CONFIG_TCPC_CLASS */
+	return ret;
+}
+
+
+static int mt6360_rerun_apsd(struct charger_device *chg_dev, bool en)
+{
+	struct mt6360_pmu_chg_info *mpci = charger_get_data(chg_dev);
+	int ret;
+
+	mpci->hvdcp_disable = en;
+	dev_info(mpci->dev, "%s: hvdcp_disable=%d, otg=%d, chg_type=%d.\n",
+			__func__, mpci->hvdcp_disable, mpci->otg_enable, mpci->chg_type);
+
+	if (!mpci->otg_enable &&
+			(mpci->chg_type == NONSTANDARD_CHARGER ||
+			 mpci->chg_type == STANDARD_CHARGER ||
+			 mpci->chg_type == CHECK_HV ||
+			 mpci->chg_type == HVDCP_CHARGER)) {
+		mpci->rerun_apsd = true;
+		mpci->hvdcp_disable = en;
+		dev_info(mpci->dev, "%s: rerurn apsd start.\n", __func__);
+		ret = mt6360_enable_chg_type_det(chg_dev, mpci->rerun_apsd);
+	} else {
+		dev_info(mpci->dev, "%s: chg_type needn't rerun apsd.\n", __func__);
+		ret = 0;
+	}
+
 	return ret;
 }
 
@@ -1921,6 +2074,7 @@ static const struct charger_ops mt6360_chg_ops = {
 	.enable_discharge = mt6360_enable_discharge,
 	/* Charger type detection */
 	.enable_chg_type_det = mt6360_enable_chg_type_det,
+	.rerun_apsd = mt6360_rerun_apsd,
 	/* ADC */
 	.get_adc = mt6360_get_adc,
 	.get_vbus_adc = mt6360_get_vbus,
@@ -2221,7 +2375,7 @@ static irqreturn_t mt6360_pmu_attachi_handler(int irq, void *data)
 {
 	struct mt6360_pmu_chg_info *mpci = data;
 
-	dev_dbg(mpci->dev, "%s\n", __func__);
+	dev_info(mpci->dev, "%s\n", __func__);
 #ifdef CONFIG_MT6360_PMU_CHARGER_TYPE_DETECT
 	mutex_lock(&mpci->chgdet_lock);
 	if (!mpci->bc12_en) {
@@ -2275,12 +2429,22 @@ static irqreturn_t mt6360_pmu_chrdet_ext_evt_handler(int irq, void *data)
 	bool pwr_rdy = false;
 
 	ret = mt6360_get_chrdet_ext_stat(mpci, &pwr_rdy);
-	dev_info(mpci->dev, "%s: pwr_rdy = %d\n", __func__, pwr_rdy);
+	dev_info(mpci->dev, "%s: pwr_rdy=%d, mpci->pwr_rdy=%d.\n",
+			__func__, pwr_rdy, mpci->pwr_rdy);
 	if (ret < 0)
 		goto out;
+
+	if (!pwr_rdy) {
+		mpci->attach = false;
+		mpci->rerun_apsd = false;
+		dev_info(mpci->dev, "%s: clear attach & rerun_apsd.\n", __func__);
+		cancel_delayed_work_sync(&mpci->get_hvdcp_work);
+	}
+
 	if (mpci->pwr_rdy == pwr_rdy)
 		goto out;
 	mpci->pwr_rdy = pwr_rdy;
+	dev_info(mpci->dev, "%s: mpci->pwr_rdy=%d.\n", __func__, mpci->pwr_rdy);
 #ifdef CONFIG_MT6360_PMU_CHARGER_TYPE_DETECT
 #ifndef CONFIG_TCPC_CLASS
 	mutex_lock(&mpci->chgdet_lock);
@@ -2899,6 +3063,7 @@ static int mt6360_pmu_chg_probe(struct platform_device *pdev)
 		goto err_shipping_mode_attr;
 	}
 	INIT_WORK(&mpci->pe_work, mt6360_trigger_pep_work_handler);
+	INIT_DELAYED_WORK(&mpci->get_hvdcp_work, mt6360_get_hvdcp_work);
 
 	/* register fg bat oc notify */
 	if (pdata->batoc_notify)
