@@ -1295,21 +1295,23 @@
             </gpio110>
             <gpio111>
                 <eint_mode>false</eint_mode>
-                <def_mode>7</def_mode>
+                <def_mode>1</def_mode>
                 <inpull_en>true</inpull_en>
-                <inpull_selhigh>false</inpull_selhigh>
+                <inpull_selhigh>true</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
+                <varName0>GPIO_I2C7_SCA_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio111>
             <gpio112>
                 <eint_mode>false</eint_mode>
-                <def_mode>5</def_mode>
+                <def_mode>1</def_mode>
                 <inpull_en>true</inpull_en>
-                <inpull_selhigh>false</inpull_selhigh>
+                <inpull_selhigh>true</inpull_selhigh>
                 <def_dir>IN</def_dir>
                 <out_high>false</out_high>
+                <varName0>GPIO_I2C7_SDA_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio112>
@@ -2284,7 +2286,7 @@
             </device5>
             <device10>
                 <varName>NFC</varName>
-                <channel>I2C_CHANNEL_3</channel>
+                <channel>I2C_CHANNEL_7</channel>
                 <address>0x08</address>
             </device10>
             <device11>
