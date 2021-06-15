@@ -363,7 +363,7 @@
 	};
 };
 
-&i2c3 {
+&i2c7 {
 	clock-frequency = <400000>;
 	mediatek,use-open-drain;
 	status = "okay";
