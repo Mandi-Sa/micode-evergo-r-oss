@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--dct_version="2.5" buid_sn="161102" dws_modification_time="05.21.2021.17:19:51"-->
+<!--dct_version="2.5" buid_sn="161102" dws_modification_time="06.15.2021.14:44:03"-->
 <dct_cfg>
     <general chip="MT6833">
         <proj>P21_Phone1</proj>
@@ -359,7 +359,7 @@
                 <def_mode>1</def_mode>
                 <inpull_en>false</inpull_en>
                 <inpull_selhigh>false</inpull_selhigh>
-                <def_dir>OUT</def_dir>
+                <def_dir>IN</def_dir>
                 <out_high>false</out_high>
                 <varName0>GPIO_SPI0_CK_PIN</varName0>
                 <smt>true</smt>
@@ -370,7 +370,7 @@
                 <def_mode>1</def_mode>
                 <inpull_en>false</inpull_en>
                 <inpull_selhigh>false</inpull_selhigh>
-                <def_dir>OUT</def_dir>
+                <def_dir>IN</def_dir>
                 <out_high>false</out_high>
                 <varName0>GPIO_SPI0_CS_PIN</varName0>
                 <smt>true</smt>
@@ -381,7 +381,7 @@
                 <def_mode>1</def_mode>
                 <inpull_en>false</inpull_en>
                 <inpull_selhigh>false</inpull_selhigh>
-                <def_dir>OUT</def_dir>
+                <def_dir>IN</def_dir>
                 <out_high>false</out_high>
                 <varName0>GPIO_SPI0_MOSI_PIN</varName0>
                 <smt>true</smt>
@@ -1057,7 +1057,7 @@
                 <def_mode>0</def_mode>
                 <inpull_en>false</inpull_en>
                 <inpull_selhigh>false</inpull_selhigh>
-                <def_dir>OUT</def_dir>
+                <def_dir>IN</def_dir>
                 <out_high>false</out_high>
                 <varName0>GPIO_NFC_EINT_PIN</varName0>
                 <smt>true</smt>
@@ -1599,12 +1599,12 @@
             </gpio138>
             <gpio139>
                 <eint_mode>false</eint_mode>
-                <def_mode>0</def_mode>
+                <def_mode>1</def_mode>
                 <inpull_en>true</inpull_en>
                 <inpull_selhigh>false</inpull_selhigh>
-                <def_dir>OUT</def_dir>
+                <def_dir>IN</def_dir>
                 <out_high>false</out_high>
-                <varName0>GPIO_SMARTPA_RST_PIN</varName0>
+                <varName0>GPIO_IRTX_OUT_PIN</varName0>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio139>
