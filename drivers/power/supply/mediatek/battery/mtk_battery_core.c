@@ -2042,11 +2042,15 @@ void notify_fg_dlpt_sd(void)
 	bm_err("[%s]\n", __func__);
 	wakeup_fg_algo(FG_INTR_DLPT_SD);
 }
-
+//Extb HONGMI-84836,wangbin wt.ADD,20210613,add for shutdown after delay time 30s
+bool enable_notify_shutdown;
 void notify_fg_shutdown(void)
 {
 	bm_err("[%s]\n", __func__);
-	wakeup_fg_algo(FG_INTR_SHUTDOWN);
+	/* +Extb HONGMI-84836,wangbin wt.ADD,20210613,add for shutdown after delay time 30s*/
+	enable_notify_shutdown = true;
+	//wakeup_fg_algo(FG_INTR_SHUTDOWN);
+	/* -Extb HONGMI-84836,wangbin wt.ADD,20210613,add for shutdown after delay time 30s*/
 }
 
 void notify_fg_chr_full(void)

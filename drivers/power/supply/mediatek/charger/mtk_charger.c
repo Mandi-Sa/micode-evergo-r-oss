@@ -267,6 +267,21 @@ struct charger_consumer *charger_manager_get_by_name(struct device *dev,
 }
 EXPORT_SYMBOL(charger_manager_get_by_name);
 
+#define RERUN_BC12_DELAY_1S 1000
+#define RERUN_BC12_DELAY_8S 8000
+static void mtk_enable_hv_work(struct work_struct *work)
+{
+	struct charger_manager *info = container_of(work,
+			struct charger_manager, enable_hv_work.work);
+	int ret;
+
+	pr_info("%s:rerun bc12 check for hv_enable:%d.\n", __func__, info->enable_hv_charging);
+	ret = charger_dev_rerun_apsd(info->chg1_dev, !info->enable_hv_charging);
+	if (ret < 0)
+		chr_err("%s: en chgdet fail.\n", __func__);
+}
+
+extern bool test_flag;
 int charger_manager_enable_high_voltage_charging(
 			struct charger_consumer *consumer, bool en)
 {
@@ -274,6 +289,7 @@ int charger_manager_enable_high_voltage_charging(
 	struct list_head *pos = NULL;
 	struct list_head *phead = &consumer_head;
 	struct charger_consumer *ptr = NULL;
+	int ret;
 
 	if (!info)
 		return -EINVAL;
@@ -304,6 +320,30 @@ int charger_manager_enable_high_voltage_charging(
 
 	pr_info("%s: user: %s, en = %d\n", __func__, dev_name(consumer->dev),
 		info->enable_hv_charging);
+
+	if (info->enable_hv_charging) {
+		pr_info("%s: enable_hv_charging: schedule_work: enable_hv_work.\n", __func__);
+		cancel_delayed_work_sync(&info->enable_hv_work);
+		schedule_delayed_work(&info->enable_hv_work,
+				msecs_to_jiffies(RERUN_BC12_DELAY_8S));
+	} else {
+		if (delayed_work_pending(&info->enable_hv_work)) {
+			pr_info("%s: disable_hv_charging: cancel_work: enable_hv_work.\n", __func__);
+			cancel_delayed_work_sync(&info->enable_hv_work);
+		} else {
+			pr_info("%s: first open camera: disable_hv_charging.\n", __func__);
+			if (!test_flag) {
+				ret = charger_dev_rerun_apsd(info->chg1_dev, !info->enable_hv_charging);
+				if (ret < 0)
+					chr_err("%s: en chgdet fail.\n", __func__);
+			} else {
+				pr_info("%s: test_flag = true, delay.\n", __func__);
+				schedule_delayed_work(&info->enable_hv_work,
+						msecs_to_jiffies(RERUN_BC12_DELAY_1S));
+
+			}
+		}
+	}
 
 	if (mtk_pe50_get_is_connect(info) && !info->enable_hv_charging)
 		mtk_pe50_stop_algo(info, true);
@@ -598,6 +638,19 @@ int charger_manager_enable_chg_type_det(struct charger_consumer *consumer,
 	return 0;
 }
 
+int charger_manager_pd_is_online(void)
+{
+	if (pinfo == NULL)
+		return 0;
+
+	if (pinfo->pd_type == MTK_PD_CONNECT_PE_READY_SNK ||
+		pinfo->pd_type == MTK_PD_CONNECT_PE_READY_SNK_PD30 ||
+		pinfo->pd_type == MTK_PD_CONNECT_PE_READY_SNK_APDO)
+		return 1;
+	else
+		return 0;
+}
+
 int register_charger_manager_notifier(struct charger_consumer *consumer,
 	struct notifier_block *nb)
 {
@@ -821,6 +874,9 @@ bool is_typec_adapter(struct charger_manager *info)
 			rp != 500 &&
 			info->chr_type != STANDARD_HOST &&
 			info->chr_type != CHARGING_HOST &&
+			info->chr_type != NONSTANDARD_CHARGER &&
+			info->chr_type != HVDCP_CHARGER &&
+			info->chr_type != CHECK_HV &&
 			mtk_pe20_get_is_connect(info) == false &&
 			mtk_pe_get_is_connect(info) == false &&
 			info->enable_type_c == true)
@@ -2049,7 +2105,6 @@ static int mtk_charger_parse_dt(struct charger_manager *info,
 			AC_CHARGER_INPUT_CURRENT);
 		info->data.ac_charger_input_current = AC_CHARGER_INPUT_CURRENT;
 	}
-
 	if (of_property_read_u32(np, "non_std_ac_charger_current", &val) >= 0)
 		info->data.non_std_ac_charger_current = val;
 	else {
@@ -3820,6 +3875,8 @@ static int mtk_charger_probe(struct platform_device *pdev)
 
 	info->chg1_consumer =
 		charger_manager_get_by_name(&pdev->dev, "charger_port1");
+
+	INIT_DELAYED_WORK(&info->enable_hv_work, mtk_enable_hv_work);
 	info->init_done = true;
 	_wake_up_charger(info);
 
@@ -3847,6 +3904,7 @@ static void mtk_charger_shutdown(struct platform_device *dev)
 			mtk_pe_reset_ta_vchr(info);
 		pr_debug("%s: reset TA before shutdown\n", __func__);
 	}
+	cancel_delayed_work_sync(&info->enable_hv_work);
 }
 
 static const struct of_device_id mtk_charger_of_match[] = {

@@ -322,12 +322,13 @@ struct quick_charge {
 	enum quick_charge_type adap_cap;
 };
 
-struct quick_charge adapter_cap[7] = {
+struct quick_charge adapter_cap[10] = {
 	{ STANDARD_HOST,        QUICK_CHARGE_NORMAL },
 	{ STANDARD_CHARGER,     QUICK_CHARGE_NORMAL },
 	{ CHARGING_HOST,        QUICK_CHARGE_NORMAL },
 	{ NONSTANDARD_CHARGER,  QUICK_CHARGE_NORMAL },
 	{ PPS_CHARGER,            QUICK_CHARGE_FAST },
+	{ HVDCP_CHARGER,    QUICK_CHARGE_FAST },
 	{ WIRELESS_CHARGER,       QUICK_CHARGE_FAST },
 	{0, 0},
 };
@@ -412,7 +413,38 @@ static int mt_usb_get_property(struct power_supply *psy,
 	/* -Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type*/
 	/* +Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 	case POWER_SUPPLY_PROP_REAL_TYPE:
-		val->intval = mtk_chg->chg_type;
+		if (charger_manager_pd_is_online()) {
+			val->intval = POWER_SUPPLY_TYPE_USB_PD;
+			mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_USB_PD;
+		} else {
+			switch (mtk_chg->chg_type) {
+			case STANDARD_HOST:
+				val->intval = POWER_SUPPLY_TYPE_USB;
+				mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_USB;
+				break;
+			case CHARGING_HOST:
+				val->intval = POWER_SUPPLY_TYPE_USB_CDP;
+				mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_USB_CDP;
+				break;
+			case CHECK_HV:
+			case STANDARD_CHARGER:
+				val->intval = POWER_SUPPLY_TYPE_USB_DCP;
+				mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_USB_DCP;
+				break;
+			case HVDCP_CHARGER:
+				val->intval = POWER_SUPPLY_TYPE_USB_HVDCP;
+				mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_USB_HVDCP;
+				break;
+			case NONSTANDARD_CHARGER:
+				val->intval = POWER_SUPPLY_TYPE_USB_FLOAT;
+				mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_USB_FLOAT;
+				break;
+			default:
+				val->intval = POWER_SUPPLY_TYPE_UNKNOWN;
+				mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_UNKNOWN;
+				break;
+			}
+		}
 		break;
 	/* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 	default:

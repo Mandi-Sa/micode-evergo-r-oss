@@ -242,6 +242,19 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 				info->data.apple_2_1a_charger_current;
 		pdata->charging_current_limit =
 				info->data.apple_2_1a_charger_current;
+	} else if (info->chr_type == CHECK_HV) {
+		pdata->input_current_limit =
+				info->data.check_hv_current;
+		pdata->charging_current_limit =
+				info->data.check_hv_current;
+	} else if (info->chr_type == HVDCP_CHARGER) {
+		pdata->input_current_limit =
+				info->data.ac_charger_input_current;
+		pdata->charging_current_limit = 3000000;
+		//		info->data.ac_charger_current;
+	} else if (info->chr_type == CHARGER_UNKNOWN) {
+		pdata->input_current_limit = 0;
+		pdata->charging_current_limit = 0;
 	}
 
 	if (info->enable_sw_jeita) {
@@ -635,12 +648,20 @@ static int select_pdc_charging_current_limit(struct charger_manager *info)
 
 	pdata = &info->chg1_data;
 
-	pdata->input_current_limit =
-		info->data.pd_charger_current;
-	pdata->charging_current_limit =
-		info->data.pd_charger_current;
-
-	sc_select_charging_current(info, pdata);
+	if ((info->chr_type == HVDCP_CHARGER)
+			|| (info->chr_type == CHECK_HV)
+			|| (info->chr_type == STANDARD_CHARGER)) {
+		pdata->input_current_limit =
+			info->data.pd_charger_current;
+		pdata->charging_current_limit =
+			info->data.pd_charger_current;
+	} else if (info->chr_type == STANDARD_HOST) {
+		pdata->input_current_limit = 1500000;
+		pdata->charging_current_limit = 1500000;
+	} else {
+		pdata->input_current_limit = 0;
+		pdata->charging_current_limit = 0;
+	}
 
 	if (pdata->thermal_input_current_limit != -1) {
 		if (pdata->thermal_input_current_limit <

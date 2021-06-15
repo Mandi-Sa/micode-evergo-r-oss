@@ -176,6 +176,7 @@ struct charger_custom_data {
 	int apple_2_1a_charger_current;
 	int ta_ac_charger_current;
 	int pd_charger_current;
+	int check_hv_current;
 
 	/* dynamic mivr */
 	int min_charger_voltage_1;
@@ -315,7 +316,7 @@ struct charger_manager {
 	struct charger_data dvchg2_data;
 
 	struct adapter_device *pd_adapter;
-
+	struct delayed_work enable_hv_work;
 
 	enum charger_type chr_type;
 	bool can_charging;
