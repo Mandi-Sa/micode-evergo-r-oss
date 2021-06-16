@@ -62,8 +62,9 @@ static const char * const power_supply_usb_real_type_text[] = {
 };
 /* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 
+//Extb HONGMI-84869,wangbin wt.ADD,20210616,add charge type
 static const char * const power_supply_charge_type_text[] = {
-	"Unknown", "N/A", "Trickle", "Fast"
+	"Unknown", "N/A", "Trickle", "Fast", "Taper"
 };
 
 static const char * const power_supply_health_text[] = {
