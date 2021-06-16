@@ -170,7 +170,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.min_shutter = 8,	/* min shutter */
 	.min_gain = 64, /*1x gain*/
 	.max_gain = 1024, /*16x gain*/
-	.min_gain_iso = 100,
+	.min_gain_iso = 50,
 	.gain_step = 1,
 	.gain_type = 0,
 
@@ -1974,8 +1974,8 @@ static void set_shutter_frame_length(
 	imgsensor.frame_length = imgsensor.frame_length + dummy_line;
 
 	/*  */
-	if (shutter > imgsensor.frame_length - imgsensor_info.margin)
-		imgsensor.frame_length = shutter + imgsensor_info.margin;
+	//if (shutter > imgsensor.frame_length - imgsensor_info.margin)
+	//	imgsensor.frame_length = shutter + imgsensor_info.margin;
 
 	if (imgsensor.frame_length > imgsensor_info.max_frame_length)
 		imgsensor.frame_length = imgsensor_info.max_frame_length;
@@ -1987,44 +1987,40 @@ static void set_shutter_frame_length(
 	? (imgsensor_info.max_frame_length - imgsensor_info.margin) : shutter;
 
 	if (imgsensor.autoflicker_en) {
-		realtime_fps = imgsensor.pclk /
-			imgsensor.line_length * 10 / imgsensor.frame_length;
-
+		realtime_fps = imgsensor.pclk /imgsensor.line_length * 10/ imgsensor.frame_length;
 		if (realtime_fps >= 297 && realtime_fps <= 305)
 			set_max_framerate(296, 0);
 		else if (realtime_fps >= 147 && realtime_fps <= 150)
 			set_max_framerate(146, 0);
 		else {
 			/* Extend frame length */
-			write_cmos_sensor(0x0104, 0x01);
-			write_cmos_sensor(0x0340, imgsensor.frame_length >> 8);
-			write_cmos_sensor(0x0341,
-				imgsensor.frame_length & 0xFF);
-			write_cmos_sensor(0x0104, 0x00);
+			write_cmos_sensor_8(0x0104, 0x01);
+			write_cmos_sensor_8(0x0340,imgsensor.frame_length >> 8);
+			write_cmos_sensor_8(0x0341,imgsensor.frame_length & 0xFF);
+			write_cmos_sensor_8(0x0104, 0x00);
 		}
 	} else {
-		/* Extend frame length */
-		write_cmos_sensor(0x0104, 0x01);
-		write_cmos_sensor(0x0340, imgsensor.frame_length >> 8);
-		write_cmos_sensor(0x0341, imgsensor.frame_length & 0xFF);
-		write_cmos_sensor(0x0104, 0x00);
+		/* Extend frame length*/
+		if (read_cmos_sensor_8(0x0350) != 0x01) {
+			LOG_INF("single cam scenario enable auto-extend");
+			write_cmos_sensor_8(0x0350, 0x01);
+		}
+		write_cmos_sensor_8(0x0104, 0x01);
+		write_cmos_sensor_8(0x0340, imgsensor.frame_length >> 8);
+		write_cmos_sensor_8(0x0341, imgsensor.frame_length & 0xFF);
+		write_cmos_sensor_8(0x0104, 0x00);
 	}
-
 	/* Update Shutter */
-	write_cmos_sensor(0x0104, 0x01);
+	write_cmos_sensor_8(0x0104, 0x01);
 	if (auto_extend_en)
 		write_cmos_sensor(0x0350, 0x01); /* Enable auto extend */
 	else
 		write_cmos_sensor(0x0350, 0x00); /* Disable auto extend */
-	write_cmos_sensor(0x0202, (shutter >> 8) & 0xFF);
-	write_cmos_sensor(0x0203, shutter & 0xFF);
-	write_cmos_sensor(0x0104, 0x00);
-
-	LOG_INF(
-		"Exit! shutter =%d, framelength =%d/%d, dummy_line=%d, auto_extend=%d\n",
-		shutter,
-		imgsensor.frame_length, frame_length,
-		dummy_line, read_cmos_sensor(0x0350));
+	write_cmos_sensor_8(0x0202, (shutter >> 8) & 0xFF);
+	write_cmos_sensor_8(0x0203, shutter  & 0xFF);
+	write_cmos_sensor_8(0x0104, 0x00);
+        /*LOG_INF("shutter =%d, framelength =%d\n",
+		shutter, imgsensor.frame_length);*/
 }			/* set_shutter_frame_length */
 
 static kal_uint16 gain2reg(const kal_uint16 gain)
@@ -2511,11 +2507,14 @@ static kal_uint32 streaming_control(kal_bool enable)
 {
 	LOG_INF("streaming_enable(0=Sw Standby,1=streaming): %d\n", enable);
 
-	if (enable)
+	if (enable){
+		mdelay(5);
 		write_cmos_sensor(0x0100, 0X01);
-	else
+	}else{
+		mdelay(5);
 		write_cmos_sensor(0x0100, 0x00);
-
+	}
+	mdelay(10);
 	return ERROR_NONE;
 }
 
@@ -3325,7 +3324,10 @@ static kal_uint32 set_max_framerate_by_scenario(
 			imgsensor_info.pre.framelength + imgsensor.dummy_line;
 		imgsensor.min_frame_length = imgsensor.frame_length;
 		spin_unlock(&imgsensor_drv_lock);
-		set_dummy();
+		if (imgsensor.frame_length > imgsensor.shutter)
+			set_dummy();
+		else
+			LOG_INF("frame_length %d < shutter %d", imgsensor.frame_length, imgsensor.shutter);
 		break;
 	case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
 		if (framerate == 0)
@@ -3884,8 +3886,11 @@ static kal_uint32 feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
 		LOG_INF("SENSOR_FEATURE_SET_STREAMING_SUSPEND\n");
 		streaming_control(KAL_FALSE);
 		break;
+
 	case SENSOR_FEATURE_SET_STREAMING_RESUME:
-		LOG_INF("SENSOR_FEATURE_SET_STREAMING_RESUME\n");
+		LOG_INF("SENSOR_FEATURE_SET_STREAMING_RESUME, shutter:%llu\n", *feature_data);
+		if (*feature_data != 0)
+			set_shutter(*feature_data);
 		streaming_control(KAL_TRUE);
 		break;
 
