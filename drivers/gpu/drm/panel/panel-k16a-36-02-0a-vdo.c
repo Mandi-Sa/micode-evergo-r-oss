@@ -486,6 +486,10 @@ static struct mtk_panel_params ext_params = {
 		.vact_timing_fps = 90,
 #endif
 	},
+	.phy_timcon = {
+	.hs_zero = 35,
+	.hs_trail = 26,
+	},
 
 };
 
@@ -497,7 +501,6 @@ static struct mtk_panel_params ext_params_90hz = {
 	.cust_esd_check = 1,
 	.esd_check_enable = 1,
 	.lcm_esd_check_table[0] = {
-
 		.cmd = 0x0A, .count = 1, .para_list[0] = 0x9C,
 	},
 	.is_cphy = 1,
@@ -514,6 +517,10 @@ static struct mtk_panel_params ext_params_90hz = {
 #else
 		.vact_timing_fps = 90,
 #endif
+	},
+	.phy_timcon = {
+	.hs_zero = 35,
+	.hs_trail = 26,
 	},
 
 };
