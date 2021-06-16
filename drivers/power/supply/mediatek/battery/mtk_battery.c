@@ -145,6 +145,8 @@ static enum power_supply_property battery_props[] = {
 	POWER_SUPPLY_PROP_SHUTDOWN_DELAY,
 	//Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp
 	POWER_SUPPLY_PROP_CHARGER_TEMP,
+	//Extb HONGMI-84869,wangbin wt.ADD,20210616,add charge type
+	POWER_SUPPLY_PROP_CHARGE_TYPE,
 
 };
 
@@ -542,6 +544,34 @@ int get_charger_pump_temp()
 extern bool mtk_shutdown_delay_enable;
 extern bool enable_notify_shutdown;
 /* -Extb HONGMI-84836,wangbin wt.ADD,20210613,add for shutdown after delay time 30s*/
+
+/* +Extb HONGMI-84869,wangbin wt.ADD,20210616,add charge type*/
+int get_charge_type(struct battery_data *data)
+{
+	struct charger_device *chg1_dev;
+	int ret,cv;
+	chg1_dev = get_charger_by_name("primary_chg");
+	if (chg1_dev) {
+		ret = charger_dev_get_constant_voltage(chg1_dev, &cv);
+	} else
+		bm_err("*** Error : can't find primary charger ***\n");
+
+	if (data->BAT_STATUS == POWER_SUPPLY_STATUS_CHARGING) {
+		bm_err("%s,cv=%d,batt_vol=%d\n",__func__,cv,data->BAT_batt_vol);
+		if (data->BAT_batt_vol*1000 < 3100000)
+			return POWER_SUPPLY_CHARGE_TYPE_TRICKLE;
+		else if (data->BAT_batt_vol*1000 < cv)
+			return POWER_SUPPLY_CHARGE_TYPE_FAST;
+		else
+			return POWER_SUPPLY_CHARGE_TYPE_TAPER;
+	}else if (data->BAT_STATUS == POWER_SUPPLY_STATUS_FULL){
+		return POWER_SUPPLY_CHARGE_TYPE_NONE;
+	}else{
+		return POWER_SUPPLY_CHARGE_TYPE_NONE;
+	}
+}
+/* -Extb HONGMI-84869,wangbin wt.ADD,20210616,add charge type*/
+
 static int battery_get_property(struct power_supply *psy,
 	enum power_supply_property psp,
 	union power_supply_propval *val)
@@ -730,6 +760,11 @@ static int battery_get_property(struct power_supply *psy,
 		val->intval = 0;
 		break;
 	/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
+	/* +Extb HONGMI-84869,wangbin wt.ADD,20210616,add charge type*/
+	case POWER_SUPPLY_PROP_CHARGE_TYPE:
+		val->intval = get_charge_type(data);
+		break;
+	/* -Extb HONGMI-84869,wangbin wt.ADD,20210616,add charge type*/
 	default:
 		ret = -EINVAL;
 		break;
