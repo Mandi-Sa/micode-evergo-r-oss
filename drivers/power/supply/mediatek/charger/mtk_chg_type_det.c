@@ -95,6 +95,8 @@ struct chg_type_info {
 	/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
 	int polarity_state;
 	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+	//Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode
+	int typec_mode;
 };
 
 #ifdef CONFIG_FPGA_EARLY_PORTING
@@ -376,6 +378,9 @@ int mt_get_quick_charge_type(struct mt_charger *mtk_chg)
 }
 /* -Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type*/
 
+//Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode
+static int g_typec_mode;
+
 static int mt_usb_get_property(struct power_supply *psy,
 	enum power_supply_property psp, union power_supply_propval *val)
 {
@@ -447,6 +452,11 @@ static int mt_usb_get_property(struct power_supply *psy,
 		}
 		break;
 	/* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
+	/* +Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
+	case POWER_SUPPLY_PROP_TYPEC_MODE:
+		val->intval = g_typec_mode;
+		break;
+	/* -Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
 	default:
 		return -EINVAL;
 	}
@@ -490,6 +500,7 @@ static enum power_supply_property mt_usb_properties[] = {
 	POWER_SUPPLY_PROP_APDO_MAX,	// Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 	POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE, //Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type
 	POWER_SUPPLY_PROP_REAL_TYPE,//Bug664795,wangbin,wt.ADD,20210604,add real type node
+	POWER_SUPPLY_PROP_TYPEC_MODE,//Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode
 
 };
 
@@ -517,6 +528,24 @@ static void plug_in_out_handler(struct chg_type_info *cti, bool en, bool ignore)
 	mutex_unlock(&cti->chgdet_lock);
 }
 
+/* +Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
+static int get_source_mode(struct tcp_notify *noti)
+{
+	switch (noti->typec_state.rp_level) {
+	case TYPEC_CC_VOLT_SNK_1_5:
+		return POWER_SUPPLY_TYPEC_SOURCE_MEDIUM;
+	case TYPEC_CC_VOLT_SNK_3_0:
+		return POWER_SUPPLY_TYPEC_SOURCE_HIGH;
+	case TYPEC_CC_VOLT_SNK_DFT:
+		return POWER_SUPPLY_TYPEC_SOURCE_DEFAULT;
+	default:
+		break;
+	}
+
+	return POWER_SUPPLY_TYPEC_NONE;
+}
+/* -Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
+
 static int pd_tcp_notifier_call(struct notifier_block *pnb,
 				unsigned long event, void *data)
 {
@@ -533,6 +562,9 @@ static int pd_tcp_notifier_call(struct notifier_block *pnb,
 		    noti->typec_state.new_state == TYPEC_ATTACHED_NORP_SRC)) {
 			pr_info("%s USB Plug in, pol = %d\n", __func__,
 					noti->typec_state.polarity);
+			//Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode
+			cti->typec_mode = get_source_mode(noti);
+			g_typec_mode = cti->typec_mode;
 			plug_in_out_handler(cti, true, false);
 		} else if ((noti->typec_state.old_state == TYPEC_ATTACHED_SNK ||
 		    noti->typec_state.old_state == TYPEC_ATTACHED_CUSTOM_SRC ||
