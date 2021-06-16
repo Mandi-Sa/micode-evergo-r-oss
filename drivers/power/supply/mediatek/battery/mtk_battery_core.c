@@ -812,6 +812,7 @@ void fg_custom_init_from_header(void)
 	/* ZCV update */
 	fg_cust_data.zcv_suspend_time = ZCV_SUSPEND_TIME;
 	fg_cust_data.sleep_current_avg = SLEEP_CURRENT_AVG;
+	fg_cust_data.zcv_com_vol_limit = ZCV_COM_VOL_LIMIT;
 	fg_cust_data.zcv_car_gap_percentage = ZCV_CAR_GAP_PERCENTAGE;
 
 	/* dod_init */
@@ -1438,6 +1439,8 @@ void fg_custom_init_from_dts(struct platform_device *dev)
 		&(fg_cust_data.zcv_suspend_time), 1);
 	fg_read_dts_val(np, "SLEEP_CURRENT_AVG",
 		&(fg_cust_data.sleep_current_avg), 1);
+	fg_read_dts_val(np, "ZCV_COM_VOL_LIMIT",
+		&(fg_cust_data.zcv_com_vol_limit), 1);
 	fg_read_dts_val(np, "ZCV_CAR_GAP_PERCENTAGE",
 		&(fg_cust_data.zcv_car_gap_percentage), 1);
 
