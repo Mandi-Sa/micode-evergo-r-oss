@@ -73,6 +73,21 @@ int cpu_power_bcpu_weight_max1 = 480;
 int cpu_power_bcpu_weight_min1 = 100;
 
 #endif /* USE_BCPU_WEIGHT */
+
+#ifdef CM_BCPU_MIN_OPP_WEIGHT
+unsigned int cm_mgr_bcpu_min_opp_weight;
+unsigned int cm_mgr_bcpu_low_opp_weight;
+unsigned int cm_mgr_bcpu_low_opp_bound = 15;
+
+unsigned int cm_mgr_bcpu_min_opp_weight0;
+unsigned int cm_mgr_bcpu_low_opp_weight0;
+unsigned int cm_mgr_bcpu_low_opp_bound0 = 15;
+
+unsigned int cm_mgr_bcpu_min_opp_weight1 = 30;
+unsigned int cm_mgr_bcpu_low_opp_weight1 = 60;
+unsigned int cm_mgr_bcpu_low_opp_bound1 = 10;
+#endif
+
 #ifdef CM_TRIGEAR
 int cpu_power_bbcpu_weight_max = 100;
 int cpu_power_bbcpu_weight_min = 100;

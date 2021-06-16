@@ -32,6 +32,7 @@
 #define USE_BCPU_WEIGHT
 #define USE_CM_USER_MODE /* POWER_HAL setting */
 
+#define CM_BCPU_MIN_OPP_WEIGHT
 #define CM_MGR_EMI_OPP 6
 #define CM_MGR_LOWER_OPP 7
 #define CM_MGR_CPU_CLUSTER 2
@@ -66,6 +67,18 @@ extern int cpu_power_bcpu_weight_min0;
 extern int cpu_power_bcpu_weight_max1;
 extern int cpu_power_bcpu_weight_min1;
 #endif /* USE_BCPU_WEIGHT */
+
+#ifdef CM_BCPU_MIN_OPP_WEIGHT
+extern unsigned int cm_mgr_bcpu_min_opp_weight;
+extern unsigned int cm_mgr_bcpu_low_opp_weight;
+extern unsigned int cm_mgr_bcpu_low_opp_bound;
+extern unsigned int cm_mgr_bcpu_min_opp_weight0;
+extern unsigned int cm_mgr_bcpu_low_opp_weight0;
+extern unsigned int cm_mgr_bcpu_low_opp_bound0;
+extern unsigned int cm_mgr_bcpu_min_opp_weight1;
+extern unsigned int cm_mgr_bcpu_low_opp_weight1;
+extern unsigned int cm_mgr_bcpu_low_opp_bound1;
+#endif /* CM_BCPU_MIN_OPP_WEIGHT */
 
 #ifdef USE_CM_USER_MODE
 extern unsigned int cm_user_mode;
