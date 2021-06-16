@@ -433,8 +433,8 @@ static const struct drm_display_mode performance_mode = {
 #define VFP_45HZ (54)
 #define VFP_60HZ (1290)
 #define VFP_90HZ (54)
-#define VSA (4)
-#define VBP (16)
+#define VSA (8)
+#define VBP (12)
 #define VAC (2400)
 #define HAC (1080)
 static const struct drm_display_mode default_mode = {
@@ -490,6 +490,10 @@ static struct mtk_panel_params ext_params = {
 		.vact_timing_fps = 90,
 #endif
 	},
+	.phy_timcon = {
+	.hs_zero = 35,
+	.hs_trail = 26,
+	},
 
 };
 
@@ -518,6 +522,10 @@ static struct mtk_panel_params ext_params_90hz = {
 #else
 		.vact_timing_fps = 90,
 #endif
+	},
+	.phy_timcon = {
+	.hs_zero = 35,
+	.hs_trail = 26,
 	},
 
 };
