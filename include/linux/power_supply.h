@@ -210,6 +210,8 @@ enum power_supply_property {
 	POWER_SUPPLY_PROP_REAL_TYPE,
 	//Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp
 	POWER_SUPPLY_PROP_CHARGER_TEMP,
+	//Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode
+	POWER_SUPPLY_PROP_TYPEC_MODE,
 	/* Local extensions */
 	POWER_SUPPLY_PROP_USB_HC,
 	POWER_SUPPLY_PROP_USB_OTG,
@@ -242,6 +244,26 @@ enum power_supply_type {
 	POWER_SUPPLY_TYPE_USB_HVDCP,		/* Dedicated Charging Port */
 };
 /* +Bug651592 caijiaqi.wt,20210607,MODIFY Secret battery */
+
+/* +Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
+/* Indicates USB Type-C CC connection status */
+enum power_supply_typec_mode {
+	POWER_SUPPLY_TYPEC_NONE,
+
+	/* Acting as source */
+	POWER_SUPPLY_TYPEC_SINK,		/* Rd only */
+	POWER_SUPPLY_TYPEC_SINK_POWERED_CABLE,	/* Rd/Ra */
+	POWER_SUPPLY_TYPEC_SINK_DEBUG_ACCESSORY,/* Rd/Rd */
+	POWER_SUPPLY_TYPEC_SINK_AUDIO_ADAPTER,	/* Ra/Ra */
+	POWER_SUPPLY_TYPEC_POWERED_CABLE_ONLY,	/* Ra only */
+
+	/* Acting as sink */
+	POWER_SUPPLY_TYPEC_SOURCE_DEFAULT,	/* Rp default */
+	POWER_SUPPLY_TYPEC_SOURCE_MEDIUM,	/* Rp 1.5A */
+	POWER_SUPPLY_TYPEC_SOURCE_HIGH,		/* Rp 3A */
+	POWER_SUPPLY_TYPEC_NON_COMPLIANT,
+};
+/* -Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
 
 enum power_supply_notifier_events {
 	PSY_EVENT_PROP_CHANGED,

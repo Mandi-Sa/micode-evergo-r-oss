@@ -62,6 +62,17 @@ static const char * const power_supply_usb_real_type_text[] = {
 };
 /* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 
+/* +Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
+static const char * const power_supply_usb_typec_mode_text[] = {
+	"Nothing attached", "Sink attached", "Powered cable w/ sink",
+	"Debug Accessory", "Audio Adapter", "Powered cable w/o sink",
+	"Source attached (default current)",
+	"Source attached (medium current)",
+	"Source attached (high current)",
+	"Non compliant",
+};
+/* -Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
+
 //Extb HONGMI-84869,wangbin wt.ADD,20210616,add charge type
 static const char * const power_supply_charge_type_text[] = {
 	"Unknown", "N/A", "Trickle", "Fast", "Taper"
@@ -116,6 +127,12 @@ static ssize_t power_supply_show_property(struct device *dev,
 		return sprintf(buf, "%s\n",
 			      power_supply_usb_real_type_text[value.intval]);
 	/* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
+
+	/* +Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
+	if (off == POWER_SUPPLY_PROP_TYPEC_MODE)
+		return sprintf(buf, "%s\n",
+			      power_supply_usb_typec_mode_text[value.intval]);
+	/* -Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
 
 	if (off == POWER_SUPPLY_PROP_STATUS)
 		return sprintf(buf, "%s\n",
@@ -322,6 +339,8 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(real_type),
 	//Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp
 	POWER_SUPPLY_ATTR(charger_temp),
+	//Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode
+	POWER_SUPPLY_ATTR(typec_mode),
 	/* Local extensions */
 	POWER_SUPPLY_ATTR(usb_hc),
 	POWER_SUPPLY_ATTR(usb_otg),
