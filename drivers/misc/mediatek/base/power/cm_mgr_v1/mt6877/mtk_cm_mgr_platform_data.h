@@ -100,11 +100,11 @@ unsigned int debounce_times_up_adb0[CM_MGR_EMI_OPP] = {0, 0, 0, 0, 0, 0};
 unsigned int debounce_times_down_adb0[CM_MGR_EMI_OPP] = {3, 0, 0, 0, 0, 0};
 
 unsigned int cpu_power_ratio_up1[CM_MGR_EMI_OPP] = {100, 120, 140, 100, 180, 140};
-unsigned int cpu_power_ratio_down1[CM_MGR_EMI_OPP] = {100, 100, 100, 100, 100, 100};
+unsigned int cpu_power_ratio_down1[CM_MGR_EMI_OPP] = {100, 100, 100, 100, 160, 100};
 unsigned int debounce_times_up_adb1[CM_MGR_EMI_OPP] = {0, 0, 0, 0, 0, 0};
-unsigned int debounce_times_down_adb1[CM_MGR_EMI_OPP] = {3, 0, 0, 0, 0, 0};
+unsigned int debounce_times_down_adb1[CM_MGR_EMI_OPP] = {3, 0, 0, 0, 3, 3};
 
-int debounce_times_reset_adb;
+int debounce_times_reset_adb = 1;
 int debounce_times_perf_down = 5;
 int debounce_times_perf_force_down = 100;
 static int update;
@@ -133,6 +133,13 @@ int cm_mgr_cpu_map_dram_enable = 1;
 int cm_mgr_cpu_map_emi_opp = 1;
 int cm_mgr_cpu_map_skip_cpu_opp = 2;
 #endif /* USE_CPU_TO_DRAM_MAP_NEW */
+
+
+int x_ratio_enable = 1;
+int cm_mgr_camera_enable;
+unsigned int cpu_power_ratio_up_x_camera[CM_MGR_EMI_OPP] = {0, 0, 0, 0, 60, 60};
+unsigned int cpu_power_ratio_up_x[CM_MGR_EMI_OPP] = {0, 0, 0, 0, 0, 0};
+
 
 static int vcore_power_gain_0[][VCORE_ARRAY_SIZE] = {
 	{42, 80, 10, 120, 210},
