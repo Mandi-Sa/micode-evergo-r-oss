@@ -686,7 +686,7 @@ static int battery_sw_jeita(struct usbpd_pm *pdpm)
 		pdpm->pps_temp_flag = true;
 		if (pdpm->cp.vbat_volt < CHG_CUR_VOLT)
 			step_vbat = bat_step(pdpm, BAT_VOLT_CURR1);
-		else if (pdpm->cp.vbat_volt >= CHG_CUR_VOLT)
+		else if (pdpm->cp.vbat_volt >= CHG_CUR_VOLT && pdpm->cp.vbat_volt <= CHG_CUR_VOLT2)
 			step_vbat = bat_step(pdpm, BAT_VOLT_CURR2);
 		else
 			step_vbat = bat_step(pdpm, BAT_VOLT_CURR3);
