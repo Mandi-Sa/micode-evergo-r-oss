@@ -1890,6 +1890,59 @@ void mtk_charging_control(struct charger_manager *info)
 #endif
 //-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
 
+//+Bug651592,chenrui1.wt,ADD,20210615,add dynamic set ieoc and cv
+#define BAT_ID_COS 0x47
+#define BAT_ID_SWD 0x57
+static int mtk_get_batt_id(void)
+{
+	struct power_supply *batt_verify;
+	union power_supply_propval pval = {0, };
+
+	batt_verify = power_supply_get_by_name("batt_verify");
+	if (!batt_verify) {
+		chr_err("wtdebug : %s can't get batt id", __func__);
+		return 0;
+	}
+	power_supply_get_property(batt_verify,
+		POWER_SUPPLY_PROP_MI_BATTERY_ID, &pval);
+	chr_err("wtdebug : %s get batt_id = %d", __func__, pval.intval);
+	return pval.intval;
+}
+
+static void mtk_dynamic_set_ieoc_and_cv(struct charger_manager *info)
+{
+
+	int batt_temp = 0;
+	int batt_id = 0;
+	unsigned int ieoc_ua = 0;
+
+	batt_id = mtk_get_batt_id();
+	if (batt_id == BAT_ID_COS || batt_id == BAT_ID_SWD) {
+		batt_temp = battery_get_bat_temperature();
+		if (batt_temp >= 15 && batt_temp <= 35) {
+			ieoc_ua = (batt_id == BAT_ID_COS) ? 686000 : 735000;
+			info->data.battery_cv = 4480000;
+		}
+		else if (batt_temp > 35 && batt_temp <= 45) {
+			ieoc_ua = (batt_id == BAT_ID_COS) ? 833000 : 784000;
+			info->data.battery_cv = 4480000;
+		}
+		else if (batt_temp > 45 && batt_temp <= 60) {
+			ieoc_ua = 300000;
+			info->data.battery_cv = 4100000;
+		}
+		else {
+			ieoc_ua = 300000;
+			info->data.battery_cv = 4450000;
+		}
+		charger_dev_set_eoc_current(info->chg1_dev, ieoc_ua);
+		chr_err("wt_debug : %s set ieoc = %u cv = %u", __func__, ieoc_ua, info->data.battery_cv);
+	}
+	else
+		chr_err("wt_debug : %s not set ieoc", __func__);
+}
+//-Bug651592,chenrui1.wt,ADD,20210615,add dynamic set ieoc and cv
+
 static int charger_routine_thread(void *arg)
 {
 	struct charger_manager *info = arg;
@@ -1946,6 +1999,11 @@ static int charger_routine_thread(void *arg)
 		}
 #endif
 //-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
+//+Bug651592,chenrui1.wt,ADD,20210615,add dynamic set ieoc and cv
+		if(is_charger_on) {
+			mtk_dynamic_set_ieoc_and_cv(info);
+		}
+//+Bug651592,chenrui1.wt,ADD,20210615,add dynamic set ieoc and cv
 		spin_lock_irqsave(&info->slock, flags);
 		__pm_relax(&info->charger_wakelock);
 		spin_unlock_irqrestore(&info->slock, flags);
