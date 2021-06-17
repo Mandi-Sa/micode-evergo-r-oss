@@ -143,7 +143,8 @@ struct usbpd_pm {
 	/* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 	bool	pps_temp_flag;
 
-	int	chg_curr_flag;
+	int	lcdoff_curr_step;
+	int	lcdon_curr_step;
 	/* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 	int	request_voltage;
 	int	request_current;
