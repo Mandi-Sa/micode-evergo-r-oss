@@ -425,6 +425,8 @@ struct charger_manager {
 
 	struct smartcharging sc;
 
+	/* Bug651592 caijiaqi.wt,20210617,ADD BATTERY jeita V0.2*/
+	bool jeita_lcd_on_off;
 
 	/*daemon related*/
 	struct sock *daemo_nl_sk;
