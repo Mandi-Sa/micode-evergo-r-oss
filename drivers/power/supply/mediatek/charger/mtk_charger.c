@@ -931,6 +931,24 @@ void sw_jeita_state_machine_init(struct charger_manager *info)
 	}
 }
 
+/* +Bug651592 caijiaqi.wt,20210617,ADD BATTERY jeita V0.2 */
+int set_jeita_lcd_on_off(bool onoff)
+{
+	int ret = 0;
+	if (1 == onoff)
+		pinfo->jeita_lcd_on_off = 1;
+	else
+		pinfo->jeita_lcd_on_off = 0;
+
+	chr_err("sw_jeita %s: onoff = %d\n", __func__, pinfo->jeita_lcd_on_off);
+
+	return ret;
+}
+int get_jeita_lcd_on_off(void){
+	return pinfo->jeita_lcd_on_off;
+}
+/* -Bug651592 caijiaqi.wt,20210617,ADD BATTERY jeita V0.2 */
+
 void do_sw_jeita_state_machine(struct charger_manager *info)
 {
 	struct sw_jeita_data *sw_jeita;
