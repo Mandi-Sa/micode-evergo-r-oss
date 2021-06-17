@@ -106,8 +106,6 @@ int lm36273_brightness_set(int level)
 {
 	if (level > 2047)
 	    level = 2047;
-	if (level < 3)
-	    level = 3;
 
 	level = level * 180 / 255;
 	int LSB_tmp = level & 0x7;
