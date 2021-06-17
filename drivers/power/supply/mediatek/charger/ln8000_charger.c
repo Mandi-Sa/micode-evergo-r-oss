@@ -37,6 +37,9 @@
 #include <linux/types.h>
 #include "ln8000_charger.h"
 
+//Extb HONGMI-84911,chenrui1.wt,ADD,20210616,add hardware info
+#include <linux/hardware_info.h>
+
 static const char *ln8000_dev_name[] = {
         "ln8000-standalone",
         "ln8000-master",
@@ -1626,6 +1629,8 @@ static int ln8000_probe(struct i2c_client *client, const struct i2c_device_id *i
 
         determine_initial_status(info);
 
+        //Extb HONGMI-84911,chenrui1.wt,ADD,20210616,add hardware info
+        hardwareinfo_set_prop(HARDWARE_SUB_CHARGER_IC_INFO, "LN8000_CHARGER");
         return 0;
 
 err_wakeup:
