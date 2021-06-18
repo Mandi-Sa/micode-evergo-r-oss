@@ -1363,10 +1363,16 @@ static struct platform_driver st21nfc_platform_driver = {
 		},
 };
 #endif /* KRNMTKLEGACY_GPIO */
+extern char *saved_command_line;
 
 /* module load/unload record keeping */
 static int __init st21nfc_dev_init(void)
 {
+	//printk("board_id found in cmdline : %s\n", saved_command_line);
+	if(strstr(saved_command_line,"board_id=S98016AA1") || strstr(saved_command_line,"board_id=S98016BA1"))  {
+	   printk("Not support NFC");
+	   return -1;
+	}else{
 	pr_info("Loading st21nfc driver\n");
 #ifndef KRNMTKLEGACY_GPIO
 	platform_driver_register(&st21nfc_platform_driver);
@@ -1374,6 +1380,7 @@ static int __init st21nfc_dev_init(void)
 		pr_debug("Loading st21nfc i2c driver\n");
 #endif
 	return i2c_add_driver(&st21nfc_driver);
+	}
 }
 
 module_init(st21nfc_dev_init);
