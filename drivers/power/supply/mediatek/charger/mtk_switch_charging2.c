@@ -221,6 +221,12 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 				info->data.ac_charger_input_current;
 		pdata->charging_current_limit =
 				info->data.ac_charger_current;
+		//+Bug669247,chenrui1.wt,MODIFY,20210618,modify PD charger charging_current_limit
+		if (charger_manager_pd_is_online()) {
+			pdata->input_current_limit = 3000000;
+			pdata->charging_current_limit = 3000000;
+		}
+		//-Bug669247,chenrui1.wt,MODIFY,20210618,modify PD charger charging_current_limit
 		mtk_pe20_set_charging_current(info,
 					&pdata->charging_current_limit,
 					&pdata->input_current_limit);
@@ -269,7 +275,8 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 		}
 	}
 
-	sc_select_charging_current(info, pdata);
+	//Bug669247,chenrui1.wt,MODIFY,20210618,modify PD charger charging_current_limit
+	//sc_select_charging_current(info, pdata);
 
 	if (pdata->thermal_input_current_limit != -1) {
 		if (pdata->thermal_input_current_limit <
@@ -286,6 +293,7 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 			pdata->input_current_limit =
 					pdata->input_current_limit_by_aicl;
 	}
+
 done:
 	ret = charger_dev_get_min_charging_current(info->chg1_dev, &ichg1_min);
 	if (ret != -ENOTSUPP && pdata->charging_current_limit < ichg1_min)
