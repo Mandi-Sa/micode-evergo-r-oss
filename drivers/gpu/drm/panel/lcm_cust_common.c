@@ -104,10 +104,10 @@ int lm36273_bias_enable(int enable, int delayMs)
 
 int lm36273_brightness_set(int level)
 {
-	if (level > 255)
-	    level = 255;
+	if (level > 2047)
+	    level = 2047;
 
-	level = level * 2047 / 255 * 180 / 255;
+	level = level * 180 / 255;
 	int LSB_tmp = level & 0x7;
 	int MSB_tmp = (level >> 3) & 0xFF;
 
