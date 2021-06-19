@@ -419,36 +419,9 @@ static int mt_usb_get_property(struct power_supply *psy,
 	/* +Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 	case POWER_SUPPLY_PROP_REAL_TYPE:
 		if (charger_manager_pd_is_online()) {
-			val->intval = POWER_SUPPLY_TYPE_USB_PD;
-			mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_USB_PD;
+			val->intval = PPS_CHARGER;
 		} else {
-			switch (mtk_chg->chg_type) {
-			case STANDARD_HOST:
-				val->intval = POWER_SUPPLY_TYPE_USB;
-				mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_USB;
-				break;
-			case CHARGING_HOST:
-				val->intval = POWER_SUPPLY_TYPE_USB_CDP;
-				mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_USB_CDP;
-				break;
-			case CHECK_HV:
-			case STANDARD_CHARGER:
-				val->intval = POWER_SUPPLY_TYPE_USB_DCP;
-				mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_USB_DCP;
-				break;
-			case HVDCP_CHARGER:
-				val->intval = POWER_SUPPLY_TYPE_USB_HVDCP;
-				mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_USB_HVDCP;
-				break;
-			case NONSTANDARD_CHARGER:
-				val->intval = POWER_SUPPLY_TYPE_USB_FLOAT;
-				mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_USB_FLOAT;
-				break;
-			default:
-				val->intval = POWER_SUPPLY_TYPE_UNKNOWN;
-				mtk_chg->usb_desc.type = POWER_SUPPLY_TYPE_UNKNOWN;
-				break;
-			}
+			val->intval = mtk_chg->chg_type;
 		}
 		break;
 	/* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
