@@ -111,11 +111,11 @@ static struct imgsensor_info_struct imgsensor_info = {
 		.framelength = 3920,
 		.startx = 0,
 		.starty = 0,
-		.grabwindow_width  = 4656,
-		.grabwindow_height = 3496,
+		.grabwindow_width  = 2328,
+		.grabwindow_height = 1748,
 		.mipi_data_lp2hs_settle_dc = 85,
 		.max_framerate = 300,
-		.mipi_pixel_rate = 580800000,
+		.mipi_pixel_rate = 302400000,
 	},
 
 	.margin = 8,			//sensor framelength & shutter margin
@@ -176,7 +176,7 @@ static struct SENSOR_WINSIZE_INFO_STRUCT imgsensor_winsize_info[7] = {
  { 4656, 3496, 0, 0,   4656, 3496, 2328, 1748,   0, 0,  2328, 1748, 0, 0, 2328, 1748 },// normal-video 
  { 4656, 3496, 0, 0,   4656, 3496, 2328, 1748,   0, 218, 2328, 1312, 0, 0, 2328, 1312 },//hs-video
  { 4656, 3496, 0, 0,   4656, 3496, 2328, 1748,   0, 0,  2328, 1748, 0, 0, 2328, 1748 },// slim-video 
- { 4656, 3496, 0, 0,   4656, 3496, 4656, 3496,   0, 0,  4656, 3496, 0, 0, 4656, 3496 },// custom1
+ { 4656, 3496, 0, 0,   4656, 3496, 2328, 1748,   0, 0,  2328, 1748, 0, 0, 2328, 1748 },// custom1
 };
 
 static kal_uint16 read_cmos_sensor(kal_uint32 addr)
@@ -592,6 +592,7 @@ static void slim_video_setting(void)
 	preview_setting();
 }
 
+/*
 static void custom1_setting(void)
 {
 	LOG_INF("loading custom1_setting\n");
@@ -599,6 +600,7 @@ static void custom1_setting(void)
 	table_write_cmos_sensor(ov16a1qqtech_custom1_setting,
 		sizeof(ov16a1qqtech_custom1_setting) / sizeof(kal_uint16));
 }
+*/
 
 unsigned int
 ov16a1qqtech_get_otpdata(unsigned char *data, u16 i2cId)
@@ -956,7 +958,7 @@ static kal_uint32 custom1(
 	/* imgsensor.current_fps = 300; */
 	imgsensor.autoflicker_en = KAL_FALSE;
 	spin_unlock(&imgsensor_drv_lock);
-	custom1_setting();
+	preview_setting();
 
 	return ERROR_NONE;
 }	/*      custom1       */

@@ -913,6 +913,7 @@ static kal_uint16 ov16a1qqtech_hs_video_setting[] = {
 	0x100, 0x01,
 };
 
+/*
 static kal_uint16 ov16a1qqtech_custom1_setting[] = {
    //2328x1748@30fps,756Mbps
 	0x100,  0x00,
@@ -992,7 +993,7 @@ static kal_uint16 ov16a1qqtech_custom1_setting[] = {
 	0x5d13, 0x1 , 
 	0x100,  0x1 ,
 };
-
+*/
 typedef enum{
 	IMGSENSOR_MODE_INIT,
 	IMGSENSOR_MODE_PREVIEW,
