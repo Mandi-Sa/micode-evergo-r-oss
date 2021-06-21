@@ -95,7 +95,6 @@ struct mtk_nanohub_device {
 	int32_t pressure_config_data[2];
 	int32_t sar_config_data[4];
 	int32_t ois_config_data[2];
-	int32_t rear_light_config_data[1];
 	int32_t sar_secondary_config_data[4];
 };
 
@@ -670,12 +669,6 @@ static void mtk_nanohub_init_sensor_info(void)
 	p->rate = SENSOR_RATE_ONCHANGE;
 	p->gain = 1;
 	strlcpy(p->name, "sar", sizeof(p->name));
-	strlcpy(p->vendor, "mtk", sizeof(p->vendor));
-
-	p = &sensor_state[SENSOR_TYPE_REAR_LIGHT];
-	p->sensorType = SENSOR_TYPE_REAR_LIGHT;
-	p->gain = 1;
-	strlcpy(p->name, "rear_light", sizeof(p->name));
 	strlcpy(p->vendor, "mtk", sizeof(p->vendor));
 
 	p = &sensor_state[SENSOR_TYPE_OIS];
@@ -1268,11 +1261,6 @@ int mtk_nanohub_get_data_from_hub(uint8_t sensor_id,
 		data->sar_event.data[1] = data_t->sar_event.data[1];
 		data->sar_event.data[2] = data_t->sar_event.data[2];
 		break;
-         case ID_REAR_LIGHT:
-                  printk("light get data %d",data_t->data[0]);
-		data->time_stamp = data_t->time_stamp;
-		data->data[0] = data_t->data[0];
-		break;
          case ID_SAR_SECONDARY:
                   printk("sar secondary get data %d %d %d",data_t->data[0], data_t->data[1], data_t->data[2]);
 		data->time_stamp = data_t->time_stamp;
@@ -1621,57 +1609,6 @@ int mtk_nanohub_set_cmd_to_hub(uint8_t sensor_id,
 			return -1;
 		}
 		break;
-          case ID_REAR_LIGHT:
-		req.set_cust_req.sensorType = ID_REAR_LIGHT;
-		req.set_cust_req.action = SENSOR_HUB_SET_CUST;
-		switch (action) {
-		case CUST_ACTION_GET_RAW_DATA:
-			req.set_cust_req.getRawData.action =
-				CUST_ACTION_GET_RAW_DATA;
-			len = offsetof(struct SCP_SENSOR_HUB_SET_CUST_REQ,
-				custData) + sizeof(req.set_cust_req.getRawData);
-			err = mtk_nanohub_req_send(&req);
-			if (err == 0) {
-				if ((req.set_cust_rsp.action !=
-					SENSOR_HUB_SET_CUST)
-					|| (req.set_cust_rsp.errCode != 0)) {
-					pr_err("get_raw fail!\n");
-					return -1;
-				}
-				if (req.set_cust_rsp.getRawData.action !=
-					CUST_ACTION_GET_RAW_DATA) {
-					pr_err("get_raw fail!\n");
-					return -1;
-				}
-				pGetRawData = &req.set_cust_rsp.getRawData;
-				*((uint8_t *) data) =
-					pGetRawData->uint8_data[0];
-			} else {
-				pr_err("get_raw failed!\n");
-			}
-			return 0;
-		case CUST_ACTION_SHOW_ALSLV:
-			req.set_cust_req.showAlslv.action =
-				CUST_ACTION_SHOW_ALSLV;
-			len = offsetof(struct SCP_SENSOR_HUB_SET_CUST_REQ,
-				custData) + sizeof(req.set_cust_req.showAlslv);
-			break;
-		case CUST_ACTION_SHOW_ALSVAL:
-			req.set_cust_req.showAlsval.action =
-				CUST_ACTION_GET_RAW_DATA;
-			len = offsetof(struct SCP_SENSOR_HUB_SET_CUST_REQ,
-				custData) + sizeof(req.set_cust_req.showAlsval);
-			break;
-		case CUST_ACTION_GET_SENSOR_INFO:
-			req.set_cust_req.getInfo.action =
-				CUST_ACTION_GET_SENSOR_INFO;
-			len = offsetof(struct SCP_SENSOR_HUB_SET_CUST_REQ,
-				custData) + sizeof(req.set_cust_req.getInfo);
-			break;
-		default:
-			return -1;
-		}
-		break;
 	case ID_SAR_SECONDARY:
 		req.set_cust_req.sensorType = ID_SAR_SECONDARY;
 		req.set_cust_req.action = SENSOR_HUB_SET_CUST;
@@ -1902,16 +1839,6 @@ static void mtk_nanohub_restoring_config(void)
 		vfree(data);
 	}
 
-	length = sizeof(device->rear_light_config_data);
-	data = vzalloc(length);
-	if (data) {
-		spin_lock(&config_data_lock);
-		memcpy(data, device->rear_light_config_data, length);
-		spin_unlock(&config_data_lock);
-		mtk_nanohub_cfg_to_hub(ID_REAR_LIGHT, data, length);
-		vfree(data);
-	}
-
 	length = sizeof(device->sar_secondary_config_data);
 	data = vzalloc(length);
 	if (data) {
@@ -2121,12 +2048,6 @@ static int mtk_nanohub_config(struct hf_device *hfdev,
 		length = sizeof(device->sar_config_data);
 		spin_lock(&config_data_lock);
 		memcpy(device->sar_config_data, data, length);
-		spin_unlock(&config_data_lock);
-		break;
-	case ID_REAR_LIGHT:
-		length = sizeof(device->rear_light_config_data);
-		spin_lock(&config_data_lock);
-		memcpy(device->rear_light_config_data, data, length);
 		spin_unlock(&config_data_lock);
 		break;
 	case ID_SAR_SECONDARY:
@@ -2398,13 +2319,6 @@ static int mtk_nanohub_report_to_manager(struct data_unit_t *data)
 			event.word[1] = data->sar_event.data[1];
 			event.word[2] = data->sar_event.data[2];
 			break;
-		case ID_REAR_LIGHT:
-	                  printk("rear light data %d",data->data[0]);
-			event.timestamp = data->time_stamp;
-			event.sensor_type = id_to_type(data->sensor_type);
-			event.action = data->flush_action;
-			event.word[0] = data->data[0];
-			break;
 		case ID_SAR_SECONDARY:
 		         printk("sar secondary data %d %d %d",data->data[0], data->data[1], data->data[2]);
 			event.timestamp = data->time_stamp;
@@ -2502,13 +2416,6 @@ static int mtk_nanohub_report_to_manager(struct data_unit_t *data)
 			event.word[1] = data->data[1];
 			break;
 		case ID_LIGHT:
-			event.timestamp = data->time_stamp;
-			event.sensor_type = id_to_type(data->sensor_type);
-			event.action = data->flush_action;
-			event.word[0] = data->data[0];
-			event.word[1] = data->data[1];
-			break;
-		case ID_REAR_LIGHT:
 			event.timestamp = data->time_stamp;
 			event.sensor_type = id_to_type(data->sensor_type);
 			event.action = data->flush_action;
