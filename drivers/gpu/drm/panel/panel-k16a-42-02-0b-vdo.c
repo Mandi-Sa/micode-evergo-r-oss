@@ -262,20 +262,21 @@ static int csot_unprepare(struct drm_panel *panel)
 
 	//usleep_range(2000, 2001);
     
-	ctx->bias_pos = devm_gpiod_get_index(ctx->dev, "bias", 0, GPIOD_OUT_HIGH);
-	gpiod_set_value(ctx->bias_pos, 0);
-	devm_gpiod_put(ctx->dev, ctx->bias_pos);
+	if(ts->gesture_enabled == false){
+		ctx->bias_pos = devm_gpiod_get_index(ctx->dev, "bias", 0, GPIOD_OUT_HIGH);
+		gpiod_set_value(ctx->bias_pos, 0);
+		devm_gpiod_put(ctx->dev, ctx->bias_pos);
 
-	usleep_range(2000, 2001);
+		usleep_range(2000, 2001);
 
-	lm36273_bias_enable(0, 3);
-	usleep_range(2000, 2001);
-	ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
-	gpiod_set_value(ctx->bias_neg, 0);
-	devm_gpiod_put(ctx->dev, ctx->bias_neg);
+		lm36273_bias_enable(0, 3);
+		usleep_range(2000, 2001);
+		ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
+		gpiod_set_value(ctx->bias_neg, 0);
+		devm_gpiod_put(ctx->dev, ctx->bias_neg);
 
-	usleep_range(2000, 2001);
-
+		usleep_range(2000, 2001);
+	}
 	ret = regulator_disable(lcd_dvdd_ldo);
 	if (ret < 0)
 		pr_err("disable regulator lcd_dvdd_ldo fail, ret = %d\n", ret);
@@ -335,16 +336,19 @@ static int csot_prepare(struct drm_panel *panel)
 	usleep_range(2000, 2001);
 
 	lm36273_bl_bias_conf();
-	lm36273_bias_enable(1, 3);
-	mdelay(10);
-	ctx->bias_pos = devm_gpiod_get_index(ctx->dev, "bias", 0, GPIOD_OUT_HIGH);
-	gpiod_set_value(ctx->bias_pos, 1);
-	devm_gpiod_put(ctx->dev, ctx->bias_pos);
-	usleep_range(2000, 2001);
+
+	if(ts->gesture_enabled == false){
+		lm36273_bias_enable(1, 3);
+		mdelay(10);
+		ctx->bias_pos = devm_gpiod_get_index(ctx->dev, "bias", 0, GPIOD_OUT_HIGH);
+		gpiod_set_value(ctx->bias_pos, 1);
+		devm_gpiod_put(ctx->dev, ctx->bias_pos);
+		usleep_range(2000, 2001);
 	
-	ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
-	gpiod_set_value(ctx->bias_neg, 1);
-	devm_gpiod_put(ctx->dev, ctx->bias_neg);
+		ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
+		gpiod_set_value(ctx->bias_neg, 1);
+		devm_gpiod_put(ctx->dev, ctx->bias_neg);
+	}
 
 	csot_panel_init(ctx);
 
