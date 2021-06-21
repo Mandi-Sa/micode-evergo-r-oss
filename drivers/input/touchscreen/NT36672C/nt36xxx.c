@@ -43,6 +43,7 @@
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
 
 #include <linux/hardware_info.h>
+#include <linux/platform_data/spi-mt65xx.h>
 
 #if NVT_TOUCH_ESD_PROTECT
 static struct delayed_work nvt_esd_check_work;
@@ -103,6 +104,31 @@ uint32_t SPI_RD_FAST_ADDR = 0;	//read from dtsi
 
 extern char Tp_name[HARDWARE_MAX_ITEM_LONGTH];
 
+#define INPUT_EVENT_START			0
+#define INPUT_EVENT_SENSITIVE_MODE_OFF		0
+#define INPUT_EVENT_SENSITIVE_MODE_ON		1
+#define INPUT_EVENT_STYLUS_MODE_OFF		2
+#define INPUT_EVENT_STYLUS_MODE_ON		3
+#define INPUT_EVENT_WAKUP_MODE_OFF		4
+#define INPUT_EVENT_WAKUP_MODE_ON		5
+#define INPUT_EVENT_COVER_MODE_OFF		6
+#define INPUT_EVENT_COVER_MODE_ON		7
+#define INPUT_EVENT_SLIDE_FOR_VOLUME		8
+#define INPUT_EVENT_DOUBLE_TAP_FOR_VOLUME		9
+#define INPUT_EVENT_SINGLE_TAP_FOR_VOLUME		10
+#define INPUT_EVENT_LONG_SINGLE_TAP_FOR_VOLUME		11
+#define INPUT_EVENT_PALM_OFF		12
+#define INPUT_EVENT_PALM_ON		13
+#define INPUT_EVENT_END				13
+
+static struct mtk_chip_config nt3667_chip_info = {
+        .sample_sel = 0,
+
+        .cs_setuptime = 2000, // 20 us
+        .cs_holdtime = 500,
+        .cs_idletime = 500,
+};
+
 struct tag_videolfb_nova {
 	u64 fb_base;
 	u32 islcmfound;
@@ -141,7 +167,7 @@ const uint16_t gesture_key_array[] = {
 
 #ifdef CONFIG_MTK_SPI
 const struct mt_chip_conf spi_ctrdata = {
-	.setuptime = 25,
+	.setuptime = 100,
 	.holdtime = 25,
 	.high_time = 5,	/* 10MHz (SPI_SPEED=100M / (high_time+low_time(10ns)))*/
 	.low_time = 5,
@@ -1241,6 +1267,56 @@ static void nvt_esd_check_func(struct work_struct *work)
 }
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
 
+static void nvt_switch_mode_work(struct work_struct *work)
+{
+	struct nvt_mode_switch *ms = container_of(work, struct nvt_mode_switch, switch_mode_work);
+	struct nvt_ts_data *data = ms->ts_data;
+	unsigned char value = ms->mode;
+	char ch[64] = {0x0,};
+
+	if (value >= INPUT_EVENT_WAKUP_MODE_OFF && value <= INPUT_EVENT_WAKUP_MODE_ON) {
+		data->gesture_enabled = value - INPUT_EVENT_WAKUP_MODE_OFF;
+		snprintf(ch, sizeof(ch), "%s", data->gesture_enabled ? "enabled" : "disabled");
+		//update_hw_monitor_info(HWMON_CONPONENT_NAME, HWMON_KEY_DBCLICK_SWITCH, ch);
+	} else {
+		NVT_ERR("Does not support touch mode %d\n", value);
+	}
+
+	if (ms != NULL) {
+		kfree(ms);
+		ms = NULL;
+	}
+}
+
+static int nvt_input_event(struct input_dev *dev, unsigned int type, unsigned int code, int value)
+{
+	struct nvt_ts_data *data = input_get_drvdata(dev);
+	struct nvt_mode_switch *ms;
+
+	if (type == EV_SYN && code == SYN_CONFIG) {
+		NVT_LOG("set input event value = %d\n", value);
+
+		if (value >= INPUT_EVENT_START && value <= INPUT_EVENT_END) {
+			ms = (struct nvt_mode_switch *)kmalloc(sizeof(struct nvt_mode_switch), GFP_ATOMIC);
+
+			if (ms != NULL) {
+				ms->ts_data = data;
+				ms->mode = (unsigned char)value;
+				INIT_WORK(&ms->switch_mode_work, nvt_switch_mode_work);
+				schedule_work(&ms->switch_mode_work);
+			} else {
+				NVT_ERR("failed in allocating memory for switching mode\n");
+				return -ENOMEM;
+			}
+		} else {
+			NVT_ERR("Invalid event value\n");
+			return -EINVAL;
+		}
+	}
+	return 0;
+}
+
+
 #define PEN_DATA_LEN 14
 #if CHECK_PEN_DATA_CHECKSUM
 static int32_t nvt_ts_pen_data_checksum(uint8_t *buf, uint8_t length)
@@ -1415,7 +1491,7 @@ static irqreturn_t nvt_ts_work_func(int irq, void *data)
 #endif /* POINT_DATA_CHECKSUM */
 
 #if WAKEUP_GESTURE
-	if (bTouchIsAwake == 0) {
+	if ((bTouchIsAwake == 0)&&(ts->gesture_enabled) ){
 		input_id = (uint8_t)(point_data[1] >> 3);
 		nvt_ts_wakeup_gesture_report(input_id, point_data);
 		mutex_unlock(&ts->lock);
@@ -1755,6 +1831,8 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	int32_t retry = 0;
 #endif
 
+	struct mtk_chip_config *chip_config = client->controller_data;
+
 #if defined(CONFIG_DRM_PANEL)
 	//get lcm info from vediolfb
 	mtk_drm_lcm_info_get();
@@ -1797,6 +1875,16 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 		ret = -ENOMEM;
 		goto err_malloc_rbuf;
 	}
+
+        if (chip_config == NULL) {
+                client->controller_data = (void *)&nt3667_chip_info;
+                NVT_LOG( "Replaced chip_info!\n");
+        } else {
+                chip_config->cs_setuptime = nt3667_chip_info.cs_setuptime;
+                chip_config->cs_idletime = nt3667_chip_info.cs_idletime;
+                chip_config->cs_holdtime = nt3667_chip_info.cs_holdtime;
+                NVT_LOG( "Added into chip_info!\n");
+        }
 
 	ts->client = client;
 	spi_set_drvdata(client, ts);
@@ -1930,6 +2018,9 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	ts->input_dev->name = NVT_TS_NAME;
 	ts->input_dev->phys = ts->phys;
 	ts->input_dev->id.bustype = BUS_SPI;
+
+	ts->input_dev->event = nvt_input_event;
+	input_set_drvdata(ts->input_dev, ts);
 
 	//---register input device---
 	ret = input_register_device(ts->input_dev);
@@ -2359,7 +2450,8 @@ static int32_t nvt_ts_suspend(struct device *dev)
 	}
 
 #if !WAKEUP_GESTURE
-	nvt_irq_enable(false);
+	if(ts->gesture_enabled == false)
+		nvt_irq_enable(false);
 #endif
 
 #if NVT_TOUCH_ESD_PROTECT
@@ -2375,15 +2467,18 @@ static int32_t nvt_ts_suspend(struct device *dev)
 	bTouchIsAwake = 0;
 
 #if WAKEUP_GESTURE
+	if(ts->gesture_enabled){
 	//---write command to enter "wakeup gesture mode"---
-	buf[0] = EVENT_MAP_HOST_CMD;
-	buf[1] = 0x13;
-	CTP_SPI_WRITE(ts->client, buf, 2);
-
-	enable_irq_wake(ts->client->irq);
-
-	NVT_LOG("Enabled touch wakeup gesture\n");
-
+		buf[0] = EVENT_MAP_HOST_CMD;
+		buf[1] = 0x13;
+		CTP_SPI_WRITE(ts->client, buf, 2);
+		enable_irq_wake(ts->client->irq);
+		NVT_LOG("Enabled touch wakeup gesture\n");
+	}else{
+		buf[0] = EVENT_MAP_HOST_CMD;
+		buf[1] = 0x11;
+		CTP_SPI_WRITE(ts->client, buf, 2);
+	}
 #else // WAKEUP_GESTURE
 	//---write command to enter "deep sleep mode"---
 	buf[0] = EVENT_MAP_HOST_CMD;
@@ -2445,7 +2540,8 @@ static int32_t nvt_ts_resume(struct device *dev)
 	}
 
 #if !WAKEUP_GESTURE
-	nvt_irq_enable(true);
+	if(ts->gesture_enabled ==false)
+		nvt_irq_enable(true);
 #endif
 
 #if NVT_TOUCH_ESD_PROTECT
