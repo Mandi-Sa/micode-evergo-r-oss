@@ -100,7 +100,7 @@ extern const uint16_t gesture_key_array[];
 #define POINT_DATA_CHECKSUM_LEN 65
 
 //---ESD Protect.---
-#define NVT_TOUCH_ESD_PROTECT 0
+#define NVT_TOUCH_ESD_PROTECT 1
 #define NVT_TOUCH_ESD_CHECK_PERIOD 1500	/* ms */
 #define NVT_TOUCH_WDT_RECOVERY 1
 
@@ -158,6 +158,7 @@ struct nvt_ts_data {
 #ifdef CONFIG_SPI_MT65XX
     struct mtk_chip_config spi_ctrl;
 #endif
+	int gesture_enabled;
 };
 
 #if NVT_TOUCH_PROC
@@ -195,6 +196,12 @@ typedef enum {
 	NVTWRITE = 0,
 	NVTREAD  = 1
 } NVT_SPI_RW;
+
+struct nvt_mode_switch {
+	struct nvt_ts_data *ts_data;
+	unsigned char mode;
+	struct work_struct switch_mode_work;
+};
 
 //---extern structures---
 extern struct nvt_ts_data *ts;
