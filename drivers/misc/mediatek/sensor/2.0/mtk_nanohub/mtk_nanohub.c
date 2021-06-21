@@ -598,7 +598,7 @@ static void mtk_nanohub_init_sensor_info(void)
 
 	p = &sensor_state[SENSOR_TYPE_PICK_UP_GESTURE];
 	p->sensorType = SENSOR_TYPE_PICK_UP_GESTURE;
-	p->rate = SENSOR_RATE_ONESHOT;
+	p->rate = SENSOR_RATE_ONCHANGE;
 	p->gain = 1;
 	strlcpy(p->name, "pickup", sizeof(p->name));
 	strlcpy(p->vendor, "mtk", sizeof(p->vendor));
