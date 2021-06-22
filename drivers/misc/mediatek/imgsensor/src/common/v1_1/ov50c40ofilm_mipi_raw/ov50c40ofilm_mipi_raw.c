@@ -216,19 +216,19 @@ static struct SENSOR_VC_INFO_STRUCT SENSOR_VC_INFO[6] = {
     {
         0x02, 0x0a, 0x0000, 0x0008, 0x40, 0x00,
         0x00, 0x2b, 0x1000, 0x0C00, 0x00, 0x00, 0x0000, 0x0000,
-        0x01, 0x2B, 0x04F6, 0x02F8, 0x03, 0x00, 0x0000, 0x0000
+        0x01, 0x2b, 0x03F8, 0x02F8, 0x03, 0x00, 0x0000, 0x0000
     },
     /* capture mode setting */
     {
         0x02, 0x0a, 0x0000, 0x0008, 0x40, 0x00,
         0x00, 0x2b, 0x1000, 0x0C00, 0x00, 0x00, 0x0000, 0x0000,
-        0x01, 0x2B, 0x04F6, 0x02F8, 0x03, 0x00, 0x0000, 0x0000
+        0x01, 0x2b, 0x03F8, 0x02F8, 0x03, 0x00, 0x0000, 0x0000
     },
     /* normal_video mode setting */
     {
         0x02, 0x0a, 0x0000, 0x0008, 0x40, 0x00,
         0x00, 0x2b, 0x1000, 0x0900, 0x00, 0x00, 0x0000, 0x0000,
-        0x01, 0x2B, 0x04F6, 0x0240, 0x03, 0x00, 0x0000, 0x0000
+        0x01, 0x2B, 0x03F8, 0x0240, 0x03, 0x00, 0x0000, 0x0000
     },
     /* high_speed_video mode setting */
     {
@@ -262,23 +262,59 @@ static struct SET_PD_BLOCK_INFO_T imgsensor_pd_info = {
 	.i4BlockNumX = 254,
 	.i4BlockNumY = 190,
 	.i4PosL = {
-		{23, 18}, 
-		{31, 18}, 
-		{19, 22}, 
-		{27, 22}, 
-		{23, 26}, 
-		{31, 26}, 
-		{19, 30}, 
+		{23, 18},
+		{31, 18},
+		{19, 22},
+		{27, 22},
+		{23, 26},
+		{31, 26},
+		{19, 30},
 		{27, 30}
 	},
 	.i4PosR = {
-		{22, 18}, 
-		{30, 18}, 
-		{18, 22}, 
-		{26, 22}, 
-		{22, 26}, 
-		{30, 26}, 
-		{18, 30}, 
+		{22, 18},
+		{30, 18},
+		{18, 22},
+		{26, 22},
+		{22, 26},
+		{30, 26},
+		{18, 30},
+		{26, 30}
+	},
+	.i4Crop = {
+		{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}
+	},
+	.iMirrorFlip = 0,	/*0 IMAGE_NORMAL, 1 IMAGE_H_MIRROR, 2 IMAGE_V_MIRROR, 3 IMAGE_HV_MIRROR */
+};
+
+static struct SET_PD_BLOCK_INFO_T imgsensor_pd_info_16_9 = {
+	.i4OffsetX = 16,
+	.i4OffsetY = 16,
+	.i4PitchX = 16,
+	.i4PitchY = 16,
+	.i4PairNum = 8,
+	.i4SubBlkW = 8,
+	.i4SubBlkH = 4,
+	.i4BlockNumX = 254,
+	.i4BlockNumY = 144,
+	.i4PosL = {
+		{23, 18},
+		{31, 18},
+		{19, 22},
+		{27, 22},
+		{23, 26},
+		{31, 26},
+		{19, 30},
+		{27, 30}
+	},
+	.i4PosR = {
+		{22, 18},
+		{30, 18},
+		{18, 22},
+		{26, 22},
+		{22, 26},
+		{30, 26},
+		{18, 30},
 		{26, 30}
 	},
 	.i4Crop = {
@@ -722,7 +758,7 @@ kal_uint16 addr_data_pair_init_OV50C40OFILM[] = {
 	0x3690, 0x10,
 	0x3699, 0x1f,
 	0x369b, 0x10,
-	0x369c, 0x19,
+	0x369c, 0x2b,
 	0x369d, 0x40,
 	0x369e, 0x00,
 	0x36a1, 0x00,
@@ -1304,9 +1340,9 @@ static void sensor_init(void)
 	write_cmos_sensor(0x368d, 0x00);
 	write_cmos_sensor(0x368e, 0x01);
 	write_cmos_sensor(0x3690, 0x10);
-	write_cmos_sensor(0x3699, 0x1f);
+	write_cmos_sensor(0x3699, 0x2b);
 	write_cmos_sensor(0x369b, 0x10);
-	write_cmos_sensor(0x369c, 0x19);
+	write_cmos_sensor(0x369c, 0x2b);
 	write_cmos_sensor(0x369d, 0x40);
 	write_cmos_sensor(0x369e, 0x00);
 	write_cmos_sensor(0x36a1, 0x00);
@@ -1812,12 +1848,12 @@ kal_uint16 addr_data_pair_preview_OV50C40OFILM[] = {
 	0x3501, 0x0c,
 	0x3502, 0x16,
 	0x3607, 0x01,
-	0x3608, 0xe4,
+	0x3608, 0xDa,
 	0x360c, 0x03,
 	0x360e, 0x1d,
-	0x3684, 0x00,
+	0x3684, 0x03,
 	0x369b, 0x10,
-	0x369c, 0x19,
+	0x369c, 0x2b,
 	0x369d, 0x40,
 	0x3702, 0x4b,
 	0x3703, 0x27,
@@ -1991,9 +2027,9 @@ static void preview_setting(void)
 	write_cmos_sensor(0x3608, 0xe4);
 	write_cmos_sensor(0x360c, 0x03);
 	write_cmos_sensor(0x360e, 0x1d);
-	write_cmos_sensor(0x3684, 0x00);
+	write_cmos_sensor(0x3684, 0x07);
 	write_cmos_sensor(0x369b, 0x10);
-	write_cmos_sensor(0x369c, 0x19);
+	write_cmos_sensor(0x369c, 0x2b);
 	write_cmos_sensor(0x369d, 0x40);
 	write_cmos_sensor(0x3702, 0x4b);
 	write_cmos_sensor(0x3703, 0x27);
@@ -2161,7 +2197,7 @@ kal_uint16 addr_data_pair_capture_15fps_OV50C40OFILM[] = {
 	0x3608, 0xe4,
 	0x360c, 0x03,
 	0x360e, 0x1d,
-	0x3684, 0x03,
+	0x3684, 0x07,
 	0x369b, 0x10,
 	0x369c, 0x19,
 	0x369d, 0x40,
@@ -2326,12 +2362,12 @@ kal_uint16 addr_data_pair_capture_30fps_OV50C40OFILM[] = {
 	0x3501, 0x0c,
 	0x3502, 0x16,
 	0x3607, 0x01,
-	0x3608, 0xe4,
+	0x3608, 0xDa,
 	0x360c, 0x03,
 	0x360e, 0x1d,
 	0x3684, 0x03,
 	0x369b, 0x10,
-	0x369c, 0x19,
+	0x369c, 0x2b,
 	0x369d, 0x40,
 	0x3702, 0x4b,
 	0x3703, 0x27,
@@ -2516,7 +2552,7 @@ static void capture_setting(kal_uint16 currefps)
 	write_cmos_sensor(0x3608, 0xe4);
 	write_cmos_sensor(0x360c, 0x03);
 	write_cmos_sensor(0x360e, 0x1d);
-	write_cmos_sensor(0x3684, 0x03);
+	write_cmos_sensor(0x3684, 0x07);
 	write_cmos_sensor(0x369b, 0x10);
 	write_cmos_sensor(0x369c, 0x19);
 	write_cmos_sensor(0x369d, 0x40);
@@ -2683,9 +2719,9 @@ static void capture_setting(kal_uint16 currefps)
 	write_cmos_sensor(0x3608, 0xe4);
 	write_cmos_sensor(0x360c, 0x03);
 	write_cmos_sensor(0x360e, 0x1d);
-	write_cmos_sensor(0x3684, 0x03);
+	write_cmos_sensor(0x3684, 0x07);
 	write_cmos_sensor(0x369b, 0x10);
-	write_cmos_sensor(0x369c, 0x19);
+	write_cmos_sensor(0x369c, 0x2b);
 	write_cmos_sensor(0x369d, 0x40);
 	write_cmos_sensor(0x3702, 0x4b);
 	write_cmos_sensor(0x3703, 0x27);
@@ -2851,12 +2887,12 @@ kal_uint16 addr_data_pair_video_OV50C40OFILM[] = {
 	0x3501,0x0c,
 	0x3502,0x16,
 	0x3607,0x01,
-	0x3608,0xe4,
-	0x360c,0x03,
+	0x3608,0xDa,
+	0x360c,0x07,
 	0x360e,0x1d,
-	0x3684,0x00,
+	0x3684,0x03,
 	0x369b,0x10,
-	0x369c,0x19,
+	0x369c,0x2b,
 	0x369d,0x40,
 	0x3702,0x4b,
 	0x3703,0x27,
@@ -3030,9 +3066,9 @@ static void normal_video_setting(kal_uint16 currefps)
 	write_cmos_sensor(0x3608, 0xe4);
 	write_cmos_sensor(0x360c, 0x03);
 	write_cmos_sensor(0x360e, 0x1d);
-	write_cmos_sensor(0x3684, 0x00);
+	write_cmos_sensor(0x3684, 0x07);
 	write_cmos_sensor(0x369b, 0x10);
-	write_cmos_sensor(0x369c, 0x19);
+	write_cmos_sensor(0x369c, 0x2b);
 	write_cmos_sensor(0x369d, 0x40);
 	write_cmos_sensor(0x3702, 0x4b);
 	write_cmos_sensor(0x3703, 0x27);
@@ -3197,7 +3233,7 @@ kal_uint16 addr_data_pair_hs_video_OV50C40OFILM[] = {
 	0x3501, 0x02,
 	0x3502, 0xf1,
 	0x3607, 0x00,
-	0x3608, 0xc5,
+	0x3608, 0xB2,
 	0x360c, 0x0b,
 	0x360e, 0x1e,
 	0x3684, 0x00,
@@ -3543,7 +3579,7 @@ kal_uint16 addr_data_pair_slim_video_OV50C40OFILM[] = {
 	0x3501,0x04,
 	0x3502,0x2b,
 	0x3607,0x00,
-	0x3608,0xc5,
+	0x3608,0xB2,
 	0x360c,0x0b,
 	0x360e,0x1e,
 	0x3684,0x00,
@@ -3889,7 +3925,7 @@ kal_uint16 addr_data_pair_custom1_OV50C40OFILM[] = {
 	0x3501, 0x0c,
 	0x3502, 0x73,
 	0x3607, 0x01,
-	0x3608, 0xe4,
+	0x3608, 0xDa,
 	0x360c, 0x03,
 	0x360e, 0x1d,
 	0x3684, 0x03,
@@ -4685,7 +4721,7 @@ static kal_uint32 get_info(enum MSDK_SCENARIO_ID_ENUM scenario_id,
 	sensor_info->IHDR_LE_FirstLine = imgsensor_info.ihdr_le_firstline;
 	sensor_info->SensorModeNum = imgsensor_info.sensor_mode_num;
 /*0: NO PDAF, 1: PDAF Raw Data mode, 2:PDAF VC mode*/
-	sensor_info->PDAF_Support = 0;	//1;
+	sensor_info->PDAF_Support = 2;	//1;
 
 	//sensor_info->HDR_Support = 0; /*0: NO HDR, 1: iHDR, 2:mvHDR, 3:zHDR*/
 	sensor_info->SensorMIPILaneNumber = imgsensor_info.mipi_lane_num;
@@ -5309,13 +5345,16 @@ static kal_uint32 feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
 
 		switch (*feature_data) {
 		case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
-		case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
+		case MSDK_SCENARIO_ID_CAMERA_PREVIEW:
 			memcpy((void *)PDAFinfo, (void *)&imgsensor_pd_info,
+				sizeof(struct SET_PD_BLOCK_INFO_T));
+			break;
+		case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
+			memcpy((void *)PDAFinfo, (void *)&imgsensor_pd_info_16_9,
 				sizeof(struct SET_PD_BLOCK_INFO_T));
 			break;
 		case MSDK_SCENARIO_ID_HIGH_SPEED_VIDEO:
 		case MSDK_SCENARIO_ID_SLIM_VIDEO:
-		case MSDK_SCENARIO_ID_CAMERA_PREVIEW:
 		case MSDK_SCENARIO_ID_CUSTOM1:
 		default:
 			break;
@@ -5354,7 +5393,7 @@ static kal_uint32 feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
 			*(MUINT32 *) (uintptr_t) (*(feature_data + 1)) = 0;
 			break;
 		case MSDK_SCENARIO_ID_CAMERA_PREVIEW:
-			*(MUINT32 *) (uintptr_t) (*(feature_data + 1)) = 0;
+			*(MUINT32 *) (uintptr_t) (*(feature_data + 1)) = 1;
 			break;
 		case MSDK_SCENARIO_ID_CUSTOM1:
 			*(MUINT32 *)(uintptr_t)(*(feature_data+1)) = 0;
