@@ -1038,6 +1038,12 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 					pdpm->cp.vbat_volt);
 			usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_ENTRY);
 		}
+		//+Bug669735,chenrui1.wt,ADD,20210622,FAMMI test QC failed
+		if (!pdpm->pps_supported) {
+			pr_notice("pps supported is failed\n");
+			usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_EXIT);
+		}
+		//-Bug669735,chenrui1.wt,ADD,20210622,FAMMI test QC failed
 		break;
 
 	case PD_PM_STATE_FC2_ENTRY:
