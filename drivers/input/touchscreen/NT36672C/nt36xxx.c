@@ -121,14 +121,6 @@ extern char Tp_name[HARDWARE_MAX_ITEM_LONGTH];
 #define INPUT_EVENT_PALM_ON		13
 #define INPUT_EVENT_END				13
 
-static struct mtk_chip_config nt3667_chip_info = {
-        .sample_sel = 0,
-
-        .cs_setuptime = 2000, // 20 us
-        .cs_holdtime = 500,
-        .cs_idletime = 500,
-};
-
 struct tag_videolfb_nova {
 	u64 fb_base;
 	u32 islcmfound;
@@ -193,6 +185,9 @@ const struct mtk_chip_config spi_ctrdata = {
     .rx_mlsb = 1,
     .tx_mlsb = 1,
    // .cs_pol = 0,
+    .cs_setuptime = 30,
+    .cs_holdtime = 25,
+    .cs_idletime = 5,
 };
 #endif
 
@@ -1831,8 +1826,6 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	int32_t retry = 0;
 #endif
 
-	struct mtk_chip_config *chip_config = client->controller_data;
-
 #if defined(CONFIG_DRM_PANEL)
 	//get lcm info from vediolfb
 	mtk_drm_lcm_info_get();
@@ -1876,16 +1869,6 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 		goto err_malloc_rbuf;
 	}
 
-        if (chip_config == NULL) {
-                client->controller_data = (void *)&nt3667_chip_info;
-                NVT_LOG( "Replaced chip_info!\n");
-        } else {
-                chip_config->cs_setuptime = nt3667_chip_info.cs_setuptime;
-                chip_config->cs_idletime = nt3667_chip_info.cs_idletime;
-                chip_config->cs_holdtime = nt3667_chip_info.cs_holdtime;
-                NVT_LOG( "Added into chip_info!\n");
-        }
-
 	ts->client = client;
 	spi_set_drvdata(client, ts);
 
@@ -1913,6 +1896,7 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 #endif
 
 #ifdef CONFIG_SPI_MT65XX
+    NVT_LOG("Config for MTK SPI API fot touch");
     /* new usage of MTK spi API */
     memcpy(&ts->spi_ctrl, &spi_ctrdata, sizeof(struct mtk_chip_config));
     ts->client->controller_data = (void *)&ts->spi_ctrl;
