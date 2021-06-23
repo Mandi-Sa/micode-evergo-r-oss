@@ -2477,6 +2477,15 @@ simtray {
 		io-channels = <&auxadc 2>;
 		io-channel-names = "thermistor-ch2";
 	};
+
+/* +HONGMI84846, jiangyanjun, ADD, 20210622, S98016AA1 add new NTC configs. */
+	tboard_thermistor5: thermal-sensor5 {
+		compatible = "mediatek,mtboard-thermistor5";
+		io-channels = <&auxadc 4>;
+		io-channel-names = "thermistor-ch4";
+	};
+/* -HONGMI84846, jiangyanjun, ADD, 20210622, S98016AA1 add new NTC configs. */
+
 /* +bug 651594, xuxinyu, ADD, 20210512, S98016AA1 add new NTC configs. */
 	tboard_thermistor6: thermal-sensor6 {
 		compatible = "mediatek,mtboard-thermistor6";
