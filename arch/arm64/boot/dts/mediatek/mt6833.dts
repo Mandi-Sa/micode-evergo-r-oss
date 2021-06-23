@@ -2477,6 +2477,15 @@ simtray {
 		io-channels = <&auxadc 2>;
 		io-channel-names = "thermistor-ch2";
 	};
+
+/* +HONGMI84846, jiangyanjun, ADD, 20210622, S98016AA1 add new NTC configs. */
+	tboard_thermistor5: thermal-sensor5 {
+		compatible = "mediatek,mtboard-thermistor5";
+		io-channels = <&auxadc 4>;
+		io-channel-names = "thermistor-ch4";
+	};
+/* -HONGMI84846, jiangyanjun, ADD, 20210622, S98016AA1 add new NTC configs. */
+
 /* +bug 651594, xuxinyu, ADD, 20210512, S98016AA1 add new NTC configs. */
 	tboard_thermistor6: thermal-sensor6 {
 		compatible = "mediatek,mtboard-thermistor6";
@@ -5556,7 +5565,8 @@ simtray {
 	charger: charger {
 		compatible = "mediatek,charger";
 		algorithm_name = "SwitchCharging2";
-		/* enable_sw_jeita; */
+		/* +Extb HONGMI-85045,modify,wangbin.wt.20210623.modify for enable sw jeita*/
+		enable_sw_jeita;
 		/* enable_pe_plus; */
 		/* enable_pe_2; */
 		/* enable_pe_3; */
@@ -5580,8 +5590,10 @@ simtray {
 		usb_charger_current_unconfigured = <70000>;
 		usb_charger_current_configured = <500000>;
 		usb_charger_current = <500000>;
-		ac_charger_current = <2050000>;
-		ac_charger_input_current = <3200000>;
+		/* +Extb HONGMI-85045,modify,wangbin.wt.20210623.modify for Ibus*/
+		ac_charger_current = <3000000>;
+		ac_charger_input_current = <2000000>;
+		/* -Extb HONGMI-85045,modify,wangbin.wt.20210623.modify for Ibus*/
 		/*Extb HONGMI-84711, chenrui1.wt,MODIFY,20210514,modify the charging current of the non-standard charger to 1A*/
 		non_std_ac_charger_current = <1000000>;
 		charging_host_charger_current = <1500000>;

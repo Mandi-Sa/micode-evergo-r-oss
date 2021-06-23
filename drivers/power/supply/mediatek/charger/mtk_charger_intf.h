@@ -134,10 +134,47 @@ enum sw_jeita_state_enum {
 	TEMP_ABOVE_T4
 };
 
+/* +Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
+enum sw_jeita_state_enum_lcd_on {
+	LCD_ON_BELOW_NEG_10 = 0,
+	LCD_ON_NEG_10_TO_T0,
+	LCD_ON_T0_TO_T1,
+	LCD_ON_T1_TO_T2,
+	LCD_ON_T2_TO_T3,
+	LCD_ON_T3_TO_T4,
+	LCD_ON_T4_TO_T5,
+	LCD_ON_T5_TO_T6,
+	LCD_ON_T6_TO_T7,
+	LCD_ON_T7_TO_T8,
+	LCD_ON_T8_TO_T9,
+	LCD_ON_ABOVE_T9
+};
+
+enum sw_jeita_state_enum_lcd_off {
+	LCD_OFF_BELOW_NEG_10 = 0,
+	LCD_OFF_NEG_10_TO_T0,
+	LCD_OFF_T0_TO_T1,
+	LCD_OFF_T1_TO_T2,
+	LCD_OFF_T2_TO_T3,
+	LCD_OFF_T3_TO_T4,
+	LCD_OFF_T4_TO_T5,
+	LCD_OFF_T5_TO_T6,
+	LCD_OFF_T6_TO_T7,
+	LCD_OFF_ABOVE_T7
+};
+/* -Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
+
 struct sw_jeita_data {
 	int sm;
 	int pre_sm;
 	int cv;
+	/* +Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
+	int cc;
+	int lcd_on_sm;
+	int pre_lcd_on_sm;
+	int lcd_off_sm;
+	int pre_lcd_off_sm;
+	/* -Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
 	bool charging;
 	bool error_recovery_flag;
 };

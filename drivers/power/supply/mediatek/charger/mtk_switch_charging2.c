@@ -63,6 +63,8 @@
 
 #include <mt-plat/mtk_boot.h>
 #include "mtk_charger_intf.h"
+//Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita
+#include "mtk_charger_init.h"
 #include "mtk_switch_charging.h"
 #include "mtk_intf.h"
 
@@ -164,7 +166,10 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 
 	if (info->atm_enabled == true && (info->chr_type == STANDARD_HOST ||
 	    info->chr_type == CHARGING_HOST)) {
-		pdata->input_current_limit = 100000; /* 100mA */
+		/* +Bug670847,caijiaqi.wt,MODIFY,20210623,modify atm mode charging current */
+		pdata->input_current_limit = 500000; /* 500mA */
+		pdata->charging_current_limit = 400000;
+		/* -Bug670847,caijiaqi.wt,MODIFY,20210623,modify atm mode charging current */
 		goto done;
 	}
 
@@ -221,12 +226,12 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 				info->data.ac_charger_input_current;
 		pdata->charging_current_limit =
 				info->data.ac_charger_current;
-		//+Bug669247,chenrui1.wt,MODIFY,20210618,modify PD charger charging_current_limit
+		//+Bug669247,caijiaqi.wt,MODIFY,20210618,modify PD charger charging_current_limit
 		if (charger_manager_pd_is_online()) {
 			pdata->input_current_limit = 3000000;
 			pdata->charging_current_limit = 3000000;
 		}
-		//-Bug669247,chenrui1.wt,MODIFY,20210618,modify PD charger charging_current_limit
+		//-Bug669247,caijiaqi.wt,MODIFY,20210618,modify PD charger charging_current_limit
 		mtk_pe20_set_charging_current(info,
 					&pdata->charging_current_limit,
 					&pdata->input_current_limit);
@@ -268,10 +273,9 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 		    && info->chr_type == STANDARD_HOST)
 			chr_err("USBIF & STAND_HOST skip current check\n");
 		else {
-			if (info->sw_jeita.sm == TEMP_T0_TO_T1) {
-				pdata->input_current_limit = 500000;
-				pdata->charging_current_limit = 350000;
-			}
+			/* +Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
+			pdata->charging_current_limit = info->sw_jeita.cc;
+			/* +Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
 		}
 	}
 
@@ -867,17 +871,19 @@ static int mtk_switch_chr_err(struct charger_manager *info)
 	struct switch_charging_alg_data *swchgalg = info->algorithm_data;
 
 	if (info->enable_sw_jeita) {
-		if ((info->sw_jeita.sm == TEMP_BELOW_T0) ||
-			(info->sw_jeita.sm == TEMP_ABOVE_T4))
+		/* +Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
+		if ((info->battery_temp >= TEMP_LCD_ON_T7) ||
+			(info->battery_temp < TEMP_LCD_ON_NEG_10))
 			info->sw_jeita.error_recovery_flag = false;
 
 		if ((info->sw_jeita.error_recovery_flag == false) &&
-			(info->sw_jeita.sm != TEMP_BELOW_T0) &&
-			(info->sw_jeita.sm != TEMP_ABOVE_T4)) {
+			(info->battery_temp < TEMP_LCD_ON_T7) &&
+			(info->battery_temp >= TEMP_LCD_ON_NEG_10)) {
 			info->sw_jeita.error_recovery_flag = true;
 			swchgalg->state = CHR_CC;
 			get_monotonic_boottime(&swchgalg->charging_begin_time);
 		}
+		/* -Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
 	}
 
 	swchgalg->total_charging_time = 0;

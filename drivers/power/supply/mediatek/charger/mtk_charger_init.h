@@ -54,6 +54,50 @@
 #define TEMP_T0_THRES  0
 #define TEMP_T0_THRES_PLUS_X_DEGREE  0
 #define TEMP_NEG_10_THRES 0
+/* +Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
+#define TEMP_LCD_OFF_T7  60
+#define TEMP_LCD_OFF_T6  49
+#define TEMP_LCD_OFF_T5  47
+#define TEMP_LCD_OFF_T4  45
+#define TEMP_LCD_OFF_T3  43
+#define TEMP_LCD_OFF_T2  10
+#define TEMP_LCD_OFF_T1  5
+#define TEMP_LCD_OFF_T0  0
+#define TEMP_LCD_OFF_NEG_10  -10
+
+#define TEMP_LCD_ON_T9  60
+#define TEMP_LCD_ON_T8  47
+#define TEMP_LCD_ON_T7  45
+#define TEMP_LCD_ON_T6  44
+#define TEMP_LCD_ON_T5  41
+#define TEMP_LCD_ON_T4  39
+#define TEMP_LCD_ON_T3  37
+#define TEMP_LCD_ON_T2  10
+#define TEMP_LCD_ON_T1  5
+#define TEMP_LCD_ON_T0  0
+#define TEMP_LCD_ON_NEG_10  -10
+#define OFFSET 1
+
+#define CURR_LCD_OFF_T6_TO_T7  1000000
+#define CURR_LCD_OFF_T5_TO_T6  1500000
+#define CURR_LCD_OFF_T4_TO_T5  2000000
+#define CURR_LCD_OFF_T3_TO_T4  2500000
+#define CURR_LCD_OFF_T2_TO_T3  3000000
+#define CURR_LCD_OFF_T1_TO_T2  2450000
+#define CURR_LCD_OFF_T0_TO_T1  980000
+#define CURR_LCD_OFF_NEG_10_TO_T0  490000
+
+#define CURR_LCD_ON_T8_TO_T9  700000
+#define CURR_LCD_ON_T7_TO_T8  1000000
+#define CURR_LCD_ON_T6_TO_T7  1500000
+#define CURR_LCD_ON_T5_TO_T6  2000000
+#define CURR_LCD_ON_T4_TO_T5  2500000
+#define CURR_LCD_ON_T3_TO_T4  2800000
+#define CURR_LCD_ON_T2_TO_T3  3000000
+#define CURR_LCD_ON_T1_TO_T2  2450000
+#define CURR_LCD_ON_T0_TO_T1  980000
+#define CURR_LCD_ON_NEG_10_TO_T0  490000
+/* -Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
 
 /* Battery Temperature Protection */
 #define MIN_CHARGE_TEMP  0
