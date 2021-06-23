@@ -949,6 +949,211 @@ int get_jeita_lcd_on_off(void){
 }
 /* -Bug651592 caijiaqi.wt,20210617,ADD BATTERY jeita V0.2 */
 
+/* +Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
+void do_sw_jeita_state_machine_lcd_on(struct charger_manager *info)
+{
+	struct sw_jeita_data *sw_jeita;
+
+	sw_jeita = &info->sw_jeita;
+	sw_jeita->pre_lcd_on_sm = sw_jeita->lcd_on_sm;
+	sw_jeita->charging = true;
+
+	if (info->battery_temp >= TEMP_LCD_ON_T9) {
+		chr_err("[SW_JEITA] lcd_on: battery temp is too high,stop charging\n");
+		sw_jeita->charging = false;
+		sw_jeita->cc = 0;
+		sw_jeita->lcd_on_sm = LCD_ON_ABOVE_T9;
+	} else if (info->battery_temp >= TEMP_LCD_ON_T8) {
+		if((sw_jeita->lcd_on_sm == LCD_ON_ABOVE_T9) &&(info->battery_temp >= (TEMP_LCD_ON_T9 - OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_on: battery temp is too high still,keep stop charging\n");
+			sw_jeita->charging = false;
+			sw_jeita->cc = 0;
+		} else {
+			chr_err("[SW_JEITA] lcd_on: CURR_LCD_ON_T8_TO_T9\n");
+			sw_jeita->charging = true;
+			sw_jeita->cc = CURR_LCD_ON_T8_TO_T9;
+			sw_jeita->lcd_on_sm = LCD_ON_T8_TO_T9;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_ON_T7) {
+		if((sw_jeita->lcd_on_sm == LCD_ON_T8_TO_T9) &&(info->battery_temp >= (TEMP_LCD_ON_T8 - OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_on: keep CURR_LCD_ON_T8_TO_T9\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_on: CURR_LCD_ON_T7_TO_T8\n");
+			sw_jeita->cc = CURR_LCD_ON_T7_TO_T8;
+			sw_jeita->lcd_on_sm = LCD_ON_T7_TO_T8;
+		}
+	}  else if (info->battery_temp >= TEMP_LCD_ON_T6) {
+		if((sw_jeita->lcd_on_sm == LCD_ON_T7_TO_T8) &&(info->battery_temp >= (TEMP_LCD_ON_T7 - OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_on: keep CURR_LCD_ON_T7_TO_T8\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_on: CURR_LCD_ON_T6_TO_T7\n");
+			sw_jeita->cc = CURR_LCD_ON_T6_TO_T7;
+			sw_jeita->lcd_on_sm = LCD_ON_T6_TO_T7;
+		}
+	}  else if (info->battery_temp >= TEMP_LCD_ON_T5) {
+		if((sw_jeita->lcd_on_sm == LCD_ON_T6_TO_T7) &&(info->battery_temp >= (TEMP_LCD_ON_T6 - OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_on: keep CURR_LCD_ON_T6_TO_T7\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_on: CURR_LCD_ON_T5_TO_T6\n");
+			sw_jeita->cc = CURR_LCD_ON_T5_TO_T6;
+			sw_jeita->lcd_on_sm = LCD_ON_T5_TO_T6;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_ON_T4) {
+		if((sw_jeita->lcd_on_sm == LCD_ON_T5_TO_T6) &&(info->battery_temp >= (TEMP_LCD_ON_T5 - OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_on: keep CURR_LCD_ON_T5_TO_T6\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_on: CURR_LCD_ON_T4_TO_T5\n");
+			sw_jeita->cc = CURR_LCD_ON_T4_TO_T5;
+			sw_jeita->lcd_on_sm = LCD_ON_T4_TO_T5;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_ON_T3) {
+		if((sw_jeita->lcd_on_sm == LCD_ON_T4_TO_T5) &&(info->battery_temp >= (TEMP_LCD_ON_T4 - OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_on: keep CURR_LCD_ON_T4_TO_T5\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_on: CURR_LCD_ON_T3_TO_T4\n");
+			sw_jeita->cc = CURR_LCD_ON_T3_TO_T4;
+			sw_jeita->lcd_on_sm = LCD_ON_T3_TO_T4;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_ON_T2) {
+		if((sw_jeita->lcd_on_sm == LCD_ON_T3_TO_T4) &&(info->battery_temp >= (TEMP_LCD_ON_T3 - OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_on: keep CURR_LCD_ON_T3_TO_T4\n");
+		} else if ((sw_jeita->lcd_on_sm == LCD_ON_T1_TO_T2) &&(info->battery_temp <= (TEMP_LCD_ON_T2 + OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_on: keep CURR_LCD_ON_T1_TO_T2\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_on: CURR_LCD_ON_T2_TO_T3\n");
+			sw_jeita->cc = CURR_LCD_ON_T2_TO_T3;
+			sw_jeita->lcd_on_sm = LCD_ON_T2_TO_T3;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_ON_T1) {
+		if ((sw_jeita->lcd_on_sm == LCD_ON_T0_TO_T1) &&(info->battery_temp <= (TEMP_LCD_ON_T1 + OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_on: keep CURR_LCD_ON_T0_TO_T1\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_on: CURR_LCD_ON_T1_TO_T2\n");
+			sw_jeita->cc = CURR_LCD_ON_T1_TO_T2;
+			sw_jeita->lcd_on_sm = LCD_ON_T1_TO_T2;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_ON_T0) {
+		if ((sw_jeita->lcd_on_sm == LCD_ON_NEG_10_TO_T0) &&(info->battery_temp <= (TEMP_LCD_ON_T0 + OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_on: keep CURR_LCD_ON_NEG_10_TO_T0\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_on: CURR_LCD_ON_T1_TO_T2\n");
+			sw_jeita->cc = CURR_LCD_ON_T0_TO_T1;
+			sw_jeita->lcd_on_sm = LCD_ON_T0_TO_T1;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_ON_NEG_10) {
+		if ((sw_jeita->lcd_on_sm == LCD_ON_BELOW_NEG_10) &&(info->battery_temp <= (TEMP_LCD_ON_NEG_10 + OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_on: battery temp is too low still,keep stop charging\n");
+			sw_jeita->charging = false;
+		} else {
+			chr_err("[SW_JEITA] lcd_on: CURR_LCD_ON_NEG_10_TO_T0\n");
+			sw_jeita->charging = true;
+			sw_jeita->cc = CURR_LCD_ON_NEG_10_TO_T0;
+			sw_jeita->lcd_on_sm = LCD_ON_NEG_10_TO_T0;
+		}
+	} else {
+		chr_err("[SW_JEITA] lcd_on: battery temp is too low,stop charging\n");
+		sw_jeita->charging = false;
+		sw_jeita->cc = 0;
+		sw_jeita->lcd_on_sm = LCD_ON_BELOW_NEG_10;
+	}
+	chr_err("[SW_JEITA] lcd_on:pre_lcd_on_sm=%d,lcd_on_sm=%d,temp=%d,charging=%d,cc=%d\n",sw_jeita->pre_lcd_on_sm,
+		sw_jeita->lcd_on_sm,info->battery_temp,sw_jeita->charging,sw_jeita->cc);
+}
+
+void do_sw_jeita_state_machine_lcd_off(struct charger_manager *info)
+{
+	struct sw_jeita_data *sw_jeita;
+
+	sw_jeita = &info->sw_jeita;
+	sw_jeita->pre_lcd_off_sm = sw_jeita->lcd_off_sm;
+	sw_jeita->charging = true;
+
+	if (info->battery_temp >= TEMP_LCD_OFF_T7) {
+		chr_err("[SW_JEITA] lcd_off: battery temp is too high,stop charging\n");
+		sw_jeita->charging = false;
+		sw_jeita->cc = 0;
+		sw_jeita->lcd_off_sm = LCD_OFF_ABOVE_T7;
+	} else if (info->battery_temp >= TEMP_LCD_OFF_T6) {
+		if((sw_jeita->lcd_off_sm == LCD_OFF_ABOVE_T7) &&(info->battery_temp >= (TEMP_LCD_OFF_T7 - OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_off: battery temp is too high still,keep stop charging\n");
+			sw_jeita->charging = false;
+		} else {
+			chr_err("[SW_JEITA] lcd_off: CURR_LCD_OFF_T6_TO_T7\n");
+			sw_jeita->charging = true;
+			sw_jeita->cc = CURR_LCD_OFF_T6_TO_T7;
+			sw_jeita->lcd_off_sm = LCD_OFF_T6_TO_T7;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_OFF_T5) {
+		if((sw_jeita->lcd_off_sm == LCD_OFF_T6_TO_T7) &&(info->battery_temp >= (TEMP_LCD_OFF_T6 - OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_off: keep CURR_LCD_OFF_T6_TO_T7\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_off: CURR_LCD_OFF_T5_TO_T6\n");
+			sw_jeita->cc = CURR_LCD_OFF_T5_TO_T6;
+			sw_jeita->lcd_off_sm = LCD_OFF_T5_TO_T6;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_OFF_T4) {
+		if((sw_jeita->lcd_off_sm == LCD_OFF_T5_TO_T6) &&(info->battery_temp >= (TEMP_LCD_OFF_T5 - OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_off: keep CURR_LCD_OFF_T5_TO_T6\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_off: CURR_LCD_OFF_T4_TO_T5\n");
+			sw_jeita->cc = CURR_LCD_OFF_T4_TO_T5;
+			sw_jeita->lcd_off_sm = LCD_OFF_T4_TO_T5;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_OFF_T3) {
+		if((sw_jeita->lcd_off_sm == LCD_OFF_T4_TO_T5) &&(info->battery_temp >= (TEMP_LCD_OFF_T4 - OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_off: keep CURR_LCD_OFF_T4_TO_T5\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_off: CURR_LCD_OFF_T3_TO_T4\n");
+			sw_jeita->cc = CURR_LCD_OFF_T3_TO_T4;
+			sw_jeita->lcd_off_sm = LCD_OFF_T3_TO_T4;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_OFF_T2) {
+		if((sw_jeita->lcd_off_sm == LCD_OFF_T3_TO_T4) &&(info->battery_temp >= (TEMP_LCD_OFF_T3 - OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_off: keep CURR_LCD_OFF_T3_TO_T4\n");
+		} else if ((sw_jeita->lcd_off_sm == LCD_OFF_T1_TO_T2) &&(info->battery_temp <= (TEMP_LCD_OFF_T2 + OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_off: keep CURR_LCD_OFF_T1_TO_T2\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_off: CURR_LCD_OFF_T2_TO_T3\n");
+			sw_jeita->cc = CURR_LCD_OFF_T2_TO_T3;
+			sw_jeita->lcd_off_sm = LCD_OFF_T2_TO_T3;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_OFF_T1) {
+		if ((sw_jeita->lcd_off_sm == LCD_OFF_T0_TO_T1) &&(info->battery_temp <= (TEMP_LCD_OFF_T1 + OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_off: keep CURR_LCD_ON_T0_TO_T1\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_off: CURR_LCD_OFF_T1_TO_T2\n");
+			sw_jeita->cc = CURR_LCD_OFF_T1_TO_T2;
+			sw_jeita->lcd_off_sm = LCD_OFF_T1_TO_T2;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_OFF_T0) {
+		if ((sw_jeita->lcd_off_sm == LCD_OFF_NEG_10_TO_T0) &&(info->battery_temp <= (TEMP_LCD_OFF_T0 + OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_off: keep CURR_LCD_OFF_NEG_10_TO_T0\n");
+		} else {
+			chr_err("[SW_JEITA] lcd_off: CURR_LCD_ON_T0_TO_T1\n");
+			sw_jeita->cc = CURR_LCD_OFF_T0_TO_T1;
+			sw_jeita->lcd_off_sm = LCD_OFF_T0_TO_T1;
+		}
+	} else if (info->battery_temp >= TEMP_LCD_OFF_NEG_10) {
+		if ((sw_jeita->lcd_off_sm == LCD_OFF_BELOW_NEG_10) &&(info->battery_temp <= (TEMP_LCD_OFF_NEG_10 + OFFSET)) ) {
+			chr_err("[SW_JEITA] lcd_off: battery temp is too low still,keep stop charging\n");
+			sw_jeita->charging = false;
+		} else {
+			chr_err("[SW_JEITA] lcd_off: CURR_LCD_OFF_NEG_10_TO_T0\n");
+			sw_jeita->charging = true;
+			sw_jeita->cc = CURR_LCD_OFF_NEG_10_TO_T0;
+			sw_jeita->lcd_off_sm = LCD_OFF_NEG_10_TO_T0;
+		}
+	} else {
+		chr_err("[SW_JEITA] lcd_off: battery temp is too low,stop charging\n");
+		sw_jeita->charging = false;
+		sw_jeita->cc = 0;
+		sw_jeita->lcd_off_sm = LCD_OFF_BELOW_NEG_10;
+	}
+	chr_err("[SW_JEITA] lcd_off:pre_lcd_off_sm=%d,lcd_off_sm=%d,temp=%d,charging=%d,cc=%d\n",
+		sw_jeita->pre_lcd_off_sm,sw_jeita->lcd_off_sm,info->battery_temp,sw_jeita->charging,sw_jeita->cc);
+}
+/* -Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
+
 void do_sw_jeita_state_machine(struct charger_manager *info)
 {
 	struct sw_jeita_data *sw_jeita;
@@ -1685,7 +1890,12 @@ static void charger_check_status(struct charger_manager *info)
 	thermal = &info->thermal;
 
 	if (info->enable_sw_jeita == true) {
-		do_sw_jeita_state_machine(info);
+		/* +Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
+		if (info->jeita_lcd_on_off == true)
+			do_sw_jeita_state_machine_lcd_on(info);
+		else
+			do_sw_jeita_state_machine_lcd_off(info);
+		/* -Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
 		if (info->sw_jeita.charging == false) {
 			charging = false;
 			goto stop_charging;
