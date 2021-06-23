@@ -166,7 +166,10 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 
 	if (info->atm_enabled == true && (info->chr_type == STANDARD_HOST ||
 	    info->chr_type == CHARGING_HOST)) {
-		pdata->input_current_limit = 100000; /* 100mA */
+		/* +Bug670847,caijiaqi.wt,MODIFY,20210623,modify atm mode charging current */
+		pdata->input_current_limit = 500000; /* 500mA */
+		pdata->charging_current_limit = 400000;
+		/* -Bug670847,caijiaqi.wt,MODIFY,20210623,modify atm mode charging current */
 		goto done;
 	}
 
@@ -223,12 +226,12 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 				info->data.ac_charger_input_current;
 		pdata->charging_current_limit =
 				info->data.ac_charger_current;
-		//+Bug669247,chenrui1.wt,MODIFY,20210618,modify PD charger charging_current_limit
+		//+Bug669247,caijiaqi.wt,MODIFY,20210618,modify PD charger charging_current_limit
 		if (charger_manager_pd_is_online()) {
 			pdata->input_current_limit = 3000000;
 			pdata->charging_current_limit = 3000000;
 		}
-		//-Bug669247,chenrui1.wt,MODIFY,20210618,modify PD charger charging_current_limit
+		//-Bug669247,caijiaqi.wt,MODIFY,20210618,modify PD charger charging_current_limit
 		mtk_pe20_set_charging_current(info,
 					&pdata->charging_current_limit,
 					&pdata->input_current_limit);
