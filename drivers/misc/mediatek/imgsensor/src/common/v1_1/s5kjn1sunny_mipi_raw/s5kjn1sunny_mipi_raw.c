@@ -31,7 +31,7 @@
 #include "kd_camera_typedef.h"
 #include "s5kjn1sunny_mipi_raw.h"
 
-//#define FPTPDAFSUPPORT
+#define FPTPDAFSUPPORT
 
 #define MULTI_WRITE 1
 #define OTP_DATA_NUMBER 9
@@ -132,7 +132,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.min_shutter = 5,
 	.min_gain = 64, /*1x gain*/
 	.max_gain = 1024, /*16x gain*/
-	.min_gain_iso = 100,
+	.min_gain_iso = 50,
 	.exp_step = 2,
 	.gain_step = 1,
 	.gain_type = 2,
@@ -184,19 +184,19 @@ static struct SENSOR_VC_INFO_STRUCT SENSOR_VC_INFO[6] = {
 	{
 		0x02, 0x0A, 0x00, 0x08, 0x40, 0x00,
 		0x00, 0x2B, 0x0ff0, 0x0c00, 0x01, 0x00, 0x0000, 0x0000,
-		0x00, 0x30, 0x026C, 0x02E0, 0x03, 0x00, 0x0000, 0x0000
+		0x01, 0x30, 0x027C, 0x0BF0, 0x03, 0x00, 0x0000, 0x0000
 	},
     /* capture mode setting */
 	{
 		0x02, 0x0A, 0x00, 0x08, 0x40, 0x00,
 		0x00, 0x2B, 0x0ff0, 0x0c00, 0x01, 0x00, 0x0000, 0x0000,
-		0x00, 0x30, 0x026C, 0x02E0, 0x03, 0x00, 0x0000, 0x0000
+		0x01, 0x30, 0x027C, 0x0BF0, 0x03, 0x00, 0x0000, 0x0000
 	},
     /* normal_video mode setting */
 	{
 		0x02, 0x0A, 0x00, 0x08, 0x40, 0x00,
 		0x00, 0x2B, 0x0ff0, 0x08f8, 0x01, 0x00, 0x0000, 0x0000,
-		0x00, 0x30, 0x026C, 0x02E0, 0x03, 0x00, 0x0000, 0x0000
+		0x01, 0x30, 0x027C, 0x08F0, 0x03, 0x00, 0x0000, 0x0000
 	},
     /* high_speed_video mode setting */
     	{
@@ -214,7 +214,7 @@ static struct SENSOR_VC_INFO_STRUCT SENSOR_VC_INFO[6] = {
 	{
 		0x02, 0x0A, 0x00, 0x08, 0x40, 0x00,
 		0x00, 0x2B, 0x0ff0, 0x0c00, 0x01, 0x00, 0x0000, 0x0000,
-		0x00, 0x30, 0x026C, 0x02E0, 0x03, 0x00, 0x0000, 0x0000
+		0x01, 0x30, 0x027C, 0x0BF0, 0x03, 0x00, 0x0000, 0x0000
 	},
 };
 
@@ -234,44 +234,54 @@ static struct SENSOR_WINSIZE_INFO_STRUCT imgsensor_winsize_info[6] = {
 };
 
 static struct SET_PD_BLOCK_INFO_T imgsensor_pd_info = {
-	.i4OffsetX = 16,
-	.i4OffsetY = 28,
-	.i4PitchX = 32,
-	.i4PitchY = 32,
-	.i4PairNum = 16,
+	.i4OffsetX = 8,
+	.i4OffsetY = 8,
+	.i4PitchX = 8,
+	.i4PitchY = 8,
+	.i4PairNum = 4,
 	.i4SubBlkW = 8,
-	.i4SubBlkH = 8,
-	.i4PosL = {{18, 29}, {26, 29}, {34, 29}, {42, 29}, {22, 41}, {30, 41}, {
-			38,
-			41
-		},
-		{46, 41}, {18, 49}, {26, 49}, {34, 49}, {42, 49}, {
-			22,
-			53
-		}, {
-			30,
-			53
-		},
-		{38, 53}, {46, 53}
+	.i4SubBlkH = 2,
+	.i4PosL = {
+		{ 9, 8 }, 
+		{11, 11}, 
+		{15, 12}, 
+		{13, 15}, 
 	},
-	.i4PosR = {{18, 33}, {26, 33}, {34, 33}, {42, 33}, {22, 37}, {30, 37}, {
-			38,
-			37
-		},
-		{46, 37}, {18, 45}, {26, 45}, {34, 45}, {42, 45}, {
-			22,
-			57
-		}, {
-			30,
-			57
-		},
-		{38, 57}, {46, 57}
+	.i4PosR = {
+		{ 8, 8 }, 
+		{10, 11}, 
+		{14, 12}, 
+		{12, 15}, 
 	},
 	.iMirrorFlip = 0,
-	.i4BlockNumX = 124,
-	.i4BlockNumY = 92,
+	.i4BlockNumX = 508,
+	.i4BlockNumY = 382,
 };
 
+static struct SET_PD_BLOCK_INFO_T imgsensor_pd_info_16_9 = {
+	.i4OffsetX = 8,
+	.i4OffsetY = 4,
+	.i4PitchX = 8,
+	.i4PitchY = 8,
+	.i4PairNum = 4,
+	.i4SubBlkW = 8,
+	.i4SubBlkH = 2,
+	.i4PosL = {
+		{ 8, 4 },
+		{10, 7 },
+		{14, 8 },
+		{12, 11},
+	},
+	.i4PosR = {
+		{ 9, 4 },
+		{11, 7 },
+		{15, 8 },
+		{13, 11},
+	},
+	.iMirrorFlip = 0,
+	.i4BlockNumX = 508,
+	.i4BlockNumY = 286,
+};
 
 #if MULTI_WRITE
 #define I2C_BUFFER_LEN 225
@@ -374,8 +384,8 @@ static kal_uint32 streaming_control(kal_bool enable)
 
 	LOG_INF("streaming_enable(0=Sw Standby,1=streaming): %d\n", enable);
 	if (enable) {
-
 //		write_cmos_sensor(0x6028, 0x4000);
+		mdelay(5);
 		write_cmos_sensor_byte(0x0100, 0X01);
 		for (i = 0; i < 5; i++) {
 			pr_err("%s streaming check is %d", __func__,
@@ -384,13 +394,14 @@ static kal_uint32 streaming_control(kal_bool enable)
 					 read_cmos_sensor_8(0x0100));
 			pr_err("%s streaming check 0x6028 is %d", __func__,
 					 read_cmos_sensor(0x6028));
-			mdelay(10);
 		}
 	} else {
 //		write_cmos_sensor(0x6028, 0x4000);
+		mdelay(5);
 		write_cmos_sensor_byte(0x0100, 0x00);
 		check_streamoff();
 	}
+	mdelay(10);
 	return ERROR_NONE;
 }
 #endif
@@ -621,8 +632,7 @@ static void set_shutter(kal_uint32 shutter)
 *
 *************************************************************************/
 
-static void
-set_shutter_frame_length(kal_uint16 shutter, kal_uint16 frame_length)
+static void set_shutter_frame_length(kal_uint16 shutter, kal_uint16 frame_length,kal_bool auto_extend_en)
 {
 	unsigned long flags;
 	kal_uint16 realtime_fps = 0;
@@ -5496,6 +5506,7 @@ get_info(enum MSDK_SCENARIO_ID_ENUM scenario_id,
 		imgsensor_info.ae_sensor_gain_delay_frame;
 	sensor_info->AEISPGainDelayFrame =
 		imgsensor_info.ae_ispGain_delay_frame;
+	sensor_info->FrameTimeDelayFrame = imgsensor_info.frame_time_delay_frame;
 	sensor_info->IHDR_Support = imgsensor_info.ihdr_support;
 	sensor_info->IHDR_LE_FirstLine = imgsensor_info.ihdr_le_firstline;
 	sensor_info->SensorModeNum = imgsensor_info.sensor_mode_num;
@@ -6038,8 +6049,7 @@ feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
 	case SENSOR_FEATURE_SET_AWB_GAIN:
 		break;
 	case SENSOR_FEATURE_SET_SHUTTER_FRAME_TIME:
-		set_shutter_frame_length((UINT16) (*feature_data),
-			 (UINT16) (*(feature_data + 1)));
+		set_shutter_frame_length((UINT16)(*feature_data), (UINT16)(*(feature_data + 1)), (BOOL) (*(feature_data + 2)));
 		break;
     	case SENSOR_FEATURE_GET_PERIOD_BY_SCENARIO:
 		switch (*feature_data) {
@@ -6122,11 +6132,14 @@ feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
 			(struct SET_PD_BLOCK_INFO_T
 			 *)(uintptr_t) (*(feature_data + 1));
 		switch (*feature_data) {
-		case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
 		case MSDK_SCENARIO_ID_CAMERA_PREVIEW:
 		case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
 		case MSDK_SCENARIO_ID_CUSTOM1:
 			memcpy((void *)PDAFinfo, (void *)&imgsensor_pd_info,
+				   sizeof(struct SET_PD_BLOCK_INFO_T));
+			break;
+		case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
+			memcpy((void *)PDAFinfo, (void *)&imgsensor_pd_info_16_9,
 				   sizeof(struct SET_PD_BLOCK_INFO_T));
 			break;
 
