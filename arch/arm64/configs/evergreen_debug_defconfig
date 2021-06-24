@@ -2,6 +2,7 @@ CONFIG_CROSS_COMPILE="aarch64-linux-android-"
 CONFIG_LOCALVERSION_AUTO=y
 # CONFIG_FHANDLE is not set
 CONFIG_IKHEADERS=m
+CONFIG_MTK_SECURITY_SW_SUPPORT=y
 #HONGMI-84834 lizhenyu.wt modify 20210508,change CONFIG_LOG_BUF_SHIFT=21,modify to 19 when MP version
 CONFIG_LOG_BUF_SHIFT=21
 #HONGMI-85113 lizhenyu.wt modify 20210601, add cmdline debugpolicy
