@@ -1850,6 +1850,13 @@ int force_get_tbat_internal(bool update)
 		return 25;
 	}
 
+//+chk92000,chenrui1.wt,20210621,add dis-temp protect
+#ifdef CONFIG_MTK_DISABLE_TEMP_PROTECT
+	gm.tbat_precise = 250;
+	return 25;
+#endif
+//-chk92000,chenrui1.wt,20210621,add dis-temp protect
+
 	if (gm.fixed_bat_tmp != 0xffff) {
 		gm.tbat_precise = gm.fixed_bat_tmp * 10;
 		return gm.fixed_bat_tmp;
