@@ -261,7 +261,7 @@ endif
 
 obj-$(CONFIG_THERMAL) += mtk_cooler_atm.o
 obj-$(CONFIG_THERMAL) += mtk_cooler_gpu_cus.o
-#obj-$(CONFIG_THERMAL) += mtk_cooler_char_curr_cus.o
+obj-$(CONFIG_THERMAL) += mtk_cooler_char_curr_cus.o
 #obj-$(CONFIG_THERMAL) += mtk_cooler_mutt_gen97.o
 #obj-$(CONFIG_THERMAL) += mtk_cooler_md_cus.o
 
