@@ -2297,6 +2297,13 @@ static int mtk_charger_parse_dt(struct charger_manager *info,
 		info->data.battery_cv = BATTERY_CV;
 	}
 
+//+chk92000,chenrui1.wt,20210621,add dis-temp protect
+#ifdef CONFIG_MTK_DISABLE_TEMP_PROTECT
+	info->enable_sw_jeita = false;
+	info->data.battery_cv = 4100000;
+#endif
+//-chk92000,chenrui1.wt,20210621,add dis-temp protect
+
 	if (of_property_read_u32(np, "max_charger_voltage", &val) >= 0)
 		info->data.max_charger_voltage = val;
 	else {

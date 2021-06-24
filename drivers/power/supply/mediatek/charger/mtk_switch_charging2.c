@@ -268,6 +268,8 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 		pdata->charging_current_limit = 0;
 	}
 
+//+chk92000,chenrui1.wt,20210621,add dis-temp protect
+#ifndef CONFIG_MTK_DISABLE_TEMP_PROTECT
 	if (info->enable_sw_jeita) {
 		if (IS_ENABLED(CONFIG_USBIF_COMPLIANCE)
 		    && info->chr_type == STANDARD_HOST)
@@ -288,6 +290,8 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 			pdata->input_current_limit =
 					pdata->thermal_input_current_limit;
 	}
+//-chk92000,chenrui1.wt,20210621,add dis-temp protect
+#endif
 
 	if (pdata->input_current_limit_by_aicl != -1 &&
 	    !mtk_pe20_get_is_connect(info) && !mtk_pe_get_is_connect(info) &&
