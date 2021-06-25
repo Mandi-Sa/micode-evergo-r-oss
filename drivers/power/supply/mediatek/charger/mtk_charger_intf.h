@@ -465,6 +465,11 @@ struct charger_manager {
 
 	/* Bug651592 caijiaqi.wt,20210617,ADD BATTERY jeita V0.2*/
 	bool jeita_lcd_on_off;
+	/* +Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
+	int system_temp_level;
+	int system_temp_level_max;
+	int thermal_mitigation_current;
+	/* -Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
 
 	/*daemon related*/
 	struct sock *daemo_nl_sk;
