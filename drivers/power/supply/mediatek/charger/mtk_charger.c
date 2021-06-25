@@ -73,8 +73,10 @@
 
 #include "mtk_charger_intf.h"
 #include "mtk_charger_init.h"
-
 #include <tcpm.h>
+
+//Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit
+int thermal_mitigation[] = {6000000, 250000, 2000000, 1600000, 1500000, 1400000, 1200000, 1000000};
 static struct charger_manager *pinfo;
 static struct list_head consumer_head = LIST_HEAD_INIT(consumer_head);
 static DEFINE_MUTEX(consumer_mutex);
@@ -577,6 +579,32 @@ int charger_manager_get_current_charging_type(struct charger_consumer *consumer)
 
 	return 0;
 }
+
+/* +Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
+int charger_manager_get_prop_system_temp_level_max(void)
+{
+	if (pinfo == NULL)
+		return false;
+	return pinfo->system_temp_level_max;
+}
+
+int charger_manager_get_prop_system_temp_level(void)
+{
+	if (pinfo == NULL)
+		return false;
+	return pinfo->system_temp_level;
+}
+
+void charger_manager_set_prop_system_temp_level(int temp_level)
+{
+	if (temp_level >= pinfo->system_temp_level_max)
+		pinfo->system_temp_level = pinfo->system_temp_level_max - 1;
+	else
+		pinfo->system_temp_level = temp_level;
+	chr_err("%s,therml_current=%d\n",thermal_mitigation[pinfo->system_temp_level]);
+	pinfo->thermal_mitigation_current = thermal_mitigation[pinfo->system_temp_level];
+}
+/* -Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
 
 int charger_manager_get_zcv(struct charger_consumer *consumer, int idx, u32 *uV)
 {
@@ -4163,6 +4191,9 @@ static int mtk_charger_probe(struct platform_device *pdev)
 	info->dvchg2_data.thermal_input_current_limit = -1;
 
 	info->sw_jeita.error_recovery_flag = true;
+	//Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit
+	info->system_temp_level_max = sizeof(thermal_mitigation)/sizeof(thermal_mitigation[0]);
+	info->thermal_mitigation_current = thermal_mitigation[0];
 
 	mtk_charger_init_timer(info);
 
