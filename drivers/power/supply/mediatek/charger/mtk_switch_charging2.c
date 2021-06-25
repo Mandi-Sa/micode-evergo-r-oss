@@ -108,6 +108,8 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 	struct switch_charging_alg_data *swchgalg = info->algorithm_data;
 	u32 ichg1_min = 0, aicr1_min = 0;
 	int ret = 0;
+	//Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit
+	int input_current_limit;
 
 	if (info->pe5.online) {
 		chr_err("In PE5.0\n");
@@ -311,7 +313,8 @@ done:
 	if (ret != -ENOTSUPP && pdata->input_current_limit < aicr1_min)
 		pdata->input_current_limit = 0;
 
-	chr_err("force:%d thermal:%d,%d pe4:%d,%d,%d setting:%d %d sc:%d,%d,%d type:%d usb_unlimited:%d usbif:%d usbsm:%d aicl:%d atm:%d\n",
+	/* +Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
+	chr_err("force:%d thermal:%d,%d pe4:%d,%d,%d setting:%d %d sc:%d,%d,%d type:%d usb_unlimited:%d usbif:%d usbsm:%d aicl:%d atm:%d thermal_mitigation_current:%d\n",
 		_uA_to_mA(pdata->force_charging_current),
 		_uA_to_mA(pdata->thermal_input_current_limit),
 		_uA_to_mA(pdata->thermal_charging_current_limit),
@@ -325,10 +328,12 @@ done:
 		info->sc.solution,
 		info->chr_type, info->usb_unlimited,
 		IS_ENABLED(CONFIG_USBIF_COMPLIANCE), info->usb_state,
-		pdata->input_current_limit_by_aicl, info->atm_enabled);
+		pdata->input_current_limit_by_aicl, info->atm_enabled,
+		_uA_to_mA(info->thermal_mitigation_current));
 
-	charger_dev_set_input_current(info->chg1_dev,
-					pdata->input_current_limit);
+	input_current_limit = min(pdata->charging_current_limit,info->thermal_mitigation_current);
+	charger_dev_set_input_current(info->chg1_dev,input_current_limit);
+	/* -Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
 	charger_dev_set_charging_current(info->chg1_dev,
 					pdata->charging_current_limit);
 
