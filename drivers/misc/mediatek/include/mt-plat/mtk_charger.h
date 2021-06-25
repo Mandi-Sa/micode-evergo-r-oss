@@ -117,5 +117,10 @@ extern bool is_power_path_supported(void);
 extern int charger_get_vbus(void);
 extern bool mt_charger_plugin(void);
 extern int charger_manager_pd_is_online(void);
+/* +Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
+extern int charger_manager_get_prop_system_temp_level(void);
+extern int charger_manager_get_prop_system_temp_level_max(void);
+extern void charger_manager_set_prop_system_temp_level(int temp_level);
+/* -Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
 
 #endif /* __MTK_CHARGER_H__ */
