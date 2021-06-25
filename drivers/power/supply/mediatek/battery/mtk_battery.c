@@ -147,6 +147,9 @@ static enum power_supply_property battery_props[] = {
 	POWER_SUPPLY_PROP_CHARGER_TEMP,
 	//Extb HONGMI-84869,wangbin wt.ADD,20210616,add charge type
 	POWER_SUPPLY_PROP_CHARGE_TYPE,
+	//Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit
+	POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT,
+	POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT_MAX,
 
 };
 
@@ -765,6 +768,14 @@ static int battery_get_property(struct power_supply *psy,
 		val->intval = get_charge_type(data);
 		break;
 	/* -Extb HONGMI-84869,wangbin wt.ADD,20210616,add charge type*/
+	/* +Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
+	case POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT:
+		val->intval = charger_manager_get_prop_system_temp_level();
+		break;
+	case POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT_MAX:
+		val->intval = charger_manager_get_prop_system_temp_level_max();
+		break;
+	/* -Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
 	default:
 		ret = -EINVAL;
 		break;
@@ -780,6 +791,11 @@ static int battery_set_prop(struct power_supply *psy,
 {
 	int ret;
 	switch (psp) {
+	/* +Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
+	case POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT:
+		charger_manager_set_prop_system_temp_level(val->intval);
+		break;
+	/* -Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
 	case POWER_SUPPLY_PROP_BATT_ID_UPDATE:
 		fg_custom_init_from_header();
 		pr_err("set batt id prop %d\n", val->intval);
