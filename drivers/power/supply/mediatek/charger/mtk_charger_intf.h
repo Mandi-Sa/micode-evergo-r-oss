@@ -358,6 +358,7 @@ struct charger_manager {
 	enum charger_type chr_type;
 	bool can_charging;
 	int cable_out_cnt;
+	int pd_verify_in_process;
 
 	int (*do_algorithm)(struct charger_manager *cm);
 	int (*plug_in)(struct charger_manager *cm);

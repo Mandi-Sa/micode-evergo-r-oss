@@ -97,6 +97,9 @@ struct chg_type_info {
 	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
 	//Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode
 	int typec_mode;
+	int pd_active;
+	int pd_verifed;
+	int pd_remove;
 };
 
 #ifdef CONFIG_FPGA_EARLY_PORTING
@@ -378,7 +381,9 @@ int mt_get_quick_charge_type(struct mt_charger *mtk_chg)
 }
 /* -Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type*/
 
-//Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode
+extern int mtk_charger_get_prop_pd_verify_process(union power_supply_propval *val);
+extern int mtk_charger_set_prop_pd_verify_process(const union power_supply_propval *val);
+
 static int g_typec_mode;
 
 static int mt_usb_get_property(struct power_supply *psy,
@@ -430,6 +435,24 @@ static int mt_usb_get_property(struct power_supply *psy,
 		val->intval = g_typec_mode;
 		break;
 	/* -Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
+	case POWER_SUPPLY_PROP_PD_VERIFY_IN_PROCESS:
+		mtk_charger_get_prop_pd_verify_process(val);
+		break;
+	case POWER_SUPPLY_PROP_PD_ACTIVE:
+		if (mtk_chg->cti->typec_mode == POWER_SUPPLY_TYPEC_NONE)
+			mtk_chg->cti->pd_active = 0;
+		val->intval = mtk_chg->cti->pd_active;
+		break;
+	case POWER_SUPPLY_PROP_PD_AUTHENTICATION:
+		if (mtk_chg->cti->typec_mode == POWER_SUPPLY_TYPEC_NONE)
+			mtk_chg->cti->pd_verifed = 0;
+		val->intval = mtk_chg->cti->pd_verifed;
+		break;
+    case POWER_SUPPLY_PROP_PD_REMOVE_COMPENSATION:
+		if (mtk_chg->cti->typec_mode == POWER_SUPPLY_TYPEC_NONE)
+			mtk_chg->cti->pd_remove = 0;
+		val->intval = mtk_chg->cti->pd_remove;
+		break;	
 	default:
 		return -EINVAL;
 	}
@@ -447,13 +470,42 @@ static int mt_usb_set_property(struct power_supply *psy,
 		mtk_chg->apdo_max = val->intval;
 		pr_info("wt_debug info: %s, %d\n", __func__, mtk_chg->apdo_max);
 		break;
+	case POWER_SUPPLY_PROP_PD_VERIFY_IN_PROCESS:
+		mtk_charger_set_prop_pd_verify_process(val);
+		break;
+	case POWER_SUPPLY_PROP_PD_ACTIVE:
+		mtk_chg->cti->pd_active = val->intval;	
+		break;
+	case POWER_SUPPLY_PROP_PD_AUTHENTICATION:
+		mtk_chg->cti->pd_verifed = val->intval;	
+		break;
+    case POWER_SUPPLY_PROP_PD_REMOVE_COMPENSATION:
+		mtk_chg->cti->pd_remove = val->intval;	
+		break;
 	default:
 		pr_debug("set prop %d is not supported in usb\n", psp);
 		return -EINVAL;
 	}
 	return 0;
 }
+
 // +Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
+
+static int mt_usb_is_writeable(struct power_supply *psy,
+				       enum power_supply_property psp)
+{
+	switch (psp) {
+        case POWER_SUPPLY_PROP_PD_VERIFY_IN_PROCESS:
+        case POWER_SUPPLY_PROP_PD_ACTIVE:
+	case POWER_SUPPLY_PROP_PD_AUTHENTICATION:
+        case POWER_SUPPLY_PROP_PD_REMOVE_COMPENSATION:
+                return 1;
+        default:
+                break;
+        }
+
+        return 0;
+}
 
 static enum power_supply_property mt_charger_properties[] = {
 	POWER_SUPPLY_PROP_ONLINE,
@@ -474,6 +526,10 @@ static enum power_supply_property mt_usb_properties[] = {
 	POWER_SUPPLY_PROP_QUICK_CHARGE_TYPE, //Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type
 	POWER_SUPPLY_PROP_REAL_TYPE,//Bug664795,wangbin,wt.ADD,20210604,add real type node
 	POWER_SUPPLY_PROP_TYPEC_MODE,//Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode
+	POWER_SUPPLY_PROP_PD_ACTIVE,
+	POWER_SUPPLY_PROP_PD_VERIFY_IN_PROCESS,
+	POWER_SUPPLY_PROP_PD_AUTHENTICATION,
+    POWER_SUPPLY_PROP_PD_REMOVE_COMPENSATION,
 
 };
 
@@ -677,6 +733,8 @@ static int mt_charger_probe(struct platform_device *pdev)
 	mt_chg->usb_desc.get_property = mt_usb_get_property;
 	//Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 	mt_chg->usb_desc.set_property = mt_usb_set_property;
+	mt_chg->usb_desc.property_is_writeable = mt_usb_is_writeable;
+	
 	mt_chg->usb_cfg.drv_data = mt_chg;
 
 	mt_chg->chg_psy = power_supply_register(&pdev->dev,
