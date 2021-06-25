@@ -30,6 +30,11 @@
 #define NVT_DIFF "nvt_diff"
 #define NVT_PEN_DIFF "nvt_pen_diff"
 
+#define NVT_PF_SWITCH "nvt_pf_switch"
+#define NVT_SENSITIVITY_SWITCH "nvt_sensitivity_switch"
+#define NVT_ER_RANGE_SWITCH "nvt_er_range_switch"
+#define NVT_EDGE_REJECT_SWITCH "nvt_edge_reject_switch"
+
 #define MI_RAW "tp_data_dump"
 
 #define BUS_TRANSFER_LENGTH  256
@@ -54,6 +59,11 @@ static struct proc_dir_entry *NVT_proc_baseline_entry;
 static struct proc_dir_entry *NVT_proc_raw_entry;
 static struct proc_dir_entry *NVT_proc_diff_entry;
 static struct proc_dir_entry *NVT_proc_pen_diff_entry;
+
+static struct proc_dir_entry *NVT_proc_pf_switch_entry;
+static struct proc_dir_entry *NVT_proc_sensitivity_switch_entry;
+static struct proc_dir_entry *NVT_proc_er_range_switch_entry;
+static struct proc_dir_entry *NVT_proc_edge_reject_switch_entry;
 
 /*******************************************************
 Description:
@@ -977,6 +987,744 @@ static const struct file_operations nvt_pen_diff_fops = {
 	.release = seq_release,
 };
 
+
+/**********************************************************
+Description:
+	Novatek touchscreen proc/nvt_pf_switch read/write node.
+***********************************************************/
+int32_t nvt_set_pf_switch(uint8_t pf_switch)
+{
+	uint8_t buf[8] = {0};
+	int32_t ret = 0;
+
+	NVT_LOG("++\n");
+	NVT_LOG("set pf switch: %d\n", pf_switch);
+
+	msleep(35);
+
+	//---set xdata index to EVENT BUF ADDR---
+	ret = nvt_set_page(ts->mmap->EVENT_BUF_ADDR | EVENT_MAP_HOST_CMD);
+	if (ret < 0) {
+		NVT_ERR("Set event buffer index fail!\n");
+		goto nvt_set_pf_switch_out;
+	}
+
+	buf[0] = EVENT_MAP_HOST_CMD;
+	buf[1] = 0x70;
+	buf[2] = pf_switch;
+	ret = CTP_SPI_WRITE(ts->client, buf, 3);
+	if (ret < 0) {
+		NVT_ERR("Write pf switch command fail!\n");
+		goto nvt_set_pf_switch_out;
+	}
+
+nvt_set_pf_switch_out:
+	NVT_LOG("--\n");
+	return ret;
+}
+
+int32_t nvt_get_pf_switch(uint8_t *pf_switch)
+{
+	uint8_t buf[8] = {0};
+	int32_t ret = 0;
+
+	NVT_LOG("++\n");
+
+	msleep(35);
+	//---set xdata index to EVENT BUF ADDR---
+	ret = nvt_set_page(ts->mmap->EVENT_BUF_ADDR | 0x5D);
+	if (ret < 0) {
+		NVT_ERR("Set event buffer index fail!\n");
+		goto nvt_get_pf_switch_out;
+	}
+
+	buf[0] = 0x5D;
+	buf[1] = 0x00;
+	ret = CTP_SPI_READ(ts->client, buf, 2);
+	if (ret < 0) {
+		NVT_ERR("Read pf switch status fail!\n");
+		goto nvt_get_pf_switch_out;
+	}
+
+	*pf_switch = (buf[1] & 0x07);
+	NVT_LOG("pf_switch = %d\n", *pf_switch);
+
+nvt_get_pf_switch_out:
+	NVT_LOG("--\n");
+	return ret;
+}
+
+static ssize_t nvt_pf_switch_proc_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
+{
+	static int finished;
+	int32_t cnt = 0;
+	int32_t len = 0;
+	uint8_t pf_switch;
+	char tmp_buf[64];
+
+	NVT_LOG("++\n");
+
+	/*
+	* We return 0 to indicate end of file, that we have
+	* no more information. Otherwise, processes will
+	* continue to read from us in an endless loop.
+	*/
+	if (finished) {
+		NVT_LOG("read END\n");
+		finished = 0;
+		return 0;
+	}
+	finished = 1;
+
+	if (mutex_lock_interruptible(&ts->lock)) {
+		return -ERESTARTSYS;
+	}
+
+#if NVT_TOUCH_ESD_PROTECT
+	nvt_esd_check_enable(false);
+#endif /* #if NVT_TOUCH_ESD_PROTECT */
+
+	nvt_get_pf_switch(&pf_switch);
+
+	mutex_unlock(&ts->lock);
+
+	//cnt = snprintf(buf, PAGE_SIZE - len, "pf_switch: %d\n", pf_switch);
+	cnt = snprintf(tmp_buf, sizeof(tmp_buf), "pf_switch: %d\n", pf_switch);
+	if (copy_to_user(buf, tmp_buf, sizeof(tmp_buf))) {
+		NVT_ERR("copy_to_user() error!\n");
+		return -EFAULT;
+	}
+	buf += cnt;
+	len += cnt;
+
+	NVT_LOG("--\n");
+	return len;
+}
+
+static ssize_t nvt_pf_switch_proc_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
+{
+	int32_t ret;
+	int32_t tmp;
+	uint8_t pf_switch;
+	char *tmp_buf;
+
+	NVT_LOG("++\n");
+
+	if (count == 0 || count > 2) {
+		NVT_ERR("Invalid value! count = %zu\n", count);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	tmp_buf = kzalloc((count+1), GFP_KERNEL);
+	if (!tmp_buf) {
+		NVT_ERR("Allocate tmp_buf fail!\n");
+		ret = -ENOMEM;
+		goto out;
+	}
+	if (copy_from_user(tmp_buf, buf, count)) {
+		NVT_ERR("copy_from_user() error!\n");
+		ret =  -EFAULT;
+		goto out;
+	}
+
+	ret = sscanf(tmp_buf, "%d", &tmp);
+	if (ret != 1) {
+		NVT_ERR("Invalid value! ret = %d\n", ret);
+		ret = -EINVAL;
+		goto out;
+	}
+	if (tmp < 0 || tmp > 4) {
+		NVT_ERR("Invalid value! tmp = %d\n", tmp);
+		ret = -EINVAL;
+		goto out;
+	}
+	pf_switch = (uint8_t)tmp;
+	NVT_LOG("pf_switch = %d\n", pf_switch);
+
+	if (mutex_lock_interruptible(&ts->lock)) {
+		return -ERESTARTSYS;
+	}
+
+#if NVT_TOUCH_ESD_PROTECT
+	nvt_esd_check_enable(false);
+#endif /* #if NVT_TOUCH_ESD_PROTECT */
+
+	nvt_set_pf_switch(pf_switch);
+
+	mutex_unlock(&ts->lock);
+
+	ret = count;
+out:
+	if (tmp_buf)
+		kfree(tmp_buf);
+	NVT_LOG("--\n");
+	return ret;
+}
+
+static const struct file_operations nvt_pf_switch_fops = {
+	.owner = THIS_MODULE,
+	.read = nvt_pf_switch_proc_read,
+	.write = nvt_pf_switch_proc_write,
+};
+
+
+/*******************************************************************
+Description:
+	Novatek touchscreen /proc/nvt_sensitivity_switch read/write node.
+********************************************************************/
+int32_t nvt_set_sensitivity_switch(uint8_t sensitivity_switch)
+{
+	uint8_t buf[8] = {0};
+	int32_t ret = 0;
+
+	NVT_LOG("++\n");
+	NVT_LOG("set sensitivity switch: %d\n", sensitivity_switch);
+
+	msleep(35);
+
+	//---set xdata index to EVENT BUF ADDR---
+	ret = nvt_set_page(ts->mmap->EVENT_BUF_ADDR | EVENT_MAP_HOST_CMD);
+	if (ret < 0) {
+		NVT_ERR("Set event buffer index fail!\n");
+		goto nvt_set_sensitivity_switch_out;
+	}
+
+	buf[0] = EVENT_MAP_HOST_CMD;
+	buf[1] = 0x71;
+	buf[2] = sensitivity_switch;
+	ret = CTP_SPI_WRITE(ts->client, buf, 3);
+	if (ret < 0) {
+		NVT_ERR("Write sensitivity switch command fail!\n");
+		goto nvt_set_sensitivity_switch_out;
+	}
+
+nvt_set_sensitivity_switch_out:
+	NVT_LOG("--\n");
+	return ret;
+}
+
+int32_t nvt_get_sensitivity_switch(uint8_t *sensitivity_switch)
+{
+	uint8_t buf[8] = {0};
+	int32_t ret = 0;
+
+	NVT_LOG("++\n");
+
+	msleep(35);
+
+	//---set xdata index to EVENT BUF ADDR---
+	ret = nvt_set_page(ts->mmap->EVENT_BUF_ADDR | 0x5D);
+	if (ret < 0) {
+		NVT_ERR("Set event buffer index fail!\n");
+		goto nvt_get_sensitivity_switch_out;
+	}
+
+	buf[0] = 0x5D;
+	buf[1] = 0x00;
+	ret = CTP_SPI_READ(ts->client, buf, 2);
+	if (ret < 0) {
+		NVT_ERR("Read sensitivity switch status fail!\n");
+		goto nvt_get_sensitivity_switch_out;
+	}
+
+	*sensitivity_switch = ((buf[1] >> 3) & 0x07);
+	NVT_LOG("sensitivity_switch = %d\n", *sensitivity_switch);
+
+nvt_get_sensitivity_switch_out:
+	NVT_LOG("--\n");
+	return ret;
+}
+
+static ssize_t nvt_sensitivity_switch_proc_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
+{
+	static int finished;
+	int32_t cnt = 0;
+	int32_t len = 0;
+	uint8_t sensitivity_switch;
+	char tmp_buf[64];
+
+	NVT_LOG("++\n");
+
+	/*
+	* We return 0 to indicate end of file, that we have
+	* no more information. Otherwise, processes will
+	* continue to read from us in an endless loop.
+	*/
+	if (finished) {
+		NVT_LOG("read END\n");
+		finished = 0;
+		return 0;
+	}
+	finished = 1;
+
+	if (mutex_lock_interruptible(&ts->lock)) {
+		return -ERESTARTSYS;
+	}
+
+#if NVT_TOUCH_ESD_PROTECT
+	nvt_esd_check_enable(false);
+#endif /* #if NVT_TOUCH_ESD_PROTECT */
+
+	nvt_get_sensitivity_switch(&sensitivity_switch);
+
+	mutex_unlock(&ts->lock);
+
+	//cnt = snprintf(buf, PAGE_SIZE - len, "sensitivity_switch: %d\n", sensitivity_switch);
+	cnt = snprintf(tmp_buf, sizeof(tmp_buf), "sensitivity_switch: %d\n", sensitivity_switch);
+	if (copy_to_user(buf, tmp_buf, sizeof(tmp_buf))) {
+		NVT_ERR("copy_to_user() error!\n");
+		return -EFAULT;
+	}
+	buf += cnt;
+	len += cnt;
+
+	NVT_LOG("--\n");
+	return len;
+}
+
+static ssize_t nvt_sensitivity_switch_proc_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
+{
+	int32_t ret;
+	int32_t tmp;
+	uint8_t sensitivity_switch;
+	char *tmp_buf;
+
+	NVT_LOG("++\n");
+
+	if (count == 0 || count > 2) {
+		NVT_ERR("Invalid value! count = %zu\n", count);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	tmp_buf = kzalloc((count+1), GFP_KERNEL);
+	if (!tmp_buf) {
+		NVT_ERR("Allocate tmp_buf fail!\n");
+		ret = -ENOMEM;
+		goto out;
+	}
+	if (copy_from_user(tmp_buf, buf, count)) {
+		NVT_ERR("copy_from_user() error!\n");
+		ret =  -EFAULT;
+		goto out;
+	}
+
+	ret = sscanf(tmp_buf, "%d", &tmp);
+	if (ret != 1) {
+		NVT_ERR("Invalid value! ret = %d\n", ret);
+		ret = -EINVAL;
+		goto out;
+	}
+	if (tmp < 0 || tmp > 4) {
+		NVT_ERR("Invalid value! tmp = %d\n", tmp);
+		ret = -EINVAL;
+		goto out;
+	}
+	sensitivity_switch = (uint8_t)tmp;
+	NVT_LOG("sensitivity_switch = %d\n", sensitivity_switch);
+
+	if (mutex_lock_interruptible(&ts->lock)) {
+		return -ERESTARTSYS;
+	}
+
+#if NVT_TOUCH_ESD_PROTECT
+	nvt_esd_check_enable(false);
+#endif /* #if NVT_TOUCH_ESD_PROTECT */
+
+	nvt_set_sensitivity_switch(sensitivity_switch);
+
+	mutex_unlock(&ts->lock);
+
+	ret = count;
+out:
+	if (tmp_buf)
+		kfree(tmp_buf);
+	NVT_LOG("--\n");
+	return ret;
+}
+
+static const struct file_operations nvt_sensitivity_switch_fops = {
+	.owner = THIS_MODULE,
+	.read = nvt_sensitivity_switch_proc_read,
+	.write = nvt_sensitivity_switch_proc_write,
+};
+
+
+/*****************************************************************
+Description:
+	Novatek touchscreen /proc/nvt_er_range_switch read/write node.
+******************************************************************/
+int32_t nvt_set_er_range_switch(uint8_t er_range_switch)
+{
+	uint8_t buf[8] = {0};
+	int32_t ret = 0;
+
+	NVT_LOG("++\n");
+	NVT_LOG("set er range switch: %d\n", er_range_switch);
+
+	msleep(35);
+
+	//---set xdata index to EVENT BUF ADDR---
+	ret = nvt_set_page(ts->mmap->EVENT_BUF_ADDR | EVENT_MAP_HOST_CMD);
+	if (ret < 0) {
+		NVT_ERR("Set event buffer index fail!\n");
+		goto nvt_set_er_range_switch_out;
+	}
+
+	buf[0] = EVENT_MAP_HOST_CMD;
+	buf[1] = 0x72;
+	buf[2] = er_range_switch;
+	ret = CTP_SPI_WRITE(ts->client, buf, 3);
+	if (ret < 0) {
+		NVT_ERR("Write er range switch command fail!\n");
+		goto nvt_set_er_range_switch_out;
+	}
+
+nvt_set_er_range_switch_out:
+	NVT_LOG("--\n");
+	return ret;
+}
+
+int32_t nvt_get_er_range_switch(uint8_t *er_range_switch)
+{
+	uint8_t buf[8] = {0};
+	int32_t ret = 0;
+
+	NVT_LOG("++\n");
+
+	msleep(35);
+
+	//---set xdata index to EVENT BUF ADDR---
+	ret = nvt_set_page(ts->mmap->EVENT_BUF_ADDR | 0x5D);
+	if (ret < 0) {
+		NVT_ERR("Set event buffer index fail!\n");
+		goto nvt_get_er_range_switch_out;
+	}
+
+	buf[0] = 0x5D;
+	buf[1] = 0x00;
+	ret = CTP_SPI_READ(ts->client, buf, 2);
+	if (ret < 0) {
+		NVT_ERR("Read er range switch status fail!\n");
+		goto nvt_get_er_range_switch_out;
+	}
+
+	*er_range_switch = ((buf[1] >> 6) & 0x03);
+	NVT_LOG("er_range_switch = %d\n", *er_range_switch);
+
+nvt_get_er_range_switch_out:
+	NVT_LOG("--\n");
+	return ret;
+}
+
+static ssize_t nvt_er_range_switch_proc_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
+{
+	static int finished;
+	int32_t cnt = 0;
+	int32_t len = 0;
+	uint8_t er_range_switch;
+	char tmp_buf[64];
+
+	NVT_LOG("++\n");
+
+	/*
+	* We return 0 to indicate end of file, that we have
+	* no more information. Otherwise, processes will
+	* continue to read from us in an endless loop.
+	*/
+	if (finished) {
+		NVT_LOG("read END\n");
+		finished = 0;
+		return 0;
+	}
+	finished = 1;
+
+	if (mutex_lock_interruptible(&ts->lock)) {
+		return -ERESTARTSYS;
+	}
+
+#if NVT_TOUCH_ESD_PROTECT
+	nvt_esd_check_enable(false);
+#endif /* #if NVT_TOUCH_ESD_PROTECT */
+
+	nvt_get_er_range_switch(&er_range_switch);
+
+	mutex_unlock(&ts->lock);
+
+	cnt = snprintf(tmp_buf, sizeof(tmp_buf), "er_range_switch: %d\n", er_range_switch);
+	if (copy_to_user(buf, tmp_buf, sizeof(tmp_buf))) {
+		NVT_ERR("copy_to_user() error!\n");
+		return -EFAULT;
+	}
+	buf += cnt;
+	len += cnt;
+
+	NVT_LOG("--\n");
+	return len;
+}
+
+static ssize_t nvt_er_range_switch_proc_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
+{
+	int32_t ret;
+	int32_t tmp;
+	uint8_t er_range_switch;
+	char *tmp_buf = 0;
+
+	NVT_LOG("++\n");
+
+	if (count == 0 || count > 2) {
+		NVT_ERR("Invalid value! count = %zu\n", count);
+		ret = -EINVAL;
+		goto out;
+	}
+	tmp_buf = kzalloc((count+1), GFP_KERNEL);
+	if (!tmp_buf) {
+		NVT_ERR("Allocate tmp_buf fail!\n");
+		ret = -ENOMEM;
+		goto out;
+	}
+	if (copy_from_user(tmp_buf, buf, count)) {
+		NVT_ERR("copy_from_user() error!\n");
+		ret =  -EFAULT;
+		goto out;
+	}
+
+	ret = sscanf(tmp_buf, "%d", &tmp);
+	if (ret != 1) {
+		NVT_ERR("Invalid value! ret = %d\n", ret);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (tmp < 0 || tmp > 3) {
+		NVT_ERR("Invalid value! tmp = %d\n", tmp);
+		ret = -EINVAL;
+		goto out;
+	}
+	er_range_switch = (uint8_t)tmp;
+	NVT_LOG("er_range_switch = %d\n", er_range_switch);
+
+	if (mutex_lock_interruptible(&ts->lock)) {
+		return -ERESTARTSYS;
+	}
+
+#if NVT_TOUCH_ESD_PROTECT
+	nvt_esd_check_enable(false);
+#endif /* #if NVT_TOUCH_ESD_PROTECT */
+
+	nvt_set_er_range_switch(er_range_switch);
+
+	mutex_unlock(&ts->lock);
+
+	ret = count;
+out:
+	if (tmp_buf)
+		kfree(tmp_buf);
+	NVT_LOG("--\n");
+	return ret;
+}
+
+static const struct file_operations nvt_er_range_switch_fops = {
+	.owner = THIS_MODULE,
+	.read = nvt_er_range_switch_proc_read,
+	.write = nvt_er_range_switch_proc_write,
+};
+
+
+/*******************************************************************
+Description:
+	Novatek touchscreen /proc/nvt_edge_reject_switch read/write node.
+********************************************************************/
+int32_t nvt_set_edge_reject_switch(uint8_t edge_reject_switch)
+{
+	uint8_t buf[8] = {0};
+	int32_t ret = 0;
+
+	NVT_LOG("++\n");
+	NVT_LOG("set edge reject switch: %d\n", edge_reject_switch);
+
+	msleep(35);
+
+	//---set xdata index to EVENT BUF ADDR---
+	ret = nvt_set_page(ts->mmap->EVENT_BUF_ADDR | EVENT_MAP_HOST_CMD);
+	if (ret < 0) {
+		NVT_ERR("Set event buffer index fail!\n");
+		goto nvt_set_edge_reject_switch_out;
+	}
+
+	buf[0] = EVENT_MAP_HOST_CMD;
+	if (edge_reject_switch == 1) {
+		// vertical
+		buf[1] = 0xBA;
+	} else if (edge_reject_switch == 2) {
+		// left up
+		buf[1] = 0xBB;
+	} else if (edge_reject_switch == 3) {
+		// righ up
+		buf[1] = 0xBC;
+	} else {
+		NVT_ERR("Invalid value! edge_reject_switch = %d\n", edge_reject_switch);
+		ret = -EINVAL;
+		goto nvt_set_edge_reject_switch_out;
+	}
+	ret = CTP_SPI_WRITE(ts->client, buf, 2);
+	if (ret < 0) {
+		NVT_ERR("Write edge reject switch command fail!\n");
+		goto nvt_set_edge_reject_switch_out;
+	}
+
+nvt_set_edge_reject_switch_out:
+	NVT_LOG("--\n");
+	return ret;
+}
+
+int32_t nvt_get_edge_reject_switch(uint8_t *edge_reject_switch)
+{
+	uint8_t buf[8] = {0};
+	int32_t ret = 0;
+
+	NVT_LOG("++\n");
+
+	msleep(35);
+
+	//---set xdata index to EVENT BUF ADDR---
+	ret = nvt_set_page(ts->mmap->EVENT_BUF_ADDR | 0x5C);
+	if (ret < 0) {
+		NVT_ERR("Set event buffer index fail!\n");
+		goto nvt_get_edge_reject_switch_out;
+	}
+
+	buf[0] = 0x5C;
+	buf[1] = 0x00;
+	ret = CTP_SPI_READ(ts->client, buf, 2);
+	if (ret < 0) {
+		NVT_ERR("Read edge reject switch status fail!\n");
+		goto nvt_get_edge_reject_switch_out;
+	}
+
+	*edge_reject_switch = ((buf[1] >> 5) & 0x03);
+	NVT_LOG("edge_reject_switch = %d\n", *edge_reject_switch);
+
+nvt_get_edge_reject_switch_out:
+	NVT_LOG("--\n");
+	return ret;
+}
+
+static ssize_t nvt_edge_reject_switch_proc_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
+{
+	static int finished;
+	int32_t cnt = 0;
+	int32_t len = 0;
+	uint8_t edge_reject_switch;
+	char tmp_buf[64];
+
+	NVT_LOG("++\n");
+
+	/*
+	* We return 0 to indicate end of file, that we have
+	* no more information. Otherwise, processes will
+	* continue to read from us in an endless loop.
+	*/
+	if (finished) {
+		NVT_LOG("read END\n");
+		finished = 0;
+		return 0;
+	}
+	finished = 1;
+
+	if (mutex_lock_interruptible(&ts->lock)) {
+		return -ERESTARTSYS;
+	}
+
+#if NVT_TOUCH_ESD_PROTECT
+	nvt_esd_check_enable(false);
+#endif /* #if NVT_TOUCH_ESD_PROTECT */
+
+	nvt_get_edge_reject_switch(&edge_reject_switch);
+
+	mutex_unlock(&ts->lock);
+
+	cnt = snprintf(tmp_buf, sizeof(tmp_buf), "edge_reject_switch: %d\n", edge_reject_switch);
+	if (copy_to_user(buf, tmp_buf, sizeof(tmp_buf))) {
+		NVT_ERR("copy_to_user() error!\n");
+		return -EFAULT;
+	}
+	buf += cnt;
+	len += cnt;
+
+	NVT_LOG("--\n");
+	return len;
+}
+
+static ssize_t nvt_edge_reject_switch_proc_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
+{
+	int32_t ret;
+	int32_t tmp;
+	uint8_t edge_reject_switch;
+	char *tmp_buf = 0;
+
+	NVT_LOG("++\n");
+
+	if (count == 0 || count > 2) {
+		NVT_ERR("Invalid value! count = %zu\n", count);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	tmp_buf = kzalloc((count+1), GFP_KERNEL);
+	if (!tmp_buf) {
+		NVT_ERR("Allocate tmp_buf fail!\n");
+		ret = -ENOMEM;
+		goto out;
+	}
+	if (copy_from_user(tmp_buf, buf, count)) {
+		NVT_ERR("copy_from_user() error!\n");
+		ret =  -EFAULT;
+		goto out;
+	}
+
+	ret = sscanf(tmp_buf, "%d", &tmp);
+	if (ret != 1) {
+		NVT_ERR("Invalid value! ret = %d\n", ret);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	if (tmp < 1 || tmp > 3) {
+		NVT_ERR("Invalid value! tmp = %d\n", tmp);
+		ret = -EINVAL;
+		goto out;
+	}
+	edge_reject_switch = (uint8_t)tmp;
+	NVT_LOG("edge_reject_switch = %d\n", edge_reject_switch);
+
+	if (mutex_lock_interruptible(&ts->lock)) {
+		return -ERESTARTSYS;
+	}
+
+#if NVT_TOUCH_ESD_PROTECT
+	nvt_esd_check_enable(false);
+#endif /* #if NVT_TOUCH_ESD_PROTECT */
+
+	nvt_set_edge_reject_switch(edge_reject_switch);
+
+	mutex_unlock(&ts->lock);
+
+	ret = count;
+out:
+	if (tmp_buf)
+		kfree(tmp_buf);
+	NVT_LOG("--\n");
+	return ret;
+}
+
+static const struct file_operations nvt_edge_reject_switch_fops = {
+	.owner = THIS_MODULE,
+	.read = nvt_edge_reject_switch_proc_read,
+	.write = nvt_edge_reject_switch_proc_write,
+};
+
 /*******************************************************
 Description:
 	Novatek touchscreen extra function proc. file node
@@ -1036,7 +1784,36 @@ int32_t nvt_extra_proc_init(void)
 			NVT_LOG("create proc/%s Succeeded!\n", NVT_PEN_DIFF);
 		}
 	}
+	NVT_proc_pf_switch_entry = proc_create(NVT_PF_SWITCH, 0664, NULL, &nvt_pf_switch_fops);
+	if (NVT_proc_pf_switch_entry == NULL) {
+		NVT_ERR("create proc/%s Failed!\n", NVT_PF_SWITCH);
+		return -ENOMEM;
+	} else {
+		NVT_LOG("create proc/%s Succeeded!\n", NVT_PF_SWITCH);
+	}
 
+	NVT_proc_sensitivity_switch_entry = proc_create(NVT_SENSITIVITY_SWITCH, 0664, NULL, &nvt_sensitivity_switch_fops);
+	if (NVT_proc_sensitivity_switch_entry == NULL) {
+		NVT_ERR("create proc/%s Failed!\n", NVT_SENSITIVITY_SWITCH);
+		return -ENOMEM;
+	} else {
+		NVT_LOG("create proc/%s Succeeded!\n", NVT_SENSITIVITY_SWITCH);
+	}
+
+	NVT_proc_er_range_switch_entry = proc_create(NVT_ER_RANGE_SWITCH, 0664, NULL, &nvt_er_range_switch_fops);
+	if (NVT_proc_er_range_switch_entry == NULL) {
+		NVT_ERR("create proc/%s Failed!\n", NVT_ER_RANGE_SWITCH);
+		return -ENOMEM;
+	} else {
+		NVT_LOG("create proc/%s Succeeded!\n", NVT_ER_RANGE_SWITCH);
+	}
+	NVT_proc_edge_reject_switch_entry = proc_create(NVT_EDGE_REJECT_SWITCH, 0664, NULL, &nvt_edge_reject_switch_fops);
+	if (NVT_proc_edge_reject_switch_entry == NULL) {
+		NVT_ERR("create proc/%s Failed!\n", NVT_EDGE_REJECT_SWITCH);
+		return -ENOMEM;
+	} else {
+		NVT_LOG("create proc/%s Succeeded!\n", NVT_EDGE_REJECT_SWITCH);
+	}
 	return 0;
 }
 
@@ -1080,6 +1857,29 @@ void nvt_extra_proc_deinit(void)
 			NVT_proc_pen_diff_entry = NULL;
 			NVT_LOG("Removed /proc/%s\n", NVT_PEN_DIFF);
 		}
+	}
+	if (NVT_proc_pf_switch_entry != NULL) {
+		remove_proc_entry(NVT_PF_SWITCH, NULL);
+		NVT_proc_pf_switch_entry = NULL;
+		NVT_LOG("Removed /proc/%s\n", NVT_PF_SWITCH);
+	}
+
+	if (NVT_proc_sensitivity_switch_entry != NULL) {
+		remove_proc_entry(NVT_SENSITIVITY_SWITCH, NULL);
+		NVT_proc_sensitivity_switch_entry = NULL;
+		NVT_LOG("Removed /proc/%s\n", NVT_SENSITIVITY_SWITCH);
+	}
+
+	if (NVT_proc_er_range_switch_entry != NULL) {
+		remove_proc_entry(NVT_ER_RANGE_SWITCH, NULL);
+		NVT_proc_er_range_switch_entry = NULL;
+		NVT_LOG("Removed /proc/%s\n", NVT_ER_RANGE_SWITCH);
+	}
+
+	if (NVT_proc_edge_reject_switch_entry != NULL) {
+		remove_proc_entry(NVT_EDGE_REJECT_SWITCH, NULL);
+		NVT_proc_edge_reject_switch_entry = NULL;
+		NVT_LOG("Removed /proc/%s\n", NVT_EDGE_REJECT_SWITCH);
 	}
 }
 #endif
