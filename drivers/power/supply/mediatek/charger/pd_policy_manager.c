@@ -614,20 +614,6 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 	// Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 	union power_supply_propval pval = {0, };
 
-//+Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
-#ifdef WT_COMPILE_FACTORY_VERSION
-	int bat_cap = 0;
-	static bool status = true;
-	struct power_supply *battery_psy;
-
-	battery_psy = power_supply_get_by_name("battery");
-	power_supply_get_property(battery_psy,
-		POWER_SUPPLY_PROP_CAPACITY, &pval);
-	bat_cap = pval.intval;
-	pr_err("wt_debug: bat_cap is %d\n", pval.intval);
-#endif
-//-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
-
 	retValue = usbpd_get_pps_status(pdpm);
 	if (retValue)
 		pdpm->pps_supported = true;
@@ -651,20 +637,6 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 	}
 	else
 		pr_notice("Not qualified PPS adapter\n");
-
-//+Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
-#ifdef WT_COMPILE_FACTORY_VERSION
-	if (bat_cap >= 80) {
-		pdpm->pps_supported = false;
-		status = false;
-	}
-	else if (bat_cap < 60) {
-		pdpm->pps_supported = true;
-		status = true;
-	}
-	else pdpm->pps_supported = status;
-#endif
-//-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
 
 }
 
@@ -995,6 +967,27 @@ static const unsigned char *pm_str[] = {
 	"PD_PM_STATE_FC2_EXIT",
 };
 
+//+Bug669735,chenrui.wt,MODIFY,20210625,FAMMI charger test failed
+#ifdef WT_COMPILE_FACTORY_VERSION
+static int mtk_get_battery_capacity(void)
+{
+	int ret = 0;
+	union power_supply_propval pval = {0, };
+	struct power_supply *battery_psy;
+
+	battery_psy = power_supply_get_by_name("battery");
+	if (!battery_psy)
+		return 0;
+	ret = power_supply_get_property(battery_psy,
+		POWER_SUPPLY_PROP_CAPACITY, &pval);
+	if (ret)
+		return -1;
+	pr_err("wt_debug %s: bat_cap is %d\n", __func__, pval.intval);
+	return pval.intval;
+}
+//-Bug669735,chenrui.wt,MODIFY,20210625,FAMMI charger test failed
+#endif
+
 static void usbpd_pm_move_state(struct usbpd_pm *pdpm, enum pm_state state)
 {
 #if 1
@@ -1011,12 +1004,6 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 	static int tune_vbus_retry;
 	static bool stop_sw;
 	static bool recover;
-//+Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
-#ifdef WT_COMPILE_FACTORY_VERSION
-		union power_supply_propval pval = {0, };
-		struct power_supply *battery_psy;
-#endif
-//-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
 
 	pr_err(">>>>>>>>>>>state phase :%d\n", pdpm->state);
 	pr_err(">>>>>vbus_vol %d    vbat_vol %d   vout %d\n", pdpm->cp.vbus_volt, pdpm->cp.vbat_volt, pdpm->cp.vout_volt);
@@ -1154,17 +1141,16 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 					pdpm->request_voltage, pdpm->request_current);
 		}
 
-//+Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
+//+Bug669735,chenrui.wt,MODIFY,20210625,FAMMI charger test failed
 #ifdef WT_COMPILE_FACTORY_VERSION
-		battery_psy = power_supply_get_by_name("battery");
-		power_supply_get_property(battery_psy,
-			POWER_SUPPLY_PROP_CAPACITY, &pval);
-		pr_err("wt_debug %s: bat_cap is %d\n", __func__, pval.intval);
-		if (pval.intval >= 80 || pval.intval <= 60) {
-			usbpd_pm_evaluate_src_caps(pdpm);
+		if (mtk_get_battery_capacity() >= 79) {
+			stop_sw = false;
+			usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_EXIT);
+			pr_err("wt_debug : %s slave charger exit", __func__);
 		}
 #endif
-//-Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
+//-Bug669735,chenrui.wt,MODIFY,20210625,FAMMI charger test failed
+
 		/* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 		/*stop second charge pump if either of ibus is lower than 750ma during CV*/
 		if((pm_config.cp_sec_enable && pdpm->cp_sec.charge_enabled
