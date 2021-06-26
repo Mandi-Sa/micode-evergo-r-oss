@@ -798,8 +798,10 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 
 	return step_ibat;
 }
+
 static int battery_sw_jeita(struct usbpd_pm *pdpm)
 {
+	int step_temp = 0;
 	int step_ibat = 0;
 	int step_vbat = 0;
 	int bat_temp = 0;
@@ -818,6 +820,13 @@ static int battery_sw_jeita(struct usbpd_pm *pdpm)
 			step_vbat = bat_step(pdpm, BAT_CURR_5400MA);
 		else
 			step_vbat = bat_step(pdpm, BAT_CURR_3900MA);
+		if (!pdpm->pd_authen) {
+			if (pdpm->cp.vbat_volt <= CHG_CUR_VOLT2)
+				step_temp = bat_step(pdpm, BAT_CURR_5400MA);
+			else
+				step_temp = -pm_config.fc2_steps;
+			step_vbat = min(step_vbat, step_temp);
+		}
 		if (get_jeita_lcd_on_off())
 			step_ibat = bat_lcdon_temp(pdpm, bat_temp);
 		else
@@ -825,8 +834,8 @@ static int battery_sw_jeita(struct usbpd_pm *pdpm)
 	} else {
 		pdpm->pps_temp_flag = false;
 	}
-	pr_err(">>>>temp %d pdpm->cp.ibus_curr %d step_ibat %d, step_vbat %d, lcd_on %d\n",
-		bat_temp, pdpm->cp.ibus_curr, step_ibat, step_vbat, get_jeita_lcd_on_off());
+	pr_err(">>>>temp %d pdpm->cp.ibus_curr %d step_ibat %d, step_vbat %d, lcd_on %d,  pd_authen %d\n",
+		bat_temp, pdpm->cp.ibus_curr, step_ibat, step_vbat, get_jeita_lcd_on_off(), pdpm->pd_authen);
 	return min(step_vbat, step_ibat);
 }
 /* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
@@ -1246,6 +1255,20 @@ static void usbpd_pm_disconnect(struct usbpd_pm *pdpm)
     usbpd_pm_move_state(pdpm, PD_PM_STATE_ENTRY);
 }
 
+static int mi_pd_auth(struct usbpd_pm *pdpm)
+{
+	union power_supply_propval val = {0,};
+	int ret = 0;
+
+	ret = power_supply_get_property(pdpm->apdo_psy,
+		POWER_SUPPLY_PROP_PD_AUTHENTICATION, &val);
+	if (ret)
+		pr_err("Failed to read typec power role\n");
+	else
+		pdpm->pd_authen = val.intval;
+	return pdpm->pd_authen;
+}
+
 static void usbpd_pd_contact(struct usbpd_pm *pdpm, bool connected)
 {
 	pdpm->pd_active = connected;
@@ -1255,6 +1278,7 @@ static void usbpd_pd_contact(struct usbpd_pm *pdpm, bool connected)
 	if (connected) {
 		usbpd_pm_evaluate_src_caps(pdpm);
 		pr_err("[SC manager] >>start cp charging pps support %d\n", pdpm->pps_supported);
+		mi_pd_auth(pdpm);
 		if (pdpm->pps_supported)
 			schedule_delayed_work(&pdpm->pm_work, 0);
 		else
