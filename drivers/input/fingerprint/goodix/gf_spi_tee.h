@@ -53,6 +53,7 @@ u8 g_debug_level = DEBUG_LOG;
 #define GF_KEY_INPUT_POWER		KEY_POWER
 #define GF_KEY_INPUT_CAMERA		KEY_CAMERA
 #define GF_KEY_INPUT_KPENTER            KEY_KPENTER
+#define GF_KEY_INPUT_DOUBLE		BTN_C
 
 typedef enum gf_nav_event {
 	GF_NAV_NONE = 0,
@@ -75,6 +76,7 @@ typedef enum gf_key_event {
 	GF_KEY_MENU,
 	GF_KEY_BACK,
 	GF_KEY_CAMERA,
+	GF_KEY_HOME_DOUBLE_CLICK,
 } gf_key_event_t;
 
 struct gf_key {
