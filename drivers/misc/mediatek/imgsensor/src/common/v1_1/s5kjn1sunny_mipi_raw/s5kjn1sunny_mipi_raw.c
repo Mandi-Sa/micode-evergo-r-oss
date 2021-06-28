@@ -131,7 +131,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.margin = 5,
 	.min_shutter = 5,
 	.min_gain = 64, /*1x gain*/
-	.max_gain = 1024, /*16x gain*/
+	.max_gain = 4096, /*64x gain*/
 	.min_gain_iso = 50,
 	.exp_step = 2,
 	.gain_step = 1,
@@ -716,12 +716,12 @@ static kal_uint16 set_gain(kal_uint16 gain)
 	kal_uint16 reg_gain;
 
 	LOG_INF("set_gain %d\n", gain);
-	if (gain < BASEGAIN || gain > 16 * BASEGAIN) {
+	if (gain < BASEGAIN || gain > 64 * BASEGAIN) {
 		LOG_INF("Error gain setting");
 		if (gain < BASEGAIN)
 			gain = BASEGAIN;
-		else if (gain > 16 * BASEGAIN)
-			gain = 16 * BASEGAIN;
+		else if (gain > 64 * BASEGAIN)
+			gain = 64 * BASEGAIN;
 	}
 	reg_gain = gain2reg(gain);
 	spin_lock(&imgsensor_drv_lock);
