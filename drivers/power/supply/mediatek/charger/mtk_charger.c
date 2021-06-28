@@ -2187,30 +2187,53 @@ static int mtk_get_batt_id(void)
 	return pval.intval;
 }
 
+static int adaptor_pd_authen(void)
+{
+	struct power_supply *batt_usb;
+	union power_supply_propval val = {0,};
+	int ret = 0;
+
+	batt_usb = power_supply_get_by_name("usb");
+        if (!batt_usb) {
+                chr_err("%s can't get usb pd_authen", __func__);
+                return -1;
+        }
+	ret = power_supply_get_property(batt_usb,
+		POWER_SUPPLY_PROP_PD_AUTHENTICATION, &val);
+	if (ret)
+		pr_err("Failed to read typec power role\n");
+	else
+		ret = val.intval;
+
+	return ret;
+}
+
 static void mtk_dynamic_set_ieoc_and_cv(struct charger_manager *info)
 {
 
 	int batt_temp = 0;
 	int batt_id = 0;
+	int pd_auth = 0;
 	unsigned int ieoc_ua = 0;
 
 	batt_id = mtk_get_batt_id();
+	pd_auth = adaptor_pd_authen();
 	if (batt_id == BAT_ID_COS || batt_id == BAT_ID_SWD) {
 		batt_temp = battery_get_bat_temperature();
-		if (batt_temp >= 15 && batt_temp <= 35) {
+		if (batt_temp >= 15 && batt_temp <= 35 && pd_auth > 0) {
 			ieoc_ua = (batt_id == BAT_ID_COS) ? 686000 : 735000;
 			info->data.battery_cv = 4480000;
 		}
-		else if (batt_temp > 35 && batt_temp <= 45) {
+		else if (batt_temp > 35 && batt_temp <= 45 && pd_auth > 0) {
 			ieoc_ua = (batt_id == BAT_ID_COS) ? 833000 : 784000;
 			info->data.battery_cv = 4480000;
 		}
 		else if (batt_temp > 45 && batt_temp <= 60) {
-			ieoc_ua = 300000;
+			ieoc_ua = 200000;
 			info->data.battery_cv = 4100000;
 		}
 		else {
-			ieoc_ua = 300000;
+			ieoc_ua = 200000;
 			info->data.battery_cv = 4450000;
 		}
 		charger_dev_set_eoc_current(info->chg1_dev, ieoc_ua);

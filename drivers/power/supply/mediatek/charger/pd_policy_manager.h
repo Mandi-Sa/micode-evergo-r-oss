@@ -142,6 +142,7 @@ struct usbpd_pm {
 	bool	pps_supported;
 	/* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 	bool	pps_temp_flag;
+	bool	pd_authen;
 
 	int	lcdoff_curr_step;
 	int	lcdon_curr_step;
