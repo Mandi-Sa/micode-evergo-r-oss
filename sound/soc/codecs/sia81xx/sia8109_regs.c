@@ -263,13 +263,13 @@ const struct sia81xx_reg_default_val sia8109_reg_default_val = {
 };
 
 static bool sia8109_writeable_register(
-	struct device *dev, 
+	struct device *dev,
 	unsigned int reg)
 {
 	switch (reg) {
 		case SIA8109_REG_SYSCTRL ... SIA8109_REG_Excur_CTRL_4 :
 			return true;
-		default : 
+		default :
 			break;
 	}
 
@@ -277,14 +277,14 @@ static bool sia8109_writeable_register(
 }
 
 static bool sia8109_readable_register(
-	struct device *dev, 
+	struct device *dev,
 	unsigned int reg)
 {
 	switch (reg) {
 		case SIA8109_REG_SYSCTRL ... SIA8109_REG_Excur_CTRL_4 :
-		case SIA8109_REG_CHIP_ID : 
+		case SIA8109_REG_CHIP_ID :
 			return true;
-		default : 
+		default :
 			break;
 	}
 
@@ -386,6 +386,7 @@ const struct sia81xx_opt_if sia8109_opt_if = {
 	.chip_off = sia8109_chip_off,
 	.get_chip_en = NULL,
 	.set_pvdd_limit = NULL,
+	.check_trimming = NULL,
 };
 
 
