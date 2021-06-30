@@ -24,7 +24,7 @@
 #include "scsi_priv.h"
 #include "scsi_logging.h"
 //+bug653763,guodandan.wt,add,20210503,add flash_name
-#define SD_NUM  6
+#define SD_NUM  3
 /* get ddr size  */
 #define WT_GET_DDR_SIZE_ZERO             0
 #define WT_GET_DDR_SIZE_1GB              1
@@ -472,6 +472,7 @@ show_flash_name(struct device *dev, struct device_attribute *attr,
 	{
 		p = &((*gd_t)->part0);
 		ufs_size += (unsigned long long)part_nr_sects_read(p);
+		printk("%s: wt calc ufs sects num is <%llu>\n", __func__, ufs_size);
 	}
 	printk("%s: wt ufs sects num is <%llu>\n", __func__, ufs_size);
 	ret = sscanf(sdev->vendor, "%8s", vendor_name);

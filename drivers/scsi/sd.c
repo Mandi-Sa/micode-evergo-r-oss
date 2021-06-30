@@ -135,7 +135,7 @@ static struct kmem_cache *sd_cdb_cache;
 static mempool_t *sd_cdb_pool;
 static mempool_t *sd_page_pool;
 //bug653763,guodandan.wt,add,20210503,add flash_name
-#define SD_NUM  6
+#define SD_NUM  3
 extern struct gendisk *ufs_disk[];
 static const char *sd_cache_types[] = {
 	"write through", "none", "write back",
