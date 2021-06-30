@@ -1229,6 +1229,7 @@ static void usbpd_pm_disconnect(struct usbpd_pm *pdpm)
 {
 	//Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
 	union power_supply_propval pval = {0, };
+	int ret = 0;
 	usbpd_pm_enable_cp(pdpm, false);
     usbpd_pm_check_cp_enabled(pdpm);
     if (pm_config.cp_sec_enable) {
@@ -1249,8 +1250,10 @@ static void usbpd_pm_disconnect(struct usbpd_pm *pdpm)
     pdpm->apdo_selected_pdo = 0;
 	//+Extb HOMGMI-84843,chenrui1.wt,ADD,20210514add adpo_max node
 	pval.intval = 0;
-	power_supply_set_property(pdpm->usb_psy,
+	ret = power_supply_set_property(pdpm->apdo_psy,
 			POWER_SUPPLY_PROP_APDO_MAX, &pval);
+	if (ret)
+		pr_err("%s:ret=%d\n",__func__,ret);
 	//-Extb HOMGMI-84843,chenrui1.wt,ADD,20210514add adpo_max node
     usbpd_pm_move_state(pdpm, PD_PM_STATE_ENTRY);
 }

@@ -453,7 +453,7 @@ static int mtk_get_prop_soc_decimal_rate(int *val)
 
 	int i, soc = 0;
 
-	soc = fg_cust_data.ui_old_soc / 100; ;
+	soc = fg_cust_data.ui_old_soc / 100;
 
 	for (i = 0; i < dec_rate_len; i += 2) {
 		if (soc < dec_rate_seq[i]) {
@@ -696,7 +696,7 @@ static int battery_get_property(struct power_supply *psy,
 	/* +Extb HONGMI-84841,wangbin,wt,ADD,20210608, add decimal soc*/
 	case POWER_SUPPLY_PROP_SOC_DECIMAL_RATE:
 		mtk_get_prop_soc_decimal_rate(&val->intval);
-	case	POWER_SUPPLY_PROP_SOC_DECIMAL:
+	case POWER_SUPPLY_PROP_SOC_DECIMAL:
 		mtk_get_prop_soc_decimal(&val->intval);
 		break;
 	/* -Extb HONGMI-84841,wangbin,wt,ADD,20210608, add decimal soc*/
