@@ -386,19 +386,25 @@ static int sia81xx_auto_set_timer_task_callback(
 
 	vol = sia81xx_get_battery_voltage(info, AUTO_SET_FIRST_SET_SAMPLES);
 	if (vol > info->pre_vdd) {
-		if(1 == SIA81XX_AUTO_PVDD_EN_GET(info->is_enable)) 
+		if (1 == SIA81XX_AUTO_PVDD_EN_GET(info->is_enable)) {
 			sia81xx_regmap_set_pvdd_limit(info->regmap, info->chip_type, vol);
-		msleep(1);
-		if(1 == SIA81XX_AUTO_VDD_EN_GET(info->is_enable)) 
+			msleep(1);
+		}
+
+		if (1 == SIA81XX_AUTO_VDD_EN_GET(info->is_enable)) {
 			send_set_vdd_msg(info, vol, info->channel_num);
+		}
 
 		info->pre_vdd = vol;
 	} else if (vol < info->pre_vdd) {
-		if(1 == SIA81XX_AUTO_VDD_EN_GET(info->is_enable))
+		if (1 == SIA81XX_AUTO_VDD_EN_GET(info->is_enable)) {
 			send_set_vdd_msg(info, vol, info->channel_num);
-		msleep(6);	// depends on the algorithm action time
-		if(1 == SIA81XX_AUTO_PVDD_EN_GET(info->is_enable)) 
+		}
+		
+		if (1 == SIA81XX_AUTO_PVDD_EN_GET(info->is_enable)) {
+			msleep(6);	// depends on the algorithm action time
 			sia81xx_regmap_set_pvdd_limit(info->regmap, info->chip_type, vol);
+		}
 
 		info->pre_vdd = vol;
 	}
@@ -438,6 +444,9 @@ int sia81xx_auto_set_vdd_probe(
 	struct sia81xx_set_vdd_info *pInfo = 
 		is_cal_id_exist(timer_task_hdl, channel_num);
 	if(NULL == pInfo) {
+		pr_info("[ info][%s] %s: timer task %u first register \r\n", 
+			LOG_FLAG, __func__, timer_task_hdl);
+
 		ret = sia81xx_open_set_vdd_server(timer_task_hdl, channel_num, cal_id);
 		if(0 != ret) {
 			pr_err("[  err][%s] %s: sia81xx_open_set_vdd_server ret : %d \r\n", 

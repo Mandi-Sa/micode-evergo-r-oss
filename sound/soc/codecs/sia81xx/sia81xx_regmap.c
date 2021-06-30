@@ -24,6 +24,8 @@
 #include "sia8108_regs.h"
 #include "sia8109_regs.h"
 #include "sia8152_regs.h"
+#include "sia8152s_regs.h"
+#include "sia8159_regs.h"
 
 
 struct reg_map_info {
@@ -52,16 +54,26 @@ static const struct reg_map_info reg_map_info_table[] = {
 		.config = &sia8152_regmap_config,
 		.reg_default = &sia8152_reg_default_val,
 		.opt = &sia8152_opt_if
+	},
+	[CHIP_TYPE_SIA8152S] = {
+		.config = &sia8152s_regmap_config,
+		.reg_default = &sia8152s_reg_default_val,
+		.opt = &sia8152s_opt_if
+	},
+	[CHIP_TYPE_SIA8159] = {
+		.config = &sia8159_regmap_config,
+		.reg_default = &sia8159_reg_default_val,
+		.opt = &sia8159_opt_if
 	}
 };
 
 static int verify_chip_type(
 	unsigned int type)
 {
-	if(type >= ARRAY_SIZE(reg_map_info_table)) {
-		pr_err("[  err][%s] %s: chip_type = %u, "
-			"ARRAY_SIZE(reg_map_info) = %lu \r\n", 
-			LOG_FLAG, __func__, type, ARRAY_SIZE(reg_map_info_table));
+	if (type >= ARRAY_SIZE(reg_map_info_table)) {
+		//pr_warn("[ warn][%s] %s: chip_type = %u, "
+		//	"ARRAY_SIZE(reg_map_info) = %lu \r\n", 
+		//	LOG_FLAG, __func__, type, ARRAY_SIZE(reg_map_info_table));
 		return -ENODEV;
 	}
 
@@ -158,9 +170,12 @@ void sia81xx_regmap_defaults(
 		return ;
 	}
 
-	for(i = 0; i < ARRAY_SIZE(reg_map_info_table); i++) {
-		
-		if(chip_type == reg_map_info_table[i].reg_default->chip_type) {
+	for (i = 0; i < ARRAY_SIZE(reg_map_info_table); i++) {
+
+		if (NULL == reg_map_info_table[i].reg_default)
+			continue;
+
+		if (chip_type == reg_map_info_table[i].reg_default->chip_type) {
 			ret = sia81xx_regmap_write(
 				regmap, 
 				reg_map_info_table[i].reg_default->offset,
@@ -172,9 +187,9 @@ void sia81xx_regmap_defaults(
 			break;
 		}
 	}
-	
-	if(0 != ret) {
-		pr_err("[  err][%s] %s: ret = %d, chip_type = %u, regmap = %p \r\n", 
+
+	if (0 != ret) {
+		pr_warn("[ warn][%s] %s: ret = %d, chip_type = %u, regmap = %p \r\n", 
 			LOG_FLAG, __func__, ret, chip_type, regmap);
 	}
 }
@@ -301,6 +316,21 @@ void sia81xx_regmap_set_pvdd_limit(
 
 	if(NULL != reg_map_info_table[chip_type].opt->set_pvdd_limit) {
 		reg_map_info_table[chip_type].opt->set_pvdd_limit(regmap, vol);
+	}
+}
+
+void sia81xx_regmap_check_trimming(
+	struct regmap *regmap, 
+	unsigned int chip_type)
+{
+	if(NULL == regmap)
+		return ;
+
+	if(0 != verify_chip_type(chip_type))
+		return ;
+
+	if(NULL != reg_map_info_table[chip_type].opt->check_trimming) {
+		reg_map_info_table[chip_type].opt->check_trimming(regmap);
 	}
 }
 
