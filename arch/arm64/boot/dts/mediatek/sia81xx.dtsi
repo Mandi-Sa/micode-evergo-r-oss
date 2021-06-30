@@ -57,7 +57,7 @@
 
 	sia81xx_L: sia81xx@L {
 		compatible = "si,sia8109";
-		si,sia81xx_type = "sia8109";
+		si,sia81xx_type = "sia81x9";
 		si,sia81xx_reset = <&pio 131 0>;
 		si,sia81xx_owi = <&pio 131 0>;
 		pinctrl-names = "sia81xx_gpio";
