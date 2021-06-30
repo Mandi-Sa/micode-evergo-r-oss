@@ -109,7 +109,7 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 	u32 ichg1_min = 0, aicr1_min = 0;
 	int ret = 0;
 	//Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit
-	int input_current_limit;
+	int charging_current_limit;
 
 	if (info->pe5.online) {
 		chr_err("In PE5.0\n");
@@ -331,11 +331,11 @@ done:
 		pdata->input_current_limit_by_aicl, info->atm_enabled,
 		_uA_to_mA(info->thermal_mitigation_current));
 
-	input_current_limit = min(pdata->charging_current_limit,info->thermal_mitigation_current);
-	charger_dev_set_input_current(info->chg1_dev,input_current_limit);
-	/* -Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
+	charging_current_limit = min(pdata->charging_current_limit,info->thermal_mitigation_current);
+	charger_dev_set_input_current(info->chg1_dev,pdata->input_current_limit);
 	charger_dev_set_charging_current(info->chg1_dev,
-					pdata->charging_current_limit);
+					charging_current_limit);
+	/* -Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
 
 	/* If AICR < 300mA, stop PE+/PE+20 */
 	if (pdata->input_current_limit < 300000) {

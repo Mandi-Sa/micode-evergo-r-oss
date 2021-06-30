@@ -332,41 +332,21 @@ struct quick_charge adapter_cap[10] = {
 	{ STANDARD_CHARGER,     QUICK_CHARGE_NORMAL },
 	{ CHARGING_HOST,        QUICK_CHARGE_NORMAL },
 	{ NONSTANDARD_CHARGER,  QUICK_CHARGE_NORMAL },
-	{ PPS_CHARGER,            QUICK_CHARGE_FAST },
-	{ HVDCP_CHARGER,    QUICK_CHARGE_FAST },
-	{ WIRELESS_CHARGER,       QUICK_CHARGE_FAST },
+	{ PPS_CHARGER,          QUICK_CHARGE_TURPE },
+	{ HVDCP_CHARGER,        QUICK_CHARGE_FAST },
+	{ WIRELESS_CHARGER,     QUICK_CHARGE_FAST },
 	{0, 0},
 };
 
 int mt_get_quick_charge_type(struct mt_charger *mtk_chg)
 {
 	int i = 0;
-	int ret;
-	bool charge_enabled;
-	union power_supply_propval val = {0,};
-	struct power_supply *charger_dev;
 
-	if (!mtk_chg){
-		pr_info("%s:mtk_chg is null\n",__func__);
-		return 0;
-	}
-	charger_dev = power_supply_get_by_name("sc8551-standalone");
-	if (!charger_dev){
-		charger_dev = power_supply_get_by_name("ln8000-standalone");
-		if (!charger_dev){
-			pr_info("%s:get ln8000-standalone fail\n",__func__);
-			return 0;
-		}
-	}
-
-	if (STANDARD_CHARGER == mtk_chg->chg_type) {
-		ret = power_supply_get_property(charger_dev,POWER_SUPPLY_PROP_CHARGING_ENABLED, &val);
-		if (!ret)
-			charge_enabled = !!val.intval;
-		else
-			pr_info("%s:get CHARGING_ENABLED fail\n",__func__);
-		if (charge_enabled)
+	if (charger_manager_pd_is_online()){
+		pr_info("%s:chg_type=%d,apdo_max=%d\n",__func__,mtk_chg->chg_type,mtk_chg->apdo_max);
+		if (mtk_chg->apdo_max >= 33){
 			mtk_chg->chg_type = PPS_CHARGER;
+		}
 	}
 
 	while (adapter_cap[i].adap_type != 0) {
