@@ -158,6 +158,8 @@ static const struct mt6360_chg_platform_data def_platform_data = {
 	.mivr = 4400000,		/* uV */
 	.cv = 4350000,			/* uA */
 	.ieoc = 250000,			/* uA */
+	//Bug651594,chenrui1,wt,ADD,20210629,add recharge volt
+	.vrechg = 200000,		/*uA*/
 	.safety_timer = 12,		/* hour */
 #ifdef CONFIG_MTK_BIF_SUPPORT
 	.ircmp_resistor = 0,		/* uohm */
@@ -213,6 +215,13 @@ static u32 mt6360_trans_ieoc_sel(u32 uA)
 {
 	return mt6360_trans_sel(uA, 100000, 50000, 0x0F);
 }
+
+//+Bug651594,chenrui1,wt,ADD,20210629,add recharge volt
+static u32 mt6360_trans_vrechg_sel(u32 uA)
+{
+	return mt6360_trans_sel(uA, 100000, 50000, 0x03);
+}
+//-Bug651594,chenrui1,wt,ADD,20210629,add recharge volt
 
 static u32 mt6360_trans_safety_timer_sel(u32 hr)
 {
@@ -1836,12 +1845,28 @@ static int mt6360_get_zcv(struct charger_device *chg_dev, u32 *uV)
 	return 0;
 }
 
+//+Bug651594,chenrui1,wt,ADD,20210629,add recharge volt
+static inline int mt6360_get_vrechg(struct charger_device *chg_dev, u32 *uV)
+{
+	struct mt6360_pmu_chg_info *mpci = charger_get_data(chg_dev);
+	int ret = 0;
+
+	ret = mt6360_pmu_reg_read(mpci->mpi, MT6360_PMU_CHG_CTRL11);
+	if (ret < 0)
+		return ret;
+	ret &= 0x3;
+	*uV = 100000 + (ret * 50000);
+	return 0;
+}
+//-Bug651594,chenrui1,wt,ADD,20210629,add recharge volt
+
 static int mt6360_dump_registers(struct charger_device *chg_dev)
 {
 	struct mt6360_pmu_chg_info *mpci = charger_get_data(chg_dev);
 	int i, ret = 0;
 	int adc_vals[MT6360_ADC_MAX];
 	u32 ichg = 0, aicr = 0, mivr = 0, cv = 0, ieoc = 0;
+	u32 vrechg = 0;
 	enum mt6360_charging_status chg_stat = MT6360_CHG_STATUS_READY;
 	bool chg_en = false;
 	u8 chg_stat1 = 0, chg_ctrl[2] = {0};
@@ -1854,6 +1879,8 @@ static int mt6360_dump_registers(struct charger_device *chg_dev)
 	ret |= mt6360_get_ieoc(mpci, &ieoc);
 	ret |= mt6360_get_charging_status(mpci, &chg_stat);
 	ret |= mt6360_is_charger_enabled(mpci, &chg_en);
+	//Bug651594,chenrui1,wt,ADD,20210629,add recharge volt
+	ret |= mt6360_get_vrechg(chg_dev, &vrechg);
 	if (ret < 0) {
 		dev_notice(mpci->dev, "%s: parse chg setting fail\n", __func__);
 		return ret;
@@ -1881,9 +1908,9 @@ static int mt6360_dump_registers(struct charger_device *chg_dev)
 	if (ret < 0)
 		return ret;
 	dev_info(mpci->dev,
-		 "%s: ICHG = %dmA, AICR = %dmA, MIVR = %dmV, IEOC = %dmA, CV = %dmV\n",
+		 "%s: ICHG = %dmA, AICR = %dmA, MIVR = %dmV, IEOC = %dmA, CV = %dmV, vrechg = %dmV\n",
 		 __func__, ichg / 1000, aicr / 1000, mivr / 1000, ieoc / 1000,
-		 cv / 1000);
+		 cv / 1000, vrechg / 1000);
 	dev_info(mpci->dev,
 		 "%s: VBUS = %dmV, IBUS = %dmA, VSYS = %dmV, VBAT = %dmV, IBAT = %dmA\n",
 		 __func__,
@@ -2686,6 +2713,11 @@ static const struct mt6360_pdata_prop mt6360_pdata_props[] = {
 	MT6360_PDATA_VALPROP(ieoc, struct mt6360_chg_platform_data,
 			     MT6360_PMU_CHG_CTRL9, 4, 0xF0,
 			     mt6360_trans_ieoc_sel, 0),
+	//+Bug651594,chenrui1,wt,ADD,20210629,add recharge volt
+	MT6360_PDATA_VALPROP(vrechg, struct mt6360_chg_platform_data,
+				 MT6360_PMU_CHG_CTRL11, 0, 0x03,
+				mt6360_trans_vrechg_sel, 0),
+	//-Bug651594,chenrui1,wt,ADD,20210629,add recharge volt
 	MT6360_PDATA_VALPROP(safety_timer, struct mt6360_chg_platform_data,
 			     MT6360_PMU_CHG_CTRL12, 5, 0xE0,
 			     mt6360_trans_safety_timer_sel, 0),
@@ -2725,6 +2757,8 @@ static const struct mt6360_val_prop mt6360_val_props[] = {
 	MT6360_DT_VALPROP(mivr, struct mt6360_chg_platform_data),
 	MT6360_DT_VALPROP(cv, struct mt6360_chg_platform_data),
 	MT6360_DT_VALPROP(ieoc, struct mt6360_chg_platform_data),
+	//Bug651594,chenrui1,wt,ADD,20210629,add recharge volt
+	MT6360_DT_VALPROP(vrechg, struct mt6360_chg_platform_data),
 	MT6360_DT_VALPROP(safety_timer, struct mt6360_chg_platform_data),
 	MT6360_DT_VALPROP(ircmp_resistor, struct mt6360_chg_platform_data),
 	MT6360_DT_VALPROP(ircmp_vclamp, struct mt6360_chg_platform_data),
