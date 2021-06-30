@@ -73,7 +73,7 @@ static const char * const power_supply_usb_typec_mode_text[] = {
 
 //Extb HONGMI-84869,wangbin wt.ADD,20210616,add charge type
 static const char * const power_supply_charge_type_text[] = {
-	"Unknown", "N/A", "Trickle", "Taper", "Fast"
+	"Unknown", "N/A", "Trickle", "Fast", "Taper"
 };
 
 static const char * const power_supply_health_text[] = {
