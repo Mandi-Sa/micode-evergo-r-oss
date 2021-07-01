@@ -401,6 +401,8 @@ struct aw869x {
 	struct aw869x_dts_info info;
 	unsigned int ramupdate_flag;
 	unsigned int rtpupdate_flag;
+	//Bug651594,chenrui1.wt,ADD,20210701,add osc_calib flag
+	bool lra_calib_flag;
 };
 
 struct aw869x_container {
