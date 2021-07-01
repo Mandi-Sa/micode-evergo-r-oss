@@ -3724,10 +3724,10 @@ static ssize_t aw869x_osc_cali_show(struct device *dev,
 	struct aw869x *aw869x = container_of(cdev, struct aw869x, cdev);
 #endif
 	ssize_t len = 0;
-
+	//Bug651594,chenrui1.wt,ADD,20210701,add osc_calib flag
 	len +=
-	    snprintf(buf + len, PAGE_SIZE - len, "lra_calib_data=%d\n",
-		     aw869x->lra_calib_data);
+	    snprintf(buf + len, PAGE_SIZE - len, "lra_calib_flag=%d,lra_calib_data=%d\n",
+		     aw869x->lra_calib_flag,aw869x->lra_calib_data);
 
 	return len;
 }
@@ -3755,10 +3755,14 @@ static ssize_t aw869x_osc_cali_store(struct device *dev,
 	if (val == 1) {
 		aw869x_haptic_upload_lra(aw869x, AW869X_HAPTIC_WRITE_ZERO);
 		aw869x_rtp_osc_calibration(aw869x);
+		//Bug651594,chenrui1.wt,ADD,20210701,add osc_calib flag
 		aw869x_rtp_trim_lra_calibration(aw869x);
+		aw869x->lra_calib_flag = true;
 	} else if (val == 2) {
 		aw869x_haptic_upload_lra(aw869x, AW869X_HAPTIC_RTP_CALI_LRA);
 		aw869x_rtp_osc_calibration(aw869x);
+		//Bug651594,chenrui1.wt,ADD,20210701,add osc_calib flag
+		aw869x->lra_calib_flag = true;
 	}
 
 	mutex_unlock(&aw869x->lock);
@@ -4663,7 +4667,8 @@ static int aw869x_i2c_probe(struct i2c_client *i2c,
 	aw869x->i2c = i2c;
 
 	i2c_set_clientdata(i2c, aw869x);
-
+	//Bug651594,chenrui1.wt,ADD,20210701,add osc_calib flag
+	aw869x->lra_calib_flag = false;
 	/* aw869x rst & int */
 	if (np) {
 		ret = aw869x_parse_dt(&i2c->dev, aw869x, np);
