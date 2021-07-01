@@ -270,6 +270,7 @@ const struct sia81xx_opt_if sia8108_opt_if = {
 	.chip_off = NULL,
 	.get_chip_en = NULL,
 	.set_pvdd_limit = NULL,
+	.check_trimming = NULL,
 };
 
 

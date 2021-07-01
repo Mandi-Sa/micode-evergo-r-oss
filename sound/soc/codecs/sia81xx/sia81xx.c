@@ -167,6 +167,14 @@ typedef struct sia81xx_dev_s {
 	struct sia81xx_err err_info;
 }sia81xx_dev_t;
 
+struct sia81xx_chip_compat {
+	const uint32_t sub_type;
+	struct {
+		const uint32_t *chips;
+		const uint32_t num;
+	};
+};
+
 static ssize_t sia81xx_cmd_show(struct device* cd,
 	struct device_attribute *attr, char* buf);
 static ssize_t sia81xx_cmd_store(struct device* cd, 
@@ -193,7 +201,11 @@ static const char *support_chip_type_name_table[] = {
 	[CHIP_TYPE_SIA8108] = "sia8108",
 	[CHIP_TYPE_SIA8109] = "sia8109",
 	[CHIP_TYPE_SIA8152] = "sia8152",
-	[CHIP_TYPE_SIA8100] = "sia8100"
+	[CHIP_TYPE_SIA8152S] = "sia8152s",
+	[CHIP_TYPE_SIA8100] = "sia8100",
+	[CHIP_TYPE_SIA8159] = "sia8159",
+	[CHIP_TYPE_SIA81X9] = "sia81x9",
+	[CHIP_TYPE_SIA8152X] = "sia8152x"
 };
 
 static sia81xx_dev_t *g_default_sia_dev = NULL;
@@ -727,13 +739,15 @@ static int sia81xx_reg_init(
 	}
 	
 	udelay(100);
-	if(0 != sia81xx_regmap_check_chip_id(sia81xx->regmap, sia81xx->chip_type)) {
-		pr_err("[  err][%s] %s: sia81xx_regmap_check_chip_id error !!! \r\n", 
+	if (0 != sia81xx_regmap_check_chip_id(sia81xx->regmap, sia81xx->chip_type)) {
+		pr_warn("[ warn][%s] %s: sia81xx_regmap_check_chip_id failed !!! \r\n", 
 			LOG_FLAG, __func__);
+		return -EINVAL;
 	}
 
-	sia81xx_regmap_set_xfilter(sia81xx->regmap, 
-		sia81xx->chip_type, sia81xx->en_xfilter);
+	/* useless in any case */
+	//sia81xx_regmap_set_xfilter(sia81xx->regmap, 
+	//	sia81xx->chip_type, sia81xx->en_xfilter);
 
 	return 0;
 }
@@ -782,6 +796,7 @@ static int sia81xx_resume(
 		sia81xx_reg_init(sia81xx);
 		sia81xx_regmap_set_chip_on(sia81xx->regmap, 
 			sia81xx->chip_type, sia81xx->scene);
+		sia81xx_regmap_check_trimming(sia81xx->regmap, sia81xx->chip_type);
 
 		if (0 == sia81xx->disable_pin) {
 			if (CHIP_TYPE_SIA8101 == sia81xx->chip_type
@@ -817,10 +832,9 @@ static int sia81xx_suspend(
 
 	if (is_chip_type_supported(sia81xx->chip_type)) {
 
-		if (sia81xx_is_chip_en(sia81xx))
+		if (sia81xx_is_chip_en(sia81xx)) {
 			sia81xx_regmap_set_chip_off(sia81xx->regmap, sia81xx->chip_type);
 
-		if (0 == sia81xx->disable_pin) {
 			spin_lock_irqsave(&sia81xx->rst_lock, flags);
 			pr_info("%s:set rst_pin low\n",__func__);
 			/* power off chip */
@@ -1049,11 +1063,6 @@ static ssize_t sia81xx_cmd_show(
 	int owi_pin_val = 0;
 
 	switch (sia81xx->chip_type) {
-		case CHIP_TYPE_SIA8101 :
-		case CHIP_TYPE_SIA8152 :
-			sia81xx_regmap_read(
-				sia81xx->regmap, 0x00, 1, &chip_id);
-			break;
 		case CHIP_TYPE_SIA8108 :
 		case CHIP_TYPE_SIA8109 :
 			sia81xx_regmap_read(
@@ -1064,7 +1073,8 @@ static ssize_t sia81xx_cmd_show(
 					LOG_FLAG, __func__, sia81xx->owi_delay_us);
 			return 0;
 		default :
-			chip_id = 0xff;
+			sia81xx_regmap_read(
+				sia81xx->regmap, 0x00, 1, &chip_id);
 			break;
 	}
 
@@ -1175,10 +1185,10 @@ static ssize_t sia81xx_cmd_store(
  		{
 			unsigned int temp_us = (unsigned int)simple_strtoul(
 										strsep(&cur, split_symb), &after, 10);
-			if(temp_us < 1000) /* only for test, pulse width must be < 1ms */
+			if(temp_us < MAX_OWI_PULSE_GAP_TIME_US) /* only for test, pulse width must be < 1ms */
 				sia81xx->owi_delay_us = temp_us;
 			else
-				sia81xx->owi_delay_us = 1000;
+				sia81xx->owi_delay_us = MAX_OWI_PULSE_GAP_TIME_US;
 			
 			break;
  		}
@@ -1842,7 +1852,7 @@ static void put_sia81xx_dev(sia81xx_dev_t *sia81xx)
 
 static unsigned int get_chip_type(const char *name)
 {
-	int i = 0;
+	int i = 0, len = 0;
 	
 	if(NULL == name)
 		return CHIP_TYPE_UNKNOWN;
@@ -1850,9 +1860,10 @@ static unsigned int get_chip_type(const char *name)
 	pr_info("[ info][%s] %s: chip : %s \r\n", 
 		LOG_FLAG, __func__, name);
 
-	for(i = 0; i < ARRAY_SIZE(support_chip_type_name_table); i ++) {
-		if(0 == memcmp(support_chip_type_name_table[i], name, 
-			strlen(support_chip_type_name_table[i]))) {
+	len = strlen(name);
+	for (i = 0; i < ARRAY_SIZE(support_chip_type_name_table); i ++) {
+		if (strlen(support_chip_type_name_table[i]) == len && 
+			0 == memcmp(support_chip_type_name_table[i], name, len)) {
 			return i;
 		}
 	}
@@ -1860,21 +1871,114 @@ static unsigned int get_chip_type(const char *name)
 	return CHIP_TYPE_UNKNOWN;
 }
 
+/* CHIP_TYPE_SIA81X9 */
+static const uint32_t sia81x9_list[] = {
+	CHIP_TYPE_SIA8109,	// first chip reg range should cover all other chips
+	CHIP_TYPE_SIA8159
+};
+	
+/* CHIP_TYPE_SIA8152X */
+static const uint32_t sia8152x_list[] = {
+	CHIP_TYPE_SIA8152S,	// first chip reg range should cover all other chips
+	CHIP_TYPE_SIA8152
+};
+
+/* compatible chips should have same i2c address */
+static const struct sia81xx_chip_compat sia81xx_compat_table[] = {
+	{ 
+		CHIP_TYPE_SIA81X9, 
+		{sia81x9_list, ARRAY_SIZE(sia81x9_list)} 
+	},
+	{ 
+		CHIP_TYPE_SIA8152X, 
+		{sia8152x_list, ARRAY_SIZE(sia8152x_list)} 
+	}
+};
+
+unsigned int get_one_available_chip_type(unsigned int chip_type)
+{
+	int i = 0;
+
+	for (i = 0; i < ARRAY_SIZE(sia81xx_compat_table); i++) {
+		if (chip_type == sia81xx_compat_table[i].sub_type) {
+			if (0 < sia81xx_compat_table[i].num)
+				//pr_info("[ info][%s] %s: chip_type = %u \r\n", 
+				//	LOG_FLAG, __func__, sia81xx_compat_table[i].chips[0]);
+				return sia81xx_compat_table[i].chips[0];
+		}
+	}
+
+	return chip_type;
+}
+
 #ifdef DISTINGUISH_CHIP_TYPE
 static int check_sia81xx_status(sia81xx_dev_t *sia81xx)
 {
 	int ret = 0;
 
-	sia81xx_resume(sia81xx);
-	if (0 == sia81xx_regmap_check_chip_id(
-			sia81xx->regmap,  sia81xx->chip_type)) {
-		ret = 1;	
-	}
-	sia81xx_suspend(sia81xx);
+	if (0 == sia81xx->disable_pin)
+		sia81xx_resume(sia81xx);
+
+	ret = sia81xx_regmap_check_chip_id(
+			sia81xx->regmap,  sia81xx->chip_type);
+
+	if (0 == sia81xx->disable_pin)
+		sia81xx_suspend(sia81xx);
 
 	return ret;
 }
 #endif
+
+void sia81xx_compatible_chips_adapt(
+	sia81xx_dev_t *sia81xx)
+{
+	int i = 0, j = 0;
+
+	for (i = 0; i < ARRAY_SIZE(sia81xx_compat_table); i++) {
+		if (sia81xx->chip_type == sia81xx_compat_table[i].sub_type) {
+
+			if (0 == sia81xx->disable_pin)
+				sia81xx_resume(sia81xx);
+
+			for (j = 0; j < sia81xx_compat_table[i].num; j++) {
+				if (NULL != sia81xx_compat_table[i].chips
+					&& 0 == sia81xx_regmap_check_chip_id(
+						sia81xx->regmap, sia81xx_compat_table[i].chips[j])) {
+					sia81xx->chip_type = sia81xx_compat_table[i].chips[j];
+					break;
+				}
+			}
+
+			if (0 == sia81xx->disable_pin)
+				sia81xx_suspend(sia81xx);
+
+			if (j >= sia81xx_compat_table[i].num)
+				sia81xx->chip_type = CHIP_TYPE_UNKNOWN;
+
+			pr_info("[ info][%s] %s: chip_type = %u \r\n", 
+				LOG_FLAG, __func__, sia81xx->chip_type);
+			break;
+		}
+	}
+
+#ifdef DISTINGUISH_CHIP_TYPE
+	/* check sia81xx is available */
+	if (CHIP_TYPE_UNKNOWN == sia81xx->chip_type || 
+		0 != check_sia81xx_status(sia81xx)) {
+		
+		sia81xx->chip_type = CHIP_TYPE_UNKNOWN;
+		sia81xx->en_dyn_ud_pvdd = 0;
+		pr_info("[ info][%s] %s: there is no sia81xx device \r\n", 
+			LOG_FLAG, __func__);
+	} else {
+		device_create_file(&sia81xx->pdev->dev, &dev_attr_sia81xx_device);
+		
+		pr_info("[ info][%s] %s: sia81xx device is available \r\n", 
+			LOG_FLAG, __func__);
+	}
+#endif
+}
+
 /********************************************************************
  * end - sia81xx driver common
  ********************************************************************/
@@ -1927,8 +2031,9 @@ static int sia81xx_i2c_probe(
 		return -ENODEV;
 	}
 
-	regmap = sia81xx_regmap_init(client, chip_type);
-	if(IS_ERR(regmap)) {
+	regmap = sia81xx_regmap_init(client, 
+		get_one_available_chip_type(chip_type));
+	if (IS_ERR(regmap)) {
 		pr_err("[  err][%s] %s: regmap_init_i2c error !!! \r\n", 
 			LOG_FLAG, __func__);
 		return -ENODEV;
@@ -1962,21 +2067,25 @@ static int sia81xx_i2c_probe(
 			&& 0 == sia81xx->channel_num)
 		g_default_sia_dev = sia81xx;
 
-#ifdef DISTINGUISH_CHIP_TYPE
 	/* A temporary solution for customer, it should be ensure that,
 	 * the sia81xx_probe() is executed before sia81xx_i2c_probe() execute */
-	/* check sia81xx is available */
-	if (1 == check_sia81xx_status(sia81xx)) {
-		device_create_file(&sia81xx->pdev->dev, &dev_attr_sia81xx_device);
-		
-		pr_info("[ info][%s] %s: sia81xx device is available \r\n", 
-			LOG_FLAG, __func__);
-	} else {
-		sia81xx->chip_type = CHIP_TYPE_UNKNOWN;
-		pr_info("[ info][%s] %s: there is no sia81xx device \r\n", 
-			LOG_FLAG, __func__);
+	sia81xx_compatible_chips_adapt(sia81xx);
+
+	/* probe other sub module */ /* update info if it's already probed */
+	if (1 == sia81xx->en_dyn_ud_vdd || 1 == sia81xx->en_dyn_ud_pvdd) {
+		sia81xx_auto_set_vdd_probe(
+			sia81xx->timer_task_hdl, 
+			sia81xx->chip_type, 
+			sia81xx->channel_num, 
+			sia81xx->regmap, 
+			sia81xx->dyn_ud_vdd_port, 
+ 			SIA81XX_AUTO_VDD_EN_SET(sia81xx->en_dyn_ud_vdd) | 
+ 			SIA81XX_AUTO_PVDD_EN_SET(sia81xx->en_dyn_ud_pvdd));
 	}
-#endif
+	/* end - probe other sub module */
+
+	/* power down chip in any case when phone start up */
+	sia81xx_suspend(sia81xx);
 
 	return 0;
 }
@@ -2011,11 +2120,14 @@ static const struct i2c_device_id si_sia81xx_i2c_id[] = {
 #ifdef CONFIG_OF
 static const struct of_device_id si_sia81xx_i2c_match[] = {
 	{.compatible = "si,sia81xx-i2c"},
-	{.compatible = "si,sia8100-i2c"},
 	{.compatible = "si,sia8101-i2c"},
 	{.compatible = "si,sia8108-i2c"},
 	{.compatible = "si,sia8109-i2c"},
 	{.compatible = "si,sia8152-i2c"},
+	{.compatible = "si,sia8152s-i2c"},
+	{.compatible = "si,sia8159-i2c"},
+	{.compatible = "si,sia81x9-i2c"},
+	{.compatible = "si,sia8152x-i2c"},
 	{},
 };
 #endif
@@ -2284,6 +2396,10 @@ static const struct of_device_id si_sia81xx_dt_match[] = {
 	{ .compatible = "si,sia8108" },
 	{ .compatible = "si,sia8109" },
 	{ .compatible = "si,sia8152" },
+	{ .compatible = "si,sia8152s" },
+	{ .compatible = "si,sia8159" },
+	{ .compatible = "si,sia81x9" },
+	{ .compatible = "si,sia8152x" },
 	{ }
 };
 MODULE_DEVICE_TABLE(of, si_sia81xx_dt_match);
