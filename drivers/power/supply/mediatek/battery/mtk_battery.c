@@ -545,7 +545,9 @@ int get_charger_pump_temp()
 /* +Extb HONGMI-84836,wangbin wt.ADD,20210613,add for shutdown after delay time 30s*/
 #define SHUTDOWN_DELAY_VOL	3300
 extern bool mtk_shutdown_delay_enable;
+#ifndef WT_COMPILE_FACTORY_VERSION 
 extern bool enable_notify_shutdown;
+#endif
 /* -Extb HONGMI-84836,wangbin wt.ADD,20210613,add for shutdown after delay time 30s*/
 
 /* +Extb HONGMI-84869,wangbin wt.ADD,20210616,add charge type*/
@@ -614,6 +616,7 @@ static int battery_get_property(struct power_supply *psy,
 		else
 			val->intval = data->BAT_CAPACITY;
 		/* +Extb HONGMI-84836,wangbin wt.ADD,20210528,add for shutdown after delay time 30s*/
+#ifndef WT_COMPILE_FACTORY_VERSION
 		if (enable_notify_shutdown) {
 			if (data->BAT_STATUS == POWER_SUPPLY_STATUS_CHARGING) {
 				enable_notify_shutdown = false;
@@ -621,6 +624,7 @@ static int battery_get_property(struct power_supply *psy,
 				val->intval = 0;
 			}
 		}
+#endif
 		if (mtk_shutdown_delay_enable) {
 			if (val->intval == 0) {
 				vbat_mv = battery_get_bat_voltage();
