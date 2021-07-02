@@ -15,7 +15,7 @@
 #ifndef _SIA81XX_COMMOMN_H
 #define _SIA81XX_COMMOMN_H
 
-#define SIA81XX_DRIVER_VERSION			("1.2.0A")
+#define SIA81XX_DRIVER_VERSION			("1.2.0")
 #define SIA81XX_MAX_CHANNEL_SUPPORT		(8)
 
 enum {
