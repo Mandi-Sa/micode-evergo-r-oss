@@ -633,6 +633,8 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 		pval.intval = (pdpm->apdo_max_volt / 1000) * (pdpm->apdo_max_curr / 1000);
 		power_supply_set_property(pdpm->apdo_psy,
 				POWER_SUPPLY_PROP_APDO_MAX, &pval);
+		//Extb HONGMI-84841,chenrui1.wt,20210702,ADD,ADD changed apdo_max for soc decimal
+		power_supply_changed(pdpm->apdo_psy);
 		// -Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
 	}
 	else
