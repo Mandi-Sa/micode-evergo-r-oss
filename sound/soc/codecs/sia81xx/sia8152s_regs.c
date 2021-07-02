@@ -247,7 +247,7 @@ static void sia8152s_set_pvdd_limit(
 	char val = 0;
 	int8_t cp_ovp = 0;
 
-	if (3200000 > vol || 4500000 < vol) {
+	if (3200000 > vol || 4800000 < vol) {
 		pr_err("[  err][%s] %s: voltage = %u out of range !!! \r\n", 
 			LOG_FLAG, __func__, vol);
 		return;
@@ -258,8 +258,8 @@ static void sia8152s_set_pvdd_limit(
 	if (0 > cp_ovp)
 		cp_ovp = 0;
 
-	if (8 < cp_ovp)	// pvdd <= 8.0V
-		cp_ovp = 8;
+	if (10 < cp_ovp)	// pvdd <= 8.5V
+		cp_ovp = 10;
 
 	if(0 != sia81xx_regmap_read(regmap, SIA8152S_REG_OVP_CFG, 1, &val))
 		return;
