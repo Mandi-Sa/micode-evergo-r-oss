@@ -3746,6 +3746,8 @@ static ssize_t aw869x_osc_cali_store(struct device *dev,
 	unsigned int val = 0;
 
 	int rc = 0;
+	//Bug651594,chenrui1.wt,ADD,20210701,add osc_calib flag
+	aw869x->lra_calib_flag = false;
 
 	rc = kstrtouint(buf, 0, &val);
 	if (rc < 0)
