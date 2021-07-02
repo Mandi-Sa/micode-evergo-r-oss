@@ -133,24 +133,12 @@ const struct sia81xx_reg_default_val sia8152_reg_default_val = {
 	}
 };
 
-
-static const SIA_CHIP_ID_RANGE chip_id_ranges[] = {
-	{0x52, 0x57},
-	{0x5C, 0x5F}
-};
-
-static const SIA_REGS trimming_regs[] = {
-	{0x09, 0x86},
-	{0x10, 0x00},
-	{0x11, 0x60}
-};
-
 static bool sia8152_writeable_register(
 	struct device *dev, 
 	unsigned int reg)
 {
 	switch (reg) {
-		case SIA8152_REG_MOD_CFG ... 0x15:	// SIA8152_REG_TEST_CFG :
+		case SIA8152_REG_MOD_CFG ... 0x11:	// SIA8152_REG_TEST_CFG :
 			return true;
 		default : 
 			break;
@@ -164,7 +152,7 @@ static bool sia8152_readable_register(
 	unsigned int reg)
 {
 	switch (reg) {
-		case SIA8152_REG_CHIP_ID ... 0x15:	// SIA8152_REG_STATE_FLAG2 :
+		case SIA8152_REG_CHIP_ID ... 0x11:	// SIA8152_REG_STATE_FLAG2 :
 			return true;
 		default : 
 			break;
@@ -220,13 +208,6 @@ static void sia8152_chip_on(
 {
 	char val = 0;
 
-	if(0 != sia81xx_regmap_read(regmap, SIA8152_REG_MOD_CFG, 1, &val))
-		return;
-
-	val |= 0x02;
-	if(0 != sia81xx_regmap_write(regmap, SIA8152_REG_MOD_CFG, 1, &val))
-		return;
-
 	if(0 != sia81xx_regmap_read(regmap, SIA8152_REG_OPC_HCFG, 1, &val))
 		return;
 
@@ -242,9 +223,6 @@ static void sia8152_chip_off(
 
 	if(0 != sia81xx_regmap_write(regmap, SIA8152_REG_OPC_HCFG, 1, &val))
 		return;
-
-	/* wait chip power down */
-	udelay(500);
 
 	val = 0x10;
 	if(0 != sia81xx_regmap_write(regmap, SIA8152_REG_MOD_CFG, 1, &val))
@@ -275,19 +253,32 @@ static void sia8152_set_pvdd_limit(
 	char val = 0;
 	int8_t cp_ovp = 0;
 
-	if (3200000 > vol || 4500000 < vol) {
+#if 0	// do not use float calc
+	float voltage = 0;
+
+	voltage = vol / (float)1000000;
+	if (3 > voltage || 5 < voltage) {
+		pr_err("[  err][%s] %s: voltage = %f out of range !!! \r\n", 
+			LOG_FLAG, __func__, voltage);
+		return;
+	}
+
+	cp_ovp = floor((2 * voltage - 6) / 0.25) - 1;
+#else
+	if (3000000 > vol || 5000000 < vol) {
 		pr_err("[  err][%s] %s: voltage = %u out of range !!! \r\n", 
 			LOG_FLAG, __func__, vol);
 		return;
 	}
 
 	cp_ovp = (int8_t)((vol << 3) / 1000000 - 24 - 1);
+#endif
 
 	if (0 > cp_ovp)
 		cp_ovp  = 0;
 
-	if (8 < cp_ovp)	// pvdd <= 8.0V
-		cp_ovp = 8;
+	if (10 < cp_ovp)
+		cp_ovp	= 10;
 
 	if(0 != sia81xx_regmap_read(regmap, SIA8152_REG_OVP_CFG, 1, &val))
 		return;
@@ -297,48 +288,6 @@ static void sia8152_set_pvdd_limit(
 		return;
 }
 
-extern int sia8152s_check_chip_id(struct regmap *regmap);
-extern void sia8152s_check_trimming(struct regmap *regmap);
-static void sia8152_check_trimming(
-	struct regmap *regmap)
-{
-	int i = 0;
-	const uint32_t reg_num = ARRAY_SIZE(trimming_regs);
-	uint8_t vals[reg_num] = {0};
-	uint8_t crc = 0;
-
-	if (0 == sia8152s_check_chip_id(regmap))
-		sia8152s_check_trimming(regmap);
-
-	/* wait reading trimming data to reg */
-	mdelay(1);
-
-	for (i = 0; i < reg_num; i++) {
-		if (0 != sia81xx_regmap_read(regmap, 
-			trimming_regs[i].addr, 1, (char *)&vals[i]))
-			return ;
-	}
-
-	crc = vals[reg_num - 1] & 0x0F;
-	vals[reg_num - 1] &= 0xF0;
-
-	if (crc != crc4_itu(vals, reg_num)) {
-		pr_warn("[ warn][%s] %s: trimming failed !! \r\n", 
-			LOG_FLAG, __func__);
-
-		if (0 != sia81xx_regmap_read(regmap, SIA8152_REG_OPC_HCFG, 1, (char *)vals))
-			return;
-
-		*vals |= 0x02;
-		if (0 != sia81xx_regmap_write(regmap, SIA8152_REG_OPC_HCFG, 1, (char *)vals))
-			return;
-
-		for (i = 0; i < reg_num; i++)
-			sia81xx_regmap_write(regmap, 
-				trimming_regs[i].addr, 1, (char *)&(trimming_regs[i].val));
-	}
-}
-
 const struct sia81xx_opt_if sia8152_opt_if = {
 	.check_chip_id = sia8152_check_chip_id,
 	.set_xfilter = NULL,
@@ -346,6 +295,5 @@ const struct sia81xx_opt_if sia8152_opt_if = {
 	.chip_off = sia8152_chip_off,
 	.get_chip_en = sia8152_get_chip_en,
 	.set_pvdd_limit = sia8152_set_pvdd_limit,
-	.check_trimming = sia8152_check_trimming,
 };
 

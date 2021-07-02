@@ -2084,9 +2084,6 @@ static int sia81xx_i2c_probe(
 	}
 	/* end - probe other sub module */
 
-	/* power down chip in any case when phone start up */
-	sia81xx_suspend(sia81xx);
-
 	return 0;
 }
 
