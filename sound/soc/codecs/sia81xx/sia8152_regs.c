@@ -60,7 +60,24 @@ static const char sia8152_palyback_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 };
 #endif
 /*-Bug 651549, zhouweijie.wt, 20210607, wt qudate sia reg for factory version*/
-
+#ifndef WT_COMPILE_FACTORY_VERSION
+static const char sia8152_voice_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
+	[SIA81XX_CHANNEL_L] = {
+				0x61,		//SIA8152_REG_MOD_CFG
+				0xD4,		//SIA8152_REG_SYS_EN
+				0x83,		//SIA8152_REG_OVP_CFG
+				0x01,		//SIA8152_REG_OPC_HCFG
+				0x00		//SIA8152_REG_TEST_CFG
+	},
+	[SIA81XX_CHANNEL_R] = {
+				0x61,		//SIA8152_REG_MOD_CFG
+				0xD4,		//SIA8152_REG_SYS_EN
+				0x83,		//SIA8152_REG_OVP_CFG
+				0x01,		//SIA8152_REG_OPC_HCFG
+				0x00		//SIA8152_REG_TEST_CFG
+	}
+};
+#else
 static const char sia8152_voice_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 	[SIA81XX_CHANNEL_L] = {
 				0x11,		//SIA8152_REG_MOD_CFG
@@ -77,7 +94,7 @@ static const char sia8152_voice_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 				0x00		//SIA8152_REG_TEST_CFG
 	}
 };
-
+#endif
 static const char sia8152_receiver_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 	[SIA81XX_CHANNEL_L] = {
 				0x41,		//SIA8152_REG_MOD_CFG
