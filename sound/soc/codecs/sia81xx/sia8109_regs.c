@@ -96,7 +96,42 @@ static const char sia8109_palyback_defaults[][SIA8108_WRITEABLE_REG_NUM] = {
 };
 #endif
 /*-Bug 651549, zhouweijie.wt, 20210607, wt qudate sia reg for factory version*/
-
+#ifndef
+static const char sia8109_voice_defaults[][SIA8108_WRITEABLE_REG_NUM] = {
+	[SIA81XX_CHANNEL_L] = {
+				0x07,		//SIA8109_REG_SYSCTRL
+				0x1C,		//SIA8109_REG_AGCCTRL
+				0xCE,		//SIA8109_REG_BOOST_CFG
+				0x1A,		//SIA8109_REG_CLSD_CFG1
+				0x26,		//SIA8109_REG_CLSD_CFG2
+				0x0A,		//SIA8109_REG_BSG_CFG
+				0x02,		//SIA8109_REG_SML_CFG1
+				0x48,		//SIA8109_REG_SML_CFG2
+				0x08,		//SIA8109_REG_SML_CFG3
+				0x88,		//SIA8109_REG_SML_CFG4
+				0x00,		//SIA8109_REG_Excur_CTRL_1
+				0x00,		//SIA8109_REG_Excur_CTRL_2
+				0x00,		//SIA8109_REG_Excur_CTRL_3
+				0x00		//SIA8109_REG_Excur_CTRL_4
+	},
+	[SIA81XX_CHANNEL_R] = {
+				0x07,		//SIA8109_REG_SYSCTRL
+				0x1C,		//SIA8109_REG_AGCCTRL
+				0xCE,		//SIA8109_REG_BOOST_CFG
+				0x1A,		//SIA8109_REG_CLSD_CFG1
+				0x26,		//SIA8109_REG_CLSD_CFG2
+				0x0A,		//SIA8109_REG_BSG_CFG
+				0x02,		//SIA8109_REG_SML_CFG1
+				0x48,		//SIA8109_REG_SML_CFG2
+				0x08,		//SIA8109_REG_SML_CFG3
+				0x88,		//SIA8109_REG_SML_CFG4
+				0x00,		//SIA8109_REG_Excur_CTRL_1
+				0x00,		//SIA8109_REG_Excur_CTRL_2
+				0x00,		//SIA8109_REG_Excur_CTRL_3
+				0x00		//SIA8109_REG_Excur_CTRL_4
+	}
+};
+#else
 static const char sia8109_voice_defaults[][SIA8108_WRITEABLE_REG_NUM] = {
 	[SIA81XX_CHANNEL_L] = {
 				0x07,		//SIA8109_REG_SYSCTRL
@@ -131,7 +166,7 @@ static const char sia8109_voice_defaults[][SIA8108_WRITEABLE_REG_NUM] = {
 				0x00		//SIA8109_REG_Excur_CTRL_4
 	}
 };
-
+#endif
 /*+Bug 651549, zhouweijie.wt, 20210607, wt qudate sia reg for factory version*/
 #ifndef WT_COMPILE_FACTORY_VERSION
 static const char sia8109_receiver_defaults[][SIA8108_WRITEABLE_REG_NUM] = {
@@ -139,7 +174,7 @@ static const char sia8109_receiver_defaults[][SIA8108_WRITEABLE_REG_NUM] = {
 				0x07,		//SIA8109_REG_SYSCTRL
 				0x1C,		//SIA8109_REG_AGCCTRL
 				0xCE,		//SIA8109_REG_BOOST_CFG
-				0x1A,		//SIA8109_REG_CLSD_CFG1
+				0x19,		//SIA8109_REG_CLSD_CFG1
 				0x26,		//SIA8109_REG_CLSD_CFG2
 				0x0A,		//SIA8109_REG_BSG_CFG
 				0x02,		//SIA8109_REG_SML_CFG1
@@ -155,7 +190,7 @@ static const char sia8109_receiver_defaults[][SIA8108_WRITEABLE_REG_NUM] = {
 				0x07,		//SIA8109_REG_SYSCTRL
 				0x1C,		//SIA8109_REG_AGCCTRL
 				0xCE,		//SIA8109_REG_BOOST_CFG
-				0x1A,		//SIA8109_REG_CLSD_CFG1
+				0x19,		//SIA8109_REG_CLSD_CFG1
 				0x26,		//SIA8109_REG_CLSD_CFG2
 				0x0A,		//SIA8109_REG_BSG_CFG
 				0x02,		//SIA8109_REG_SML_CFG1
@@ -267,7 +302,7 @@ static bool sia8109_writeable_register(
 	unsigned int reg)
 {
 	switch (reg) {
-		case SIA8109_REG_SYSCTRL ... SIA8109_REG_Excur_CTRL_4 :
+		case SIA8109_REG_SYSCTRL ... 0x22 :
 			return true;
 		default :
 			break;
@@ -281,7 +316,7 @@ static bool sia8109_readable_register(
 	unsigned int reg)
 {
 	switch (reg) {
-		case SIA8109_REG_SYSCTRL ... SIA8109_REG_Excur_CTRL_4 :
+		case SIA8109_REG_SYSCTRL ... 0x22 :
 		case SIA8109_REG_CHIP_ID :
 			return true;
 		default :

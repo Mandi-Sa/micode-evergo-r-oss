@@ -395,21 +395,27 @@ static int shutdown_event_handler(struct shutdown_controller *sdd)
 				if (IS_ENABLED(
 					LOW_TEMP_DISABLE_LOW_BAT_SHUTDOWN)) {
 					if (tmp >= LOW_TEMP_THRESHOLD) {
-						//Extb HONGMI-84836,wangbin wt.ADD,20210613,add for shutdown after delay time 30s
-						//down_to_low_bat = 1;
+/* +Extb HONGMI-84836,wangbin wt.ADD,20210701,add for shutdown after delay time 30s*/
+#ifndef WT_COMPILE_FACTORY_VERSION
+						down_to_low_bat = 1;
+#endif
 						bm_err("normal tmp, battery voltage is low shutdown\n");
 						notify_fg_shutdown();
 					} else if (sdd->avgvbat <=
 						LOW_TMP_BAT_VOLTAGE_LOW_BOUND) {
-						//Extb HONGMI-84836,wangbin wt.ADD,20210613,add for shutdown after delay time 30s
-						//down_to_low_bat = 1;
+#ifndef WT_COMPILE_FACTORY_VERSION
+						down_to_low_bat = 1;
+#endif
 						bm_err("cold tmp, battery voltage is low shutdown\n");
 						notify_fg_shutdown();
 					} else
 						bm_err("low temp disable low battery sd\n");
 				} else {
-					//Extb HONGMI-84836,wangbin wt.ADD,20210613,add for shutdown after delay time 30s
-					//down_to_low_bat = 1;
+#ifndef WT_COMPILE_FACTORY_VERSION
+					down_to_low_bat = 1;
+#endif
+/* -Extb HONGMI-84836,wangbin wt.ADD,20210701,add for shutdown after delay time 30s*/
+
 					bm_err("[%s]avg vbat is low to shutdown\n",
 						__func__);
 					notify_fg_shutdown();
