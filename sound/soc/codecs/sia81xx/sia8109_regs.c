@@ -96,7 +96,7 @@ static const char sia8109_palyback_defaults[][SIA8108_WRITEABLE_REG_NUM] = {
 };
 #endif
 /*-Bug 651549, zhouweijie.wt, 20210607, wt qudate sia reg for factory version*/
-#ifndef
+#ifndef WT_COMPILE_FACTORY_VERSION
 static const char sia8109_voice_defaults[][SIA8108_WRITEABLE_REG_NUM] = {
 	[SIA81XX_CHANNEL_L] = {
 				0x07,		//SIA8109_REG_SYSCTRL
