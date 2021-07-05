@@ -1091,6 +1091,11 @@ void cm_mgr_ddr_setting_init(void)
 		cpu_power_bcpu_weight_max = cpu_power_bcpu_weight_max0;
 		cpu_power_bcpu_weight_min = cpu_power_bcpu_weight_min0;
 #endif
+#ifdef CM_BCPU_MIN_OPP_WEIGHT
+		cm_mgr_bcpu_min_opp_weight = cm_mgr_bcpu_min_opp_weight0;
+		cm_mgr_bcpu_low_opp_weight = cm_mgr_bcpu_low_opp_weight0;
+		cm_mgr_bcpu_low_opp_bound = cm_mgr_bcpu_low_opp_bound0;
+#endif /* CM_BCPU_MIN_OPP_WEIGHT */
 	} else if (idx == CM_MGR_LP5) {
 		for (i = 0; i < CM_MGR_EMI_OPP; i++) {
 			cpu_power_ratio_up[i] = cpu_power_ratio_up1[i];
@@ -1102,6 +1107,11 @@ void cm_mgr_ddr_setting_init(void)
 		cpu_power_bcpu_weight_max = cpu_power_bcpu_weight_max1;
 		cpu_power_bcpu_weight_min = cpu_power_bcpu_weight_min1;
 #endif
+#ifdef CM_BCPU_MIN_OPP_WEIGHT
+		cm_mgr_bcpu_min_opp_weight = cm_mgr_bcpu_min_opp_weight1;
+		cm_mgr_bcpu_low_opp_weight = cm_mgr_bcpu_low_opp_weight1;
+		cm_mgr_bcpu_low_opp_bound = cm_mgr_bcpu_low_opp_bound1;
+#endif /* CM_BCPU_MIN_OPP_WEIGHT */
 	}
 #if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
 	for (i = 0; i < CM_MGR_EMI_OPP; i++) {
@@ -1114,6 +1124,14 @@ void cm_mgr_ddr_setting_init(void)
 		cm_mgr_to_sspm_command(IPI_CM_MGR_DEBOUNCE_DOWN,
 			i << 16 | debounce_times_down_adb[i]);
 	}
+#ifdef CM_BCPU_MIN_OPP_WEIGHT
+	cm_mgr_to_sspm_command(IPI_CM_MGR_BCPU_MIN_OPP_WEIGHT_SET,
+			cm_mgr_bcpu_min_opp_weight);
+	cm_mgr_to_sspm_command(IPI_CM_MGR_BCPU_LOW_OPP_WEIGHT_SET,
+			cm_mgr_bcpu_low_opp_weight);
+	cm_mgr_to_sspm_command(IPI_CM_MGR_BCPU_LOW_OPP_BOUND_SET,
+			cm_mgr_bcpu_low_opp_bound);
+#endif /* CM_BCPU_MIN_OPP_WEIGHT */
 #endif
 }
 
@@ -1195,3 +1213,94 @@ void cm_mgr_user_mode_cmd(int reset, char *cmd, unsigned int val_1,
 	}
 }
 #endif /* USE_CM_USER_MODE */
+
+void dbg_cm_mgr_platform_show(struct seq_file *m)
+{
+	int i;
+
+	if (cm_mgr_idx == CM_MGR_LP4)
+		return;
+
+	seq_printf(m, "cm_mgr_camera_enable %d\n", cm_mgr_camera_enable);
+	seq_printf(m, "x_ratio_enable %d\n", x_ratio_enable);
+
+	seq_puts(m, "cpu_power_ratio_up_x_camera");
+	for (i = 0; i < CM_MGR_EMI_OPP; i++)
+		seq_printf(m, " %d", cpu_power_ratio_up_x_camera[i]);
+	seq_puts(m, "\n");
+
+	seq_puts(m, "cpu_power_ratio_up_x");
+	for (i = 0; i < CM_MGR_EMI_OPP; i++)
+		seq_printf(m, " %d", cpu_power_ratio_up_x[i]);
+	seq_puts(m, "\n");
+}
+
+void dbg_cm_mgr_platform_write(int len, const char *cmd, u32 val_1, u32 val_2)
+{
+	unsigned int i;
+
+	if (cm_mgr_idx == CM_MGR_LP4)
+		return;
+
+	if (!strcmp(cmd, "x_ratio_enable")) {
+		x_ratio_enable = val_1;
+		if (!x_ratio_enable) {
+			for (i = 0; i <  CM_MGR_EMI_OPP; i++) {
+				/* restore common setting */
+				cpu_power_ratio_up_x[i] = 0;
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
+				cm_mgr_to_sspm_command(
+					IPI_CM_MGR_CPU_POWER_RATIO_UP,
+					i << 16 | cpu_power_ratio_up[i]);
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT */
+			}
+		}
+	} else if (!strcmp(cmd, "cm_mgr_camera_enable") && x_ratio_enable) {
+		if (cm_mgr_camera_enable == val_1)
+			return;
+		if (val_1) {
+			for (i = 0; i <  CM_MGR_EMI_OPP; i++) {
+				if (cpu_power_ratio_up_x[i] ==
+					cpu_power_ratio_up_x_camera[i])
+					continue;
+				cpu_power_ratio_up_x[i] =
+					cpu_power_ratio_up_x_camera[i];
+
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
+				if (cpu_power_ratio_up_x[i])
+					cm_mgr_to_sspm_command(
+					IPI_CM_MGR_CPU_POWER_RATIO_UP,
+					i << 16 | cpu_power_ratio_up_x[i]);
+				else
+					cm_mgr_to_sspm_command(
+					IPI_CM_MGR_CPU_POWER_RATIO_UP,
+					i << 16 | cpu_power_ratio_up[i]);
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT */
+			}
+		} else {
+			for (i = 0; i <  CM_MGR_EMI_OPP; i++) {
+				if (!cpu_power_ratio_up_x[i])
+					continue;
+				cpu_power_ratio_up_x[i] = 0;
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
+				cm_mgr_to_sspm_command(
+					IPI_CM_MGR_CPU_POWER_RATIO_UP,
+					i << 16 | cpu_power_ratio_up[i]);
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT */
+			}
+		}
+		cm_mgr_camera_enable = val_1;
+	} else if (!strcmp(cmd, "cpu_power_ratio_up_x")) {
+		if (len == 3 && val_1 < CM_MGR_EMI_OPP && x_ratio_enable) {
+			cpu_power_ratio_up_x[val_1] = val_2;
+			if (!val_2)
+				val_2 = cpu_power_ratio_up[val_1];
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
+			cm_mgr_to_sspm_command(IPI_CM_MGR_CPU_POWER_RATIO_UP,
+				val_1 << 16 | val_2);
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT */
+		}
+	}
+}
+
+

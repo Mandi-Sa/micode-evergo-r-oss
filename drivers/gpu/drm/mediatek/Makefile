@@ -97,6 +97,7 @@ ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/mt6833/include/m
 else
 ifeq (y, $(filter y, $(CONFIG_MACH_MT6877)))
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/mt6877/include/mach/
+ccflags-y += -I$(srctree)/include/memory/mediatek/
 else
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat/$(MTK_PLATFORM)/include/mach/
 endif

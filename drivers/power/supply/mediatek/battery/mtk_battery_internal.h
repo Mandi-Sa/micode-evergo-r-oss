@@ -486,6 +486,7 @@ struct fuel_gauge_custom_data {
 	/* ZCV update */
 	int zcv_suspend_time;
 	int sleep_current_avg;
+	int zcv_com_vol_limit;
 
 	int dc_ratio_sel;
 	int dc_r_cnt;
