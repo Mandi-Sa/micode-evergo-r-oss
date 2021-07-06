@@ -601,7 +601,7 @@ void charger_manager_set_prop_system_temp_level(int temp_level)
 		pinfo->system_temp_level = pinfo->system_temp_level_max - 1;
 	else
 		pinfo->system_temp_level = temp_level;
-	chr_err("%s,therml_current=%d\n",thermal_mitigation[pinfo->system_temp_level]);
+	chr_err("%s,therml_current=%d\n",__func__,thermal_mitigation[pinfo->system_temp_level]);
 	pinfo->thermal_mitigation_current = thermal_mitigation[pinfo->system_temp_level];
 }
 /* -Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
