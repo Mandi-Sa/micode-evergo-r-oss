@@ -5144,6 +5144,12 @@ simtray {
 		clock-names = "parent-clk", "sel-clk", "spi-clk";
 	};
 
+	xiaomi_touch {
+		compatible = "xiaomi-touch";
+		status = "ok";
+		touch,name = "xiaomi-touch";
+	};
+
 	spi2: spi2@11012000 {
 		compatible = "mediatek,mt6765-spi";
 		mediatek,pad-select = <0>;

@@ -99,6 +99,12 @@ extern const uint16_t gesture_key_array[];
 #define POINT_DATA_CHECKSUM 1
 #define POINT_DATA_CHECKSUM_LEN 65
 
+//porting from xiaomi
+#define WAKEUP_GESTURE							1
+#define FUNCPAGE_PALM							4
+#define PACKET_PALM_ON							3
+#define PACKET_PALM_OFF							4
+
 //---ESD Protect.---
 #define NVT_TOUCH_ESD_PROTECT 1
 #define NVT_TOUCH_ESD_CHECK_PERIOD 1500	/* ms */
@@ -138,6 +144,7 @@ struct nvt_ts_data {
 	uint32_t reset_flags;
 	struct mutex lock;
 	const struct nvt_ts_mem_map *mmap;
+	struct work_struct switch_mode_work;
 	uint8_t carrier_system;
 	uint8_t hw_crc;
 	uint16_t nvt_pid;
@@ -159,6 +166,19 @@ struct nvt_ts_data {
     struct mtk_chip_config spi_ctrl;
 #endif
 	int gesture_enabled;
+
+#ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
+	bool palm_sensor_changed;
+	bool palm_sensor_switch;
+
+//porting from xiaomi
+	int gesture_command_delayed;
+	bool dev_pm_suspend;
+	struct completion dev_pm_suspend_completion;
+#endif
+	int db_wakeup;
+	struct class *ts_tp_class;
+	struct device *ts_touch_dev;
 };
 
 #if NVT_TOUCH_PROC
@@ -235,5 +255,5 @@ int32_t nvt_write_addr(uint32_t addr, uint8_t data);
 #if NVT_TOUCH_ESD_PROTECT
 extern void nvt_esd_check_enable(uint8_t enable);
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
-
+int32_t nvt_set_pocket_palm_switch(uint8_t pocket_palm_switch);
 #endif /* _LINUX_NVT_TOUCH_H */
