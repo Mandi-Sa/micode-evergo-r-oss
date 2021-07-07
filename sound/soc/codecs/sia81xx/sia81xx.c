@@ -789,7 +789,7 @@ static int sia81xx_resume(
 			mdelay(1);	/* wait chip power up, the time must be > 1ms */
 			spin_unlock_irqrestore(&sia81xx->rst_lock, flags);
 
-			if (CHIP_TYPE_SIA8109 == sia81xx->chip_type)
+			if (CHIP_TYPE_SIA8109 == sia81xx->chip_type || CHIP_TYPE_SIA81X9 == sia81xx->chip_type)
 				mdelay(39);	/* for sia8109 gain rising. */
 		}
 
