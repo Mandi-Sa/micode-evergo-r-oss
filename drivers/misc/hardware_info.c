@@ -179,11 +179,13 @@ static long hardwareinfo_ioctl(struct file *file, unsigned int cmd,unsigned long
 		hardwareinfo_num = HARDWARE_MACRO_CAM;
 		break;
 	case HARDWARE_BT_GET:
-		hardwareinfo_set_prop(HARDWARE_BT, "MT6631");
+		//jiyanan.wt,DEL,20210707,set hardware information in driver and add fw version
+		//hardwareinfo_set_prop(HARDWARE_BT, "MT6631");
 		hardwareinfo_num = HARDWARE_BT;
 		break;
 	case HARDWARE_WIFI_GET:
-		hardwareinfo_set_prop(HARDWARE_WIFI, "MT6631");
+		//jiyanan.wt,DEL,20210707,set hardware information in driver and add fw version
+		//hardwareinfo_set_prop(HARDWARE_WIFI, "MT6631");
 		hardwareinfo_num = HARDWARE_WIFI;
 		break;
 	case HARDWARE_ACCELEROMETER_GET:
