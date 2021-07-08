@@ -265,7 +265,14 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 				info->data.ac_charger_input_current;
 		pdata->charging_current_limit = 3000000;
 		//		info->data.ac_charger_current;
-	} else if (info->chr_type == CHARGER_UNKNOWN) {
+	//+Bug651594,chenrui1.wt,ADD,20210708,add pps_charger para
+	} else if (info->chr_type == PPS_CHARGER) {
+		pdata->input_current_limit = 3000000;
+		pdata->charging_current_limit = 3000000;
+		//-set pps_charger input current
+	}
+	//-Bug651594,chenrui1.wt,ADD,20210708,add pps_charger para
+	else if (info->chr_type == CHARGER_UNKNOWN) {
 		pdata->input_current_limit = 0;
 		pdata->charging_current_limit = 0;
 	}
