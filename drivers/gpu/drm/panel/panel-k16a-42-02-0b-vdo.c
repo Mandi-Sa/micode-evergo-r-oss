@@ -199,7 +199,9 @@ static void csot_panel_init(struct csot *ctx)
 	csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
 	csot_dcs_write_seq_static(ctx, 0x9C, 0x11);
 	csot_dcs_write_seq_static(ctx, 0x9D, 0x11);
-	
+
+	csot_dcs_write_seq_static(ctx, 0x35, 0x00);
+
 	csot_dcs_write_seq_static(ctx, 0xFF, 0x10);;
 
 	csot_dcs_write_seq_static(ctx, 0x11);
@@ -604,9 +606,9 @@ static void csot_mode_switch_to_90(struct drm_panel *panel)
 {
 	struct csot *ctx = panel_to_csot(panel);
 
-	csot_dcs_write_seq_static(ctx, 0xFF, 0x25);
-	csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
-	csot_dcs_write_seq_static(ctx, 0x18, 0x20);//90hz
+	//csot_dcs_write_seq_static(ctx, 0xFF, 0x25);
+	//csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	//csot_dcs_write_seq_static(ctx, 0x18, 0x20);//90hz
 
 }
 
@@ -614,9 +616,9 @@ static void csot_mode_switch_to_60(struct drm_panel *panel)
 {
 	struct csot *ctx = panel_to_csot(panel);
 
-	csot_dcs_write_seq_static(ctx, 0xFF, 0x25);
-	csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
-	csot_dcs_write_seq_static(ctx, 0x18, 0x21);
+	//csot_dcs_write_seq_static(ctx, 0xFF, 0x25);
+	//csot_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	//csot_dcs_write_seq_static(ctx, 0x18, 0x21);
 }
 
 static int csot_mode_switch(struct drm_panel *panel, unsigned int cur_mode,
