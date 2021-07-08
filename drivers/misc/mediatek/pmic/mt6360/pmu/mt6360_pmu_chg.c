@@ -159,7 +159,7 @@ static const struct mt6360_chg_platform_data def_platform_data = {
 	.cv = 4350000,			/* uA */
 	.ieoc = 250000,			/* uA */
 	//Bug651594,chenrui1,wt,ADD,20210629,add recharge volt
-	.vrechg = 200000,		/*uA*/
+	.vrechg = 100000,		/*uA*/
 	.safety_timer = 12,		/* hour */
 #ifdef CONFIG_MTK_BIF_SUPPORT
 	.ircmp_resistor = 0,		/* uohm */
