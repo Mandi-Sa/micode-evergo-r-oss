@@ -198,7 +198,9 @@ static void tianma_panel_init(struct tianma *ctx)
 	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
 	tianma_dcs_write_seq_static(ctx, 0x9C, 0x11);
 	tianma_dcs_write_seq_static(ctx, 0x9D, 0x11);
-	
+
+	tianma_dcs_write_seq_static(ctx, 0x35, 0x00);
+
 	tianma_dcs_write_seq_static(ctx, 0xFF, 0x10);
 	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
 	tianma_dcs_write_seq_static(ctx, 0xC0, 0x00);
@@ -596,9 +598,9 @@ static void mode_switch_to_90(struct drm_panel *panel)
 {
 	struct tianma *ctx = panel_to_tianma(panel);
 
-	tianma_dcs_write_seq_static(ctx, 0xFF, 0x25);
-	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
-	tianma_dcs_write_seq_static(ctx, 0x18, 0x20);//90hz
+	//tianma_dcs_write_seq_static(ctx, 0xFF, 0x25);
+	//tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	//tianma_dcs_write_seq_static(ctx, 0x18, 0x20);//90hz
 
 }
 
@@ -606,9 +608,9 @@ static void mode_switch_to_60(struct drm_panel *panel)
 {
 	struct tianma *ctx = panel_to_tianma(panel);
 
-	tianma_dcs_write_seq_static(ctx, 0xFF, 0x25);
-	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
-	tianma_dcs_write_seq_static(ctx, 0x18, 0x21);
+	//tianma_dcs_write_seq_static(ctx, 0xFF, 0x25);
+	//tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
+	//tianma_dcs_write_seq_static(ctx, 0x18, 0x21);
 }
 
 static int mode_switch(struct drm_panel *panel, unsigned int cur_mode,
