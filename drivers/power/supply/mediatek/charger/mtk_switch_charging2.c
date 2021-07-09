@@ -67,6 +67,8 @@
 #include "mtk_charger_init.h"
 #include "mtk_switch_charging.h"
 #include "mtk_intf.h"
+//Extb HONGMI-85045,ADD,wangbin.wt.20210709.add charging call state limit
+extern bool get_charging_call_state(void);
 
 static int _uA_to_mA(int uA)
 {
@@ -339,6 +341,12 @@ done:
 		_uA_to_mA(info->thermal_mitigation_current));
 
 	charging_current_limit = min(pdata->charging_current_limit,info->thermal_mitigation_current);
+	/* +Extb HONGMI-85045,ADD,wangbin.wt.20210709.add charging call state limit*/
+	if (get_charging_call_state()) {
+		charging_current_limit = min(1000000,charging_current_limit);
+		chr_err("is charging call state:%d\n",_uA_to_mA(charging_current_limit));
+	}
+	/* -Extb HONGMI-85045,ADD,wangbin.wt.20210709.add charging call state limit*/
 	charger_dev_set_input_current(info->chg1_dev,pdata->input_current_limit);
 	charger_dev_set_charging_current(info->chg1_dev,
 					charging_current_limit);
