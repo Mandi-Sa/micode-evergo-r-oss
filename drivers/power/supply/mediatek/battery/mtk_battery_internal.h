@@ -945,6 +945,8 @@ struct mtk_battery {
 	struct fgd_cmd_param_t_custom fg_data;
 	//Extb HONGMI-84891,chenrui1.wt,20210610,ADD,add input_suspend API for running test
 	bool input_suspend;
+	//Extb HONGMI-85045,ADD,wangbin.wt.20210709.add charging call state limit
+	bool charging_call_state;
 };
 
 

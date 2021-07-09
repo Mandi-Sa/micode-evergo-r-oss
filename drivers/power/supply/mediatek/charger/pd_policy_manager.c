@@ -68,6 +68,8 @@
 
 extern int get_jeita_lcd_on_off(void);
 /* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
+//Extb HONGMI-85045,ADD,wangbin.wt.20210709.add charging call state limit
+extern bool get_charging_call_state(void);
 
 enum {
 	PM_ALGO_RET_OK,
@@ -1059,7 +1061,8 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 			usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_EXIT);
 		/* +Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
 		} else if ((bat_temp >= CHG_BAT_TEMP_MAX - FFC_BAT_TEMP_OFFSET)
-			|| bat_temp <= CHG_BAT_TEMP_MIN) {
+			|| bat_temp <= CHG_BAT_TEMP_MIN
+			|| get_charging_call_state()) {
 			pr_notice("temp is %d, high or low, waiting...\n", bat_temp);
 		/* -Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
 		} else {
@@ -1185,7 +1188,8 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 		}
 
 		/* +Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
-		if (!pdpm->pps_temp_flag) {
+		if (!pdpm->pps_temp_flag
+			|| get_charging_call_state()) {
 			pr_notice("temp high or lower,stop charging\n");
 			stop_sw = false;
 			pdpm->sw.charge_enabled = false;
@@ -1249,7 +1253,8 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 			rc = 1;
 		}
 		/* +Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
-		if (!pdpm->pps_temp_flag) {
+		if (!pdpm->pps_temp_flag
+			|| get_charging_call_state()) {
 			pr_notice("temp is high or low waiting...\n");
 			usbpd_pm_move_state(pdpm, PD_PM_STATE_ENTRY);
 			pdpm->pd_active = false;
