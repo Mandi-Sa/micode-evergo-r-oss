@@ -320,7 +320,8 @@ static long hardwareinfo_ioctl(struct file *file, unsigned int cmd,unsigned long
 		break;
 	//+Bug493560,lili5.wt,ADD,20191112,Add fuel gauge information in factory mode
 	case HARDWARE_BMS_GAUGE_GET:
-		hardwareinfo_set_prop(HARDWARE_BMS_GAUGE_ID, fuelgauge_name);
+		//Extb HONGMI-87036,chenrui1.wt,MODIFY,20210709,modify gauge information
+		hardwareinfo_set_prop(HARDWARE_BMS_GAUGE_ID, "MT6359_GAUGE");
 		hardwareinfo_num = HARDWARE_BMS_GAUGE_ID;
 		break;
 	//-Bug493560,lili5.wt,ADD,20191112,Add fuel gauge information in factory mode
