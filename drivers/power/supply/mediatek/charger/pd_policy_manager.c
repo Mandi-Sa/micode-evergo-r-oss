@@ -615,6 +615,8 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 	bool retValue;
 	// Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 	union power_supply_propval pval = {0, };
+	//Extb HOMGMI-84841,wangbin.wt,ADD,20210709,add for report soc decimal instantly
+	struct power_supply *battery_psy;
 
 	retValue = usbpd_get_pps_status(pdpm);
 	if (retValue)
@@ -638,6 +640,13 @@ static void usbpd_pm_evaluate_src_caps(struct usbpd_pm *pdpm)
 		//Extb HONGMI-84841,chenrui1.wt,20210702,ADD,ADD changed apdo_max for soc decimal
 		power_supply_changed(pdpm->apdo_psy);
 		// -Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
+		/* +Extb HOMGMI-84841,wangbin.wt,ADD,20210709,add for report soc decimal instantly*/
+		battery_psy = power_supply_get_by_name("battery");
+		if (NULL != battery_psy)
+			power_supply_changed(battery_psy);
+		else
+			pr_err("battery_psy is null\n");
+		/* -Extb HOMGMI-84841,wangbin.wt,ADD,20210709,add for report soc decimal instantly*/
 	}
 	else
 		pr_notice("Not qualified PPS adapter\n");
