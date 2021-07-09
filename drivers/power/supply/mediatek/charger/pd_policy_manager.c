@@ -13,7 +13,7 @@
 
 #define PCA_PPS_CMD_RETRY_COUNT	2
 
-#define BATT_MAX_CHG_VOLT		4480
+#define BATT_MAX_CHG_VOLT		4470
 /* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 #define BATT_FAST_CHG_CURR		6000
 #define BUS_OVP_THRESHOLD		10500
@@ -28,7 +28,9 @@
 #define PM_WORK_RUN_INTERVAL		200
 
 /* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
-#define CHG_BAT_TEMP_MIN      150
+#define CHG_BAT_TEMP_MIN      100
+#define CHG_BAT_TEMP_15       150
+#define FFC_BAT_TEMP_OFFSET   20
 #define CHG_BAT_TEMP_MAX      450
 #define BAT_TEMP_300          300
 #define BAT_TEMP_340          340
@@ -801,19 +803,26 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 	return step_ibat;
 }
 
+static int get_battery_temp(void)
+{
+	struct power_supply *battery_psy;
+	union power_supply_propval pval = {0, };
+
+	battery_psy = power_supply_get_by_name("battery");
+	if(battery_psy)
+		power_supply_get_property(battery_psy,
+			POWER_SUPPLY_PROP_TEMP, &pval);
+	return pval.intval;
+}
+
 static int battery_sw_jeita(struct usbpd_pm *pdpm)
 {
 	int step_temp = 0;
 	int step_ibat = 0;
 	int step_vbat = 0;
 	int bat_temp = 0;
-	struct power_supply *battery_psy;
-	union power_supply_propval pval = {0, };
 
-	battery_psy = power_supply_get_by_name("battery");
-	power_supply_get_property(battery_psy,
-		POWER_SUPPLY_PROP_TEMP, &pval);
-	bat_temp = pval.intval;
+	bat_temp = get_battery_temp();
 	if (bat_temp >= CHG_BAT_TEMP_MIN && bat_temp <= CHG_BAT_TEMP_MAX) {
 		pdpm->pps_temp_flag = true;
 		if (pdpm->cp.vbat_volt < CHG_CUR_VOLT)
@@ -822,6 +831,10 @@ static int battery_sw_jeita(struct usbpd_pm *pdpm)
 			step_vbat = bat_step(pdpm, BAT_CURR_5400MA);
 		else
 			step_vbat = bat_step(pdpm, BAT_CURR_3900MA);
+
+		if (bat_temp <= CHG_BAT_TEMP_15)
+			step_vbat = bat_step(pdpm, BAT_CURR_3900MA);
+
 		if (!pdpm->pd_authen) {
 			if (pdpm->cp.vbat_volt <= CHG_CUR_VOLT2)
 				step_temp = bat_step(pdpm, BAT_CURR_5400MA);
@@ -1015,7 +1028,11 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 	static int tune_vbus_retry;
 	static bool stop_sw;
 	static bool recover;
+	/* +Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
+	int bat_temp;
 
+	bat_temp = get_battery_temp();
+	/* -Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
 	pr_err(">>>>>>>>>>>state phase :%d\n", pdpm->state);
 	pr_err(">>>>>vbus_vol %d    vbat_vol %d   vout %d\n", pdpm->cp.vbus_volt, pdpm->cp.vbat_volt, pdpm->cp.vout_volt);
 	pr_err(">>>>>ibus_curr %d    ibat_curr %d\n", pdpm->cp.ibus_curr + pdpm->cp_sec.ibus_curr, pdpm->cp.ibat_curr);
@@ -1031,11 +1048,17 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 					charging with switch charger\n", 
 					pdpm->cp.vbat_volt);
 			usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_EXIT);
+		/* +Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
+		} else if ((bat_temp >= CHG_BAT_TEMP_MAX - FFC_BAT_TEMP_OFFSET)
+			|| bat_temp <= CHG_BAT_TEMP_MIN) {
+			pr_notice("temp is %d, high or low, waiting...\n", bat_temp);
+		/* -Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
 		} else {
 			pr_notice("batt_volt-%d is ok, start flash charging\n", 
 					pdpm->cp.vbat_volt);
 			usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_ENTRY);
 		}
+
 		//+Bug669735,chenrui1.wt,ADD,20210622,FAMMI test QC failed
 		if (!pdpm->pps_supported) {
 			pr_notice("pps supported is failed\n");
@@ -1152,6 +1175,16 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 					pdpm->request_voltage, pdpm->request_current);
 		}
 
+		/* +Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
+		if (!pdpm->pps_temp_flag) {
+			pr_notice("temp high or lower,stop charging\n");
+			stop_sw = false;
+			pdpm->sw.charge_enabled = false;
+			usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_EXIT);
+			break;
+		}
+		/* -Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
+
 //+Bug669735,chenrui.wt,MODIFY,20210625,FAMMI charger test failed
 #ifdef WT_COMPILE_FACTORY_VERSION
 		if (mtk_get_battery_capacity() >= 79) {
@@ -1206,7 +1239,14 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 			usbpd_pps_enable_charging(pdpm,false,5000,3000);
 			rc = 1;
 		}
-		
+		/* +Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
+		if (!pdpm->pps_temp_flag) {
+			pr_notice("temp is high or low waiting...\n");
+			usbpd_pm_move_state(pdpm, PD_PM_STATE_ENTRY);
+			pdpm->pd_active = false;
+			schedule_work(&pdpm->usb_psy_change_work);
+		}
+		/* -Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
 	        break;
 	}
 
@@ -1342,7 +1382,7 @@ static void usb_psy_change_work(struct work_struct *work)
 		usbpd_pd_contact(pdpm, true);
 	else if (pdpm->pd_active && !propval.intval)
 		usbpd_pd_contact(pdpm, false);
-    
+
 	pdpm->psy_change_running = false;
 }
 
