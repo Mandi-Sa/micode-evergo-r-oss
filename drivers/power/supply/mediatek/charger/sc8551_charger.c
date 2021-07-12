@@ -966,7 +966,8 @@ static int sc8551_get_adc_data(struct sc8551 *sc, int channel,  int *result)
 		else if(channel == ADC_IBAT)		val = val * 3125/1000 ;
 		else if(channel == ADC_TBUS)		val = val * 9766/100000;
 		else if(channel == ADC_TBAT)		val = val * 9766/100000;
-		else if(channel == ADC_TDIE)		val = val * 5/10;
+		//Bug674901,wangbin wt.MODIFY	.20210612,modify for return 3 digit degree.
+		else if(channel == ADC_TDIE)		val = val * 5;
 	}
 
 	*result = val;
