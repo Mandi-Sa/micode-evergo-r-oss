@@ -678,7 +678,8 @@ static int bat_lcdon_temp(struct usbpd_pm *pdpm, int temp)
 
 	if (bat_temp < BAT_TEMP_300) {
 		if (!pdpm->lcdon_curr_step)
-			step_ibat = bat_step(pdpm, BAT_CURR_6000MA);
+			//Bug674901,wangbin wt.MODIFY	.20210612,modify Max charge current is 4A when lcd is on.
+			step_ibat = bat_step(pdpm, BAT_CURR_4000MA);
 		else
 			step_ibat = bat_step(pdpm, BAT_CURR_4000MA);
 	} else if (bat_temp >= BAT_TEMP_300 && bat_temp < BAT_TEMP_340) {
