@@ -4698,6 +4698,27 @@ static ssize_t store_StartCharging_Test(struct device *dev,struct device_attribu
 static DEVICE_ATTR(StartCharging_Test, 0664, show_StartCharging_Test, store_StartCharging_Test);
 /* -Bug653766,wangbin.wt,add,20210514,add start/stop API for running test */
 
+/* +Extb HONGMI-85045,ADD,wangbin.wt.20210709.add charging call state limit*/
+bool get_charging_call_state(void)
+{
+	return gm.charging_call_state;
+}
+static ssize_t show_charging_call_state(struct device *dev,struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "charging_call_state=%d\n",gm.charging_call_state);
+}
+static ssize_t store_charging_call_state(struct device *dev,struct device_attribute *attr, const char *buf, size_t size)
+{
+	if(buf[0]=='1')
+		gm.charging_call_state = true;
+	else
+		gm.charging_call_state = false;
+	bm_err("store_charging_call_state,buf=%s,size=%d,charging_call_state=%d\n",buf,size,gm.charging_call_state);
+	return -1;
+}
+static DEVICE_ATTR(charging_call_state, 0664, show_charging_call_state, store_charging_call_state);
+/* -Extb HONGMI-85045,ADD,wangbin.wt.20210709.add charging call state limit*/
+
 /*************************************/
 static struct wakeup_source battery_lock;
 static int __init battery_probe(struct platform_device *dev)
@@ -4870,6 +4891,8 @@ static int __init battery_probe(struct platform_device *dev)
 	ret = device_create_file(&battery_main.psy->dev, &dev_attr_StopCharging_Test);
 	ret = device_create_file(&battery_main.psy->dev, &dev_attr_StartCharging_Test);
 	/* -Bug653766,wangbin.wt,add,20210514,add start/stop API for running test */
+	//Extb HONGMI-85045,ADD,wangbin.wt.20210709.add charging call state limit
+	ret = device_create_file(&battery_main.psy->dev, &dev_attr_charging_call_state);
 	battery_debug_init();
 
 	__pm_relax(&battery_lock);
