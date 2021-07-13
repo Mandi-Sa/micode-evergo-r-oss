@@ -2562,7 +2562,7 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	xiaomi_touch_interfaces.getModeAll = nvt_get_mode_all;
 	xiaomi_touch_interfaces.palm_sensor_write = nvt_palm_sensor_write;
 	nvt_init_touchmode_data();
-	xiaomitouch_register_modedata(0, &xiaomi_touch_interfaces);
+	xiaomitouch_register_modedata(&xiaomi_touch_interfaces);
 #endif
 
 	bTouchIsAwake = 1;
