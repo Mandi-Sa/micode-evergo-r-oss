@@ -539,6 +539,13 @@ static void plug_in_out_handler(struct chg_type_info *cti, bool en, bool ignore)
 	cti->chgdet_en = en;
 	cti->ignore_usb = ignore;
 	cti->plugin = en;
+	//+Bug651592,chenrui1.wt,ADD,20210713,check again std_pd after th charger is plugout
+	if (!en) {
+		cti->pd_active = en;
+		cti->pd_verifed = en;
+		cti->pd_remove = en;
+	}
+	//-Bug651592,chenrui1.wt,ADD,20210713,check again std_pd after th charger is plugout
 	atomic_inc(&cti->chgdet_cnt);
 	wake_up_interruptible(&cti->waitq);
 	mutex_unlock(&cti->chgdet_lock);
