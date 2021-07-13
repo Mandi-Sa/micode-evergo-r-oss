@@ -25,8 +25,6 @@ extern unsigned int ov16a1qofilm_get_otpdata(unsigned char *data, u16 i2cId);
 extern unsigned int ov16a1qqtech_get_otpdata(unsigned char *data, u16 i2cId);
 extern unsigned int imx355sunny_get_otpdata(unsigned char *data, u16 i2cId);
 extern unsigned int imx355ofilm_get_otpdata(unsigned char *data, u16 i2cId);
-extern unsigned int ov02b10aac_get_otpdata(unsigned char *data, u16 i2cId);
-extern unsigned int gc02m1ofilm_get_otpdata(unsigned char *data, u16 i2cId);
 
 typedef unsigned int (*imgsensor_hwinfo_get_func) (unsigned char *data, u16 i2cId);
 
