@@ -193,7 +193,7 @@ static void tianma_panel_init(struct tianma *ctx)
 	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
 	tianma_dcs_write_seq_static(ctx, 0x53, 0x22);
 	tianma_dcs_write_seq_static(ctx, 0x54, 0x02);
-	
+
 	tianma_dcs_write_seq_static(ctx, 0xFF, 0xC0);
 	tianma_dcs_write_seq_static(ctx, 0xFB, 0x01);
 	tianma_dcs_write_seq_static(ctx, 0x9C, 0x11);
@@ -206,10 +206,10 @@ static void tianma_panel_init(struct tianma *ctx)
 	tianma_dcs_write_seq_static(ctx, 0xC0, 0x00);
 
 	tianma_dcs_write_seq_static(ctx, 0x11);
-	msleep(100);
+	usleep_range(100000, 100001);
 	/* Display On*/
 	tianma_dcs_write_seq_static(ctx, 0x29);
-	msleep(40);
+	usleep_range(20000, 20001);
 	pr_info("%s-\n", __func__);
 }
 
@@ -253,10 +253,10 @@ static int tianma_unprepare(struct drm_panel *panel)
 		pr_err("nvt : %s ++++ drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data)++++", __func__);
 	}
 	tianma_dcs_write_seq_static(ctx, 0x28);
-	msleep(20);
+	usleep_range(20000, 20001);
 	tianma_dcs_write_seq_static(ctx, 0x10);
-	msleep(100);
-	
+	usleep_range(100000, 100001);
+
 	//ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
 	//gpiod_set_value(ctx->reset_gpio, 0);
 	//devm_gpiod_put(ctx->dev, ctx->reset_gpio);
@@ -304,15 +304,15 @@ static int tianma_prepare(struct drm_panel *panel)
 		return 0;
 
 	// reset  L
-	ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
-	gpiod_set_value(ctx->reset_gpio, 0);
-	devm_gpiod_put(ctx->dev, ctx->reset_gpio);
-	usleep_range(10000, 10001);
+	//ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
+	//gpiod_set_value(ctx->reset_gpio, 0);
+	//devm_gpiod_put(ctx->dev, ctx->reset_gpio);
+	//usleep_range(10000, 10001);
 
-	ctx->pm_gpio = devm_gpiod_get(ctx->dev, "pm-enable", GPIOD_OUT_HIGH);
-	gpiod_set_value(ctx->pm_gpio, 1);
-	devm_gpiod_put(ctx->dev, ctx->pm_gpio);
-	usleep_range(10000, 10001);
+	//ctx->pm_gpio = devm_gpiod_get(ctx->dev, "pm-enable", GPIOD_OUT_HIGH);
+	//gpiod_set_value(ctx->pm_gpio, 1);
+	//devm_gpiod_put(ctx->dev, ctx->pm_gpio);
+	//usleep_range(10000, 10001);
 
 	/* set voltage with min & max*/
 	ret = regulator_set_voltage(lcd_dvdd_ldo, 1300000, 1300000);
@@ -335,7 +335,7 @@ static int tianma_prepare(struct drm_panel *panel)
 	lm36273_bl_bias_conf();
 
 	if(ts->gesture_enabled == false){
-		lm36273_bias_enable(1, 3);
+		lm36273_bias_enable(1, 1);
 		mdelay(10);
 		ctx->bias_pos = devm_gpiod_get_index(ctx->dev, "bias", 0, GPIOD_OUT_HIGH);
 		gpiod_set_value(ctx->bias_pos, 1);
@@ -795,8 +795,7 @@ static int tianma_probe(struct mipi_dsi_device *dsi)
 	}
 	gpiod_set_value(ctx->lcm_bl_en_gpio, 1);
 	devm_gpiod_put(dev, ctx->lcm_bl_en_gpio);
-	
-	
+
 	ctx->bias_pos = devm_gpiod_get_index(dev, "bias", 0, GPIOD_OUT_HIGH);
 	if (IS_ERR(ctx->bias_pos)) {
 		dev_info(dev, "cannot get bias-gpios 0 %ld\n",
