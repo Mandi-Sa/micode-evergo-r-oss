@@ -888,10 +888,37 @@ bool fg_interrupt_check(void)
 	return true;
 }
 
+//+Bug651592,chenrui1.wt,ADD,20210712,report charge full
+static void battery_report_full(struct battery_data *bat_data)
+{
+	static struct charger_device *primary_charger;
+	bool chg_done = false;
+
+	if (!primary_charger) {
+		pr_err("primary_charger is NULL\n");
+		primary_charger = get_charger_by_name("primary_chg");
+	}
+	charger_dev_is_charging_done(primary_charger, &chg_done);
+
+	if (bat_data->BAT_CAPACITY == 100 && upmu_get_rgs_chrdet() != 0
+		&& bat_data->BAT_STATUS != POWER_SUPPLY_STATUS_DISCHARGING
+		&& chg_done) {
+		bat_data->BAT_STATUS = POWER_SUPPLY_STATUS_FULL;
+		bm_err("battery_update set FULL! ui:%d chr:%d %d done:%d\n",
+			bat_data->BAT_CAPACITY, upmu_get_rgs_chrdet(),
+			bat_data->BAT_STATUS, chg_done);
+	}
+	bm_err("battery_update status: ui:%d chr:%d status%d done:%d temp:%d\n",
+		bat_data->BAT_CAPACITY, upmu_get_rgs_chrdet(), bat_data->BAT_STATUS,
+		chg_done);
+}
+//-Bug651592,chenrui1.wt,ADD,20210712,report charge full
+
 void battery_update(struct battery_data *bat_data)
 {
 	struct power_supply *bat_psy = bat_data->psy;
-
+	//Bug651592,chenrui1.wt,ADD,20210712,report charge full
+	battery_report_full(bat_data);
 	battery_update_psd(&battery_main);
 	//Extb HONGMI-87035,chenrui1.wt,MODIFY,20210702,modify bat_technology
 	bat_data->BAT_TECHNOLOGY = POWER_SUPPLY_TECHNOLOGY_LIPO;
