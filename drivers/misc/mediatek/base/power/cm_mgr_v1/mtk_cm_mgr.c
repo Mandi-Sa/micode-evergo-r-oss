@@ -737,6 +737,14 @@ int cm_mgr_to_sspm_command(u32 cmd, int val)
 	case IPI_CM_MGR_BBCPU_WEIGHT_MIN_SET:
 		/* FALLTHROUGH */
 #endif
+#ifdef CM_BCPU_MIN_OPP_WEIGHT
+	case IPI_CM_MGR_BCPU_MIN_OPP_WEIGHT_SET:
+		/* FALLTHROUGH */
+	case IPI_CM_MGR_BCPU_LOW_OPP_WEIGHT_SET:
+		/* FALLTHROUGH */
+	case IPI_CM_MGR_BCPU_LOW_OPP_BOUND_SET:
+		/* FALLTHROUGH */
+#endif /* CM_BCPU_MIN_OPP_WEIGHT */
 #ifdef DSU_DVFS_ENABLE
 		/* FALLTHROUGH */
 	case IPI_CM_MGR_DSU_DEBOUNCE_UP_SET:
@@ -806,6 +814,15 @@ int cm_mgr_to_sspm_command(u32 cmd, int val)
 	case IPI_CM_MGR_EMI_DEMAND_CHECK:
 	case IPI_CM_MGR_BCPU_WEIGHT_MAX_SET:
 	case IPI_CM_MGR_BCPU_WEIGHT_MIN_SET:
+#ifdef CM_BCPU_MIN_OPP_WEIGHT
+		/* FALLTHROUGH */
+	case IPI_CM_MGR_BCPU_MIN_OPP_WEIGHT_SET:
+		/* FALLTHROUGH */
+	case IPI_CM_MGR_BCPU_LOW_OPP_WEIGHT_SET:
+		/* FALLTHROUGH */
+	case IPI_CM_MGR_BCPU_LOW_OPP_BOUND_SET:
+		/* FALLTHROUGH */
+#endif /* CM_BCPU_MIN_OPP_WEIGHT */
 #ifdef CM_TRIGEAR
 	/* FALLTHROUGH */
 	case IPI_CM_MGR_BBCPU_WEIGHT_MAX_SET:
@@ -926,6 +943,14 @@ static int dbg_cm_mgr_proc_show(struct seq_file *m, void *v)
 			cm_mgr_perf_timer_enable);
 	seq_printf(m, "cm_mgr_perf_force_enable %d\n",
 			cm_mgr_perf_force_enable);
+#ifdef CM_BCPU_MIN_OPP_WEIGHT
+	seq_printf(m, "cm_mgr_bcpu_min_opp_weight %d\n",
+			cm_mgr_bcpu_min_opp_weight);
+	seq_printf(m, "cm_mgr_bcpu_low_opp_weight %d\n",
+			cm_mgr_bcpu_low_opp_weight);
+	seq_printf(m, "cm_mgr_bcpu_low_opp_bound %d\n",
+			cm_mgr_bcpu_low_opp_bound);
+#endif
 #ifdef USE_CM_USER_MODE
 	seq_printf(m, "cm_user_mode %d\n",
 			cm_user_mode);
@@ -1444,6 +1469,26 @@ static ssize_t dbg_cm_mgr_proc_write(struct file *file,
 #endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT */
 		}
 #endif /* USE_BCPU_WEIGHT */
+#ifdef CM_BCPU_MIN_OPP_WEIGHT
+	} else if (!strcmp(cmd, "cm_mgr_bcpu_min_opp_weight")) {
+		cm_mgr_bcpu_min_opp_weight = val_1;
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
+		cm_mgr_to_sspm_command(IPI_CM_MGR_BCPU_MIN_OPP_WEIGHT_SET,
+				val_1);
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT */
+	} else if (!strcmp(cmd, "cm_mgr_bcpu_low_opp_weight")) {
+		cm_mgr_bcpu_low_opp_weight = val_1;
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
+		cm_mgr_to_sspm_command(IPI_CM_MGR_BCPU_LOW_OPP_WEIGHT_SET,
+				val_1);
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT */
+	} else if (!strcmp(cmd, "cm_mgr_bcpu_low_opp_bound")) {
+		cm_mgr_bcpu_low_opp_bound = val_1;
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(USE_CM_MGR_AT_SSPM)
+		cm_mgr_to_sspm_command(IPI_CM_MGR_BCPU_LOW_OPP_BOUND_SET,
+				val_1);
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT */
+#endif /* CM_BCPU_MIN_OPP_WEIGHT */
 #ifdef CM_TRIGEAR
 	} else if (!strcmp(cmd, "cpu_power_bbcpu_weight_max")) {
 		if (cpu_power_bbcpu_weight_max < cpu_power_bbcpu_weight_min) {

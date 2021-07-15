@@ -34,6 +34,11 @@
 #include "mtk_layering_rule.h"
 #include "mtk_drm_trace.h"
 #include "swpm_me.h"
+#if defined(CONFIG_MACH_MT6877)
+#ifdef CONFIG_MEDIATEK_DRAMC
+#include <dramc.h>
+#endif
+#endif
 
 #define DISP_REG_RDMA_INT_ENABLE 0x0000
 #define DISP_REG_RDMA_INT_STATUS 0x0004
@@ -505,6 +510,11 @@ void mtk_rdma_cal_golden_setting(struct mtk_ddp_comp *comp,
 
 	unsigned int fill_rate = 0;	  /* 100 times */
 	unsigned long long consume_rate = 0; /* 100 times */
+#if defined(CONFIG_MACH_MT6877)
+#ifdef CONFIG_MEDIATEK_DRAMC
+	int ddr_type = mtk_dramc_get_ddr_type();
+#endif
+#endif
 
 	if (if_fps == 0) {
 		DDPPR_ERR("%s invalid vrefresh %u\n",
@@ -569,7 +579,19 @@ void mtk_rdma_cal_golden_setting(struct mtk_ddp_comp *comp,
 	gs[GS_RDMA_ULTRA_TH_HIGH] = gs[GS_RDMA_PRE_ULTRA_TH_LOW];
 	if (gsc->is_vdo_mode) {
 		gs[GS_RDMA_VALID_TH_BLOCK_ULTRA] = 0;
+#if defined(CONFIG_MACH_MT6877)
+#ifdef CONFIG_MEDIATEK_DRAMC
+		if (ddr_type == 0x6) {
+			DDPINFO("%s(%d) ddr_type is LP4:%d\n", __func__, __LINE__, ddr_type);
+			gs[GS_RDMA_VDE_BLOCK_ULTRA] = 1;
+		} else {
+			DDPINFO("%s(%d) ddr_type is LP5:%d\n", __func__, __LINE__, ddr_type);
+			gs[GS_RDMA_VDE_BLOCK_ULTRA] = 0;
+		}
+#endif
+#else
 		gs[GS_RDMA_VDE_BLOCK_ULTRA] = 1;
+#endif
 	} else {
 		gs[GS_RDMA_VALID_TH_BLOCK_ULTRA] = 1;
 		gs[GS_RDMA_VDE_BLOCK_ULTRA] = 0;
