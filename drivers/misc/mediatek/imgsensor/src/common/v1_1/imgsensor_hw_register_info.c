@@ -109,14 +109,6 @@ IMGSENSOR_HQ_REGISTER_INFO cam_hwinfo[MAX_IMGSENSOR_NUM][MAX_VENDOR_COUNT] = {
 	{
 	    {"imx355sunny_mipi_raw_i", 22, "SUNNY", IMX355SUNNY_SENSOR_ID, wide_hw_info, 0xA0, imx355sunny_get_otpdata},
 	    {"imx355ofilm_mipi_raw_ii", 23, "OFILM", IMX355OFILM_SENSOR_ID, wide_hw_info, 0xA0, imx355ofilm_get_otpdata},
-	},
-	{
-	    {"ov02b10aac_mipi_raw_i", 21, "AAC", OV02B10AAC_SENSOR_ID, macro_hw_info, 0xA4, ov02b10aac_get_otpdata},
-	    {"gc02m1ofilm_mipi_raw_ii", 23, "OFILM", GC02M1OFILM_SENSOR_ID, macro_hw_info, 0xA4, gc02m1ofilm_get_otpdata},
-	},
-	{
-	    {"ov02b10aac_mipi_raw_i", 21, "AAC", OV02B10AAC_SENSOR_ID, macro_hw_info, 0xA4, ov02b10aac_get_otpdata},
-	    {"gc02m1ofilm_mipi_raw_ii", 23, "OFILM", GC02M1OFILM_SENSOR_ID, macro_hw_info, 0xA4, gc02m1ofilm_get_otpdata},
 	}
 };
 

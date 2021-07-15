@@ -11,11 +11,6 @@
 #include <mtk_dcm_internal.h>
 #include <mtk_dcm_autogen.h>
 #include <mtk_dcm.h>
-#if defined(CONFIG_MACH_MT6877)
-#ifdef CONFIG_MEDIATEK_DRAMC
-#include <dramc.h>
-#endif
-#endif
 DEFINE_MUTEX(dcm_lock);
 short dcm_debug;
 short dcm_initiated;
@@ -470,11 +465,6 @@ static struct kobj_attribute dcm_state_attr = {
 
 int __init mt_dcm_init(void)
 {
-	#if defined(CONFIG_MACH_MT6877)
-	#ifdef CONFIG_MEDIATEK_DRAMC
-	int ddr_type = mtk_dramc_get_ddr_type();
-	#endif
-	#endif
 	if (is_dcm_bringup())
 		return 0;
 
@@ -489,21 +479,8 @@ int __init mt_dcm_init(void)
 	dcm_pre_init();
 
 #ifndef DCM_DEFAULT_ALL_OFF
-	#if defined(CONFIG_MACH_MT6877)
-	#ifdef CONFIG_MEDIATEK_DRAMC
-	dcm_pr_info("%s(%d) ddr_type:%d\n", __func__, __LINE__, ddr_type);
-	if (ddr_type == 0x6) {
-		dcm_pr_info("%s(%d) ddr_type is LP4\n", __func__, __LINE__);
-		dcm_set_state(all_dcm_type, DCM_OFF);
-	} else {
-		dcm_pr_info("%s(%d) ddr_type is LP5\n", __func__, __LINE__);
-		dcm_set_default(init_dcm_type);
-	}
-	#endif
-	#else
 	/** enable all dcm **/
 	dcm_set_default(init_dcm_type);
-	#endif
 #else /* DCM_DEFAULT_ALL_OFF */
 	dcm_set_state(all_dcm_type, DCM_OFF);
 #endif /* #ifndef DCM_DEFAULT_ALL_OFF */

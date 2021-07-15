@@ -61,11 +61,7 @@ static void mdla_cmd_prepare_v2_0_hw_sched(struct mdla_run_cmd *cd,
 	ce->priority = priority;
 	ce->footprint = 0;
 
-	if (cd->offset_code_buf == 0)
-		/* for mdla UT */
-		ce->kva = (void *)apusys_mem_query_kva((u32)ce->mva);
-	else
-		ce->kva = (void *)(apusys_hd->cmd_entry + cd->offset_code_buf);
+	ce->kva = (void *)apusys_mem_query_kva((u32)ce->mva);
 
 	/* Initialize timestamp*/
 	ce->exec_time = 0;
@@ -202,6 +198,7 @@ int mdla_cmd_run_sync_v2_0_hw_sched(struct mdla_run_cmd_sync *cmd_data,
 	struct mdla_run_cmd *cd = &cmd_data->req;
 	struct command_entry *ce;
 	struct mdla_scheduler *sched = mdla_info->sched;
+	uint64_t out_end;
 
 	u32 core_id = mdla_info->mdla_id;
 
@@ -243,6 +240,10 @@ int mdla_cmd_run_sync_v2_0_hw_sched(struct mdla_run_cmd_sync *cmd_data,
 
 	/* prepare CE */
 	mdla_cmd_prepare_v2_0_hw_sched(cd, apusys_hd, ce, priority);
+
+	out_end = apusys_hd->cmd_entry + apusys_hd->cmd_size;
+	if (mdla_cmd_plat_cb()->check_cmd_valid(out_end, ce) == false)
+		return -EINVAL;
 
 	ce->poweron_t = pwron_t;
 
