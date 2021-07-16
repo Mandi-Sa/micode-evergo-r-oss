@@ -27,14 +27,14 @@
 #ifndef WT_COMPILE_FACTORY_VERSION
 static const char sia8152_palyback_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 	[SIA81XX_CHANNEL_L] = {
-				0x91,		//SIA8152_REG_MOD_CFG
+				0x93,		//SIA8152_REG_MOD_CFG
 				0xE4,		//SIA8152_REG_SYS_EN
 				0x80,		//SIA8152_REG_OVP_CFG
 				0x01,		//SIA8152_REG_OPC_HCFG
 				0x00		//SIA8152_REG_TEST_CFG
 	},
 	[SIA81XX_CHANNEL_R] = {
-				0x91,		//SIA8152_REG_MOD_CFG
+				0x93,		//SIA8152_REG_MOD_CFG
 				0xE4,		//SIA8152_REG_SYS_EN
 				0x80,		//SIA8152_REG_OVP_CFG
 				0x01,		//SIA8152_REG_OPC_HCFG
@@ -44,14 +44,14 @@ static const char sia8152_palyback_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 #else
 static const char sia8152_palyback_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 	[SIA81XX_CHANNEL_L] = {
-				0x11,		//SIA8152_REG_MOD_CFG
+				0x13,		//SIA8152_REG_MOD_CFG
 				0xE4,		//SIA8152_REG_SYS_EN
 				0x80,		//SIA8152_REG_OVP_CFG
 				0x01,		//SIA8152_REG_OPC_HCFG
 				0x00		//SIA8152_REG_TEST_CFG
 	},
 	[SIA81XX_CHANNEL_R] = {
-				0x11,		//SIA8152_REG_MOD_CFG
+				0x13,		//SIA8152_REG_MOD_CFG
 				0xE4,		//SIA8152_REG_SYS_EN
 				0x80,		//SIA8152_REG_OVP_CFG
 				0x01,		//SIA8152_REG_OPC_HCFG
@@ -63,14 +63,14 @@ static const char sia8152_palyback_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 #ifndef WT_COMPILE_FACTORY_VERSION
 static const char sia8152_voice_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 	[SIA81XX_CHANNEL_L] = {
-				0x61,		//SIA8152_REG_MOD_CFG
+				0x63,		//SIA8152_REG_MOD_CFG
 				0xD4,		//SIA8152_REG_SYS_EN
 				0x83,		//SIA8152_REG_OVP_CFG
 				0x01,		//SIA8152_REG_OPC_HCFG
 				0x00		//SIA8152_REG_TEST_CFG
 	},
 	[SIA81XX_CHANNEL_R] = {
-				0x61,		//SIA8152_REG_MOD_CFG
+				0x63,		//SIA8152_REG_MOD_CFG
 				0xD4,		//SIA8152_REG_SYS_EN
 				0x83,		//SIA8152_REG_OVP_CFG
 				0x01,		//SIA8152_REG_OPC_HCFG
@@ -80,14 +80,14 @@ static const char sia8152_voice_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 #else
 static const char sia8152_voice_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 	[SIA81XX_CHANNEL_L] = {
-				0x11,		//SIA8152_REG_MOD_CFG
+				0x13,		//SIA8152_REG_MOD_CFG
 				0xE4,		//SIA8152_REG_SYS_EN
 				0x80,		//SIA8152_REG_OVP_CFG
 				0x01,		//SIA8152_REG_OPC_HCFG
 				0x00		//SIA8152_REG_TEST_CFG
 	},
 	[SIA81XX_CHANNEL_R] = {
-				0x11,		//SIA8152_REG_MOD_CFG
+				0x13,		//SIA8152_REG_MOD_CFG
 				0xE4,		//SIA8152_REG_SYS_EN
 				0x80,		//SIA8152_REG_OVP_CFG
 				0x01,		//SIA8152_REG_OPC_HCFG
@@ -97,14 +97,14 @@ static const char sia8152_voice_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 #endif
 static const char sia8152_receiver_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 	[SIA81XX_CHANNEL_L] = {
-				0x41,		//SIA8152_REG_MOD_CFG
+				0x43,		//SIA8152_REG_MOD_CFG
 				0xD4,		//SIA8152_REG_SYS_EN
 				0x80,		//SIA8152_REG_OVP_CFG
 				0x01,		//SIA8152_REG_OPC_HCFG
 				0x00		//SIA8152_REG_TEST_CFG
 	},
 	[SIA81XX_CHANNEL_R] = {
-				0x41,		//SIA8152_REG_MOD_CFG
+				0x43,		//SIA8152_REG_MOD_CFG
 				0xD4,		//SIA8152_REG_SYS_EN
 				0x80,		//SIA8152_REG_OVP_CFG
 				0x01,		//SIA8152_REG_OPC_HCFG
@@ -114,16 +114,16 @@ static const char sia8152_receiver_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 
 static const char sia8152_factory_defaults[][SIA8152_WRITEABLE_REG_NUM] = {
 	[SIA81XX_CHANNEL_L] = {
-				0x11,		//SIA8152_REG_MOD_CFG
+				0x13,		//SIA8152_REG_MOD_CFG
 				0xE4,		//SIA8152_REG_SYS_EN
-				0xA0,		//SIA8152_REG_OVP_CFG
+				0x80,		//SIA8152_REG_OVP_CFG
 				0x01,		//SIA8152_REG_OPC_HCFG
 				0x00		//SIA8152_REG_TEST_CFG
 	},
 	[SIA81XX_CHANNEL_R] = {
-				0x11,		//SIA8152_REG_MOD_CFG
+				0x13,		//SIA8152_REG_MOD_CFG
 				0xE4,		//SIA8152_REG_SYS_EN
-				0xA0,		//SIA8152_REG_OVP_CFG
+				0x80,		//SIA8152_REG_OVP_CFG
 				0x01,		//SIA8152_REG_OPC_HCFG
 				0x00		//SIA8152_REG_TEST_CFG
 	}
@@ -216,20 +216,18 @@ const struct regmap_config sia8152_regmap_config = {
 static int sia8152_check_chip_id(
 	struct regmap *regmap) 
 {
+	int i = 0;
 	char val = 0;
 
 	if(0 != sia81xx_regmap_read(regmap, SIA8152_REG_CHIP_ID, 1, &val))
 		return -1;
 
-	/* distinguish AW chip id */
-	if(0x59 == val || 0x5A == val)
-		return -1;
+	for (i = 0; i < ARRAY_SIZE(chip_id_ranges); i++) {
+		if (val >= chip_id_ranges[i].begin && val <= chip_id_ranges[i].end)
+			return 0;
+	}
 
-	if((SIA8152_CHIP_ID_VAL & SIA8152_CHIP_ID_MASK) != 
-		(val & SIA8152_CHIP_ID_MASK))
-		return -1;
-
-	return 0;
+	return -1;
 }
 
 static void sia8152_chip_on(
@@ -249,6 +247,11 @@ static void sia8152_chip_on(
 
 	val |= 0x01;
 	if(0 != sia81xx_regmap_write(regmap, SIA8152_REG_OPC_HCFG, 1, &val))
+		return;
+
+	/* SIA8152_REG_OVP_CFG must be set after chip_en */
+	val = 0x80;
+	if (0 != sia81xx_regmap_write(regmap, SIA8152_REG_OVP_CFG, 1, &val))
 		return;
 }
 
@@ -270,6 +273,8 @@ static void sia8152_chip_off(
 	val = 0x80;
 	if(0 != sia81xx_regmap_write(regmap, SIA8152_REG_SYS_EN, 1, &val))
 		return;
+
+	mdelay(1);	// wait chip power off
 }
 
 static bool sia8152_get_chip_en(

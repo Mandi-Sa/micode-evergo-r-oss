@@ -24,10 +24,6 @@
 #define SIA8152_REG_STATE_FLAG1			(0x06)
 #define SIA8152_REG_STATE_FLAG2			(0x07)
 
-#define SIA8152_CHIP_ID_VAL				(0x52)
-#define SIA8152_CHIP_ID_MASK			(0xF0)
-
-
 extern const struct regmap_config sia8152_regmap_config;
 extern const struct sia81xx_reg_default_val sia8152_reg_default_val;
 extern const struct sia81xx_opt_if sia8152_opt_if;
