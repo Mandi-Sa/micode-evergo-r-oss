@@ -255,6 +255,8 @@ static void sia8159_chip_off(
 	val = 0x20;
 	if (0 != sia81xx_regmap_write(regmap, SIA8159_REG_ALGO_EN, 1, &val))
 		return;
+
+	mdelay(1);	// wait chip power off
 }
 
 static void sia8159_check_trimming(

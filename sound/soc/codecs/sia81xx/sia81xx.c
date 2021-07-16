@@ -763,7 +763,8 @@ static int sia81xx_resume(
 	if (NULL == sia81xx)
 		return -ENODEV;
 
-	if (is_chip_type_supported(sia81xx->chip_type)) {
+	if (is_chip_type_supported(sia81xx->chip_type) &&
+		!sia81xx_is_chip_en(sia81xx)) {
 
 		if (0 == sia81xx->disable_pin) {
 			if (CHIP_TYPE_SIA8101 == sia81xx->chip_type
@@ -830,11 +831,12 @@ static int sia81xx_suspend(
 	if (sia81xx->en_dyn_ud_vdd || sia81xx->en_dyn_ud_pvdd)
 		sia81xx_timer_task_stop(sia81xx->timer_task_hdl);
 
-	if (is_chip_type_supported(sia81xx->chip_type)) {
+	if (is_chip_type_supported(sia81xx->chip_type) &&
+		sia81xx_is_chip_en(sia81xx)) {
 
-		if (sia81xx_is_chip_en(sia81xx)) {
-			sia81xx_regmap_set_chip_off(sia81xx->regmap, sia81xx->chip_type);
+		sia81xx_regmap_set_chip_off(sia81xx->regmap, sia81xx->chip_type);
 
+		if (0 == sia81xx->disable_pin) {
 			spin_lock_irqsave(&sia81xx->rst_lock, flags);
 			pr_info("%s:set rst_pin low\n",__func__);
 			/* power off chip */
