@@ -679,29 +679,29 @@ static int bat_lcdon_temp(struct usbpd_pm *pdpm, int temp)
 	if (bat_temp < BAT_TEMP_300) {
 		if (!pdpm->lcdon_curr_step)
 			//Bug674901,wangbin wt.MODIFY	.20210612,modify Max charge current is 4A when lcd is on.
-			step_ibat = bat_step(pdpm, BAT_CURR_4000MA);
+			step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 		else
-			step_ibat = bat_step(pdpm, BAT_CURR_4000MA);
+			step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 	} else if (bat_temp >= BAT_TEMP_300 && bat_temp < BAT_TEMP_340) {
 		if (pdpm->lcdon_curr_step <= CHG_TEMP_STEP1) {
 			pdpm->lcdon_curr_step = CHG_TEMP_STEP1;
-			step_ibat = bat_step(pdpm, BAT_CURR_4000MA);
+			step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 		} else if (pdpm->lcdon_curr_step == CHG_TEMP_STEP2) {
 			if (bat_temp <= BAT_TEMP_340 - CHG_TEMP_OFFSET) {
 				pdpm->lcdon_curr_step = CHG_TEMP_STEP1;
-				step_ibat = bat_step(pdpm, BAT_CURR_4000MA);
+				step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 			} else {
-				step_ibat = bat_step(pdpm, BAT_CURR_3500MA);
+				step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 			}
 		}
 	} else if (bat_temp >= BAT_TEMP_340 && bat_temp < BAT_TEMP_370) {
 		if (pdpm->lcdon_curr_step <= CHG_TEMP_STEP2) {
 			pdpm->lcdon_curr_step = CHG_TEMP_STEP2;
-			step_ibat = bat_step(pdpm, BAT_CURR_3500MA);
+			step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 		} else if (pdpm->lcdon_curr_step == CHG_TEMP_STEP3) {
 			if (bat_temp <= BAT_TEMP_370 - CHG_TEMP_OFFSET) {
 				pdpm->lcdon_curr_step = CHG_TEMP_STEP2;
-				step_ibat = bat_step(pdpm, BAT_CURR_3500MA);
+				step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 			} else {
 				step_ibat = bat_step(pdpm, BAT_CURR_2800MA);
 			}
