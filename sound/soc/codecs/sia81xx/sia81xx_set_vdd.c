@@ -27,6 +27,8 @@
 #include "sia81xx_regmap.h"
 #include "sia81xx_set_vdd.h"
 
+#define SIXTH_CORE_V2_0
+
 #define TIMER_TASK_PROC_NAME			("auto_set_vdd")
 
 #define MAX_SET_VDD_INFO_NUM			(16)
@@ -39,11 +41,14 @@
 
 #define DEFAULT_MODULE_ID				(0x1000E900)
 #define DEFAULT_PARAM_ID				(0x1000EA03)
+#ifdef SIXTH_CORE_V2_0
+#define COMPONENT_ID					(66)//ID_VDD,66 0x42
+#else
 #define COMPONENT_ID					(50)//ID_VDD,50 0x32
+#endif
 #define VDD_DEFAULT_VAL					(3300000)//3.3v
 #define VDD_MSG_INVALID_VAL				(0xFFFFFFFF);
 
-#define SIXTH_CORE_V2_0
 
 typedef struct sia81xx_set_vdd_info {
 	uint32_t timer_task_hdl;
