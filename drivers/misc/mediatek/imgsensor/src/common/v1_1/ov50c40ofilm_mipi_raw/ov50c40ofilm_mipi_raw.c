@@ -176,7 +176,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.mclk = 24,		//mclk value, suggest 24 or 26 for 24Mhz or 26Mhz
 	.mipi_lane_num = SENSOR_MIPI_4_LANE,	//mipi lane num
 	.i2c_addr_table = {0x20, 0x21, 0xff},
-	.i2c_speed = 400,
+	.i2c_speed = 1000,
 };
 
 static struct imgsensor_struct imgsensor = {
@@ -388,7 +388,7 @@ static kal_uint16 OV50C40OFILM_table_write_cmos_sensor(kal_uint16 *para,
 			tosend = 0;
 		}
 #else
-		iWriteRegI2C(puSendCmd, 3, imgsensor.i2c_write_id);
+		iWriteRegI2CTiming(puSendCmd, 3, imgsensor.i2c_write_id, imgsensor_info.i2c_speed);
 		tosend = 0;
 
 #endif
@@ -401,7 +401,7 @@ static kal_uint16 read_cmos_sensor(kal_uint32 addr)
 	kal_uint16 get_byte = 0;
 	char pusendcmd[2] = { (char)(addr >> 8), (char)(addr & 0xFF) };
 
-	iReadRegI2C(pusendcmd, 2, (u8 *) &get_byte, 1, imgsensor.i2c_write_id);
+	iReadRegI2CTiming(pusendcmd, 2, (u8 *) &get_byte, 1, imgsensor.i2c_write_id, imgsensor_info.i2c_speed);
 
 	return get_byte;
 }
@@ -412,7 +412,7 @@ static void write_cmos_sensor(kal_uint32 addr, kal_uint32 para)
 		(char)(addr & 0xFF), (char)(para & 0xFF)
 	};
 
-	iWriteRegI2C(pusendcmd, 3, imgsensor.i2c_write_id);
+	iWriteRegI2CTiming(pusendcmd, 3, imgsensor.i2c_write_id, imgsensor_info.i2c_speed);
 }
 
 static void set_dummy(void)
@@ -4283,7 +4283,7 @@ static kal_uint16 otp_read_cmos_sensor(kal_uint32 addr)
     char pu_send_cmd[2] = {(char)(addr >> 8), (char)(addr & 0xFF) };
 
     //kdSetI2CSpeed(imgsensor_info.i2c_speed); // Add this func to set i2c speed by each sensor
-    iReadRegI2C(pu_send_cmd, 2, (u8*)&get_byte, 1, imgsensor.i2c_write_id);
+    iReadRegI2CTiming(pu_send_cmd, 2, (u8*)&get_byte, 1, imgsensor.i2c_write_id, imgsensor_info.i2c_speed);
     return get_byte;
 }
 
@@ -4325,7 +4325,7 @@ static kal_uint16 get_vendor_id(void)
 {
 	kal_uint16 get_byte = 0;
 	char pusendcmd[2] = { (char)(0x01 >> 8), (char)(0x01 & 0xFF) };
-	iReadRegI2C(pusendcmd, 2, (u8 *) &get_byte, 1, 0xA2);
+	iReadRegI2CTiming(pusendcmd, 2, (u8 *) &get_byte, 1, 0xA2, imgsensor_info.i2c_speed);
 	return get_byte;
 
 }
@@ -4338,7 +4338,7 @@ ov50c40ofilm_get_otpdata(unsigned char *data, u16 i2cId)
         LOG_INF("%s in", __func__);
         for (ii = 0; ii < OTP_DATA_NUMBER; ii++) {
                 char pusendcmd[2] = {(char)(0x01 >> 8), (char)(otp_addr[ii] & 0xFF) };
-                iReadRegI2C(pusendcmd, 2, (u8 *)&data[ii], 1, i2cId);
+                iReadRegI2CTiming(pusendcmd, 2, (u8 *)&data[ii], 1, i2cId, imgsensor_info.i2c_speed);
                 LOG_INF("%s otp_info %d is %x", __func__,otp_addr[ii],data[ii]);
         }
 
