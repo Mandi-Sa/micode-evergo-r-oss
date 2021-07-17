@@ -404,7 +404,7 @@ static int mt_usb_get_property(struct power_supply *psy,
 	/* +Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 	case POWER_SUPPLY_PROP_REAL_TYPE:
 		//Extb HONGMI-87422,chenrui1.wt,MODIFY,20210708,modify real_type
-		if (charger_manager_pd_is_online() && battery_get_vbus() > 7000) {
+		if (charger_manager_pd_is_online() && val->intval != STANDARD_HOST) {
 			val->intval = PPS_CHARGER;
 		} else {
 			val->intval = mtk_chg->chg_type;
