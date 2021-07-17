@@ -175,6 +175,7 @@ EXPORT_SYMBOL(hbm_brightness_get);
 
 unsigned int panel_white_point_x;
 unsigned int panel_white_point_y;
+unsigned int panel_white_point_lv;
 
 #define WHITE_POINT_BASE_X 172
 #define WHITE_POINT_BASE_Y 192
@@ -191,6 +192,13 @@ static int __init disp_get_white_point_y(char *arg)
 	int y;
 	kstrtouint(arg, 10, &y);
 	panel_white_point_y = y + WHITE_POINT_BASE_Y;
+}
+
+static int __init disp_get_white_point_lv(char *arg)
+{
+	int lv;
+	kstrtouint(arg, 10, &lv);
+	panel_white_point_lv = lv;
 }
 
 static int _lcm_i2c_probe(struct i2c_client *client,const struct i2c_device_id *id)
@@ -249,6 +257,7 @@ static void __exit lcm_i2c_exit(void)
 
 early_param("androidboot.lcm_white_ponit_x", disp_get_white_point_x);
 early_param("androidboot.lcm_white_ponit_y", disp_get_white_point_y);
+early_param("androidboot.lcm_white_ponit_lv", disp_get_white_point_lv);
 
 module_init(lcm_i2c_init);
 module_exit(lcm_i2c_exit);
