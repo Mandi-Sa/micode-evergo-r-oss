@@ -104,13 +104,15 @@ int lm36273_bias_enable(int enable, int delayMs)
 
 int lm36273_brightness_set(int level)
 {
+	int temp_level, LSB_tmp, MSB_tmp;
 	if (level > 2047)
 	    level = 2047;
 
-	level = level * 180 / 255;
-	int LSB_tmp = level & 0x7;
-	int MSB_tmp = (level >> 3) & 0xFF;
+	temp_level = level * 180 / 255;
+	LSB_tmp = temp_level & 0x7;
+	MSB_tmp = (temp_level >> 3) & 0xFF;
 
+	mutex_lock(&g_lm36273_led.lock);
 	_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, LSB_tmp);
 	_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, MSB_tmp);
 	if (level == 0 && g_lm36273_led.level != 0) {
@@ -120,8 +122,9 @@ int lm36273_brightness_set(int level)
 		_lcm_i2c_write_bytes(LP36273_DISP_BC2, 0xcd);
 	}
 
-	pr_info("%s backlight = -%d\n", __func__, level);
-	g_lm36273_led.level = level;
+	pr_info("%s backlight = %d, temp_level = %d\n", __func__, level, temp_level);
+	g_lm36273_led.level = temp_level;
+	mutex_unlock(&g_lm36273_led.lock);
 	return 0;
 }
 EXPORT_SYMBOL(lm36273_brightness_set);
@@ -135,7 +138,7 @@ int hbm_brightness_set(int level)
 		_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, BL_HBM_L1 & 0x7);
 		_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, BL_HBM_L1 >> 3);
 		g_lm36273_led.hbm_status = 1;
-		break;		
+		break;
 	case DISPPARAM_LCD_HBM_L2_ON:
 		_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, BL_HBM_L2 & 0x7);
 		_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, BL_HBM_L2 >> 3);
