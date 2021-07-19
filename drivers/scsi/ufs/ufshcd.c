@@ -9627,7 +9627,7 @@ out:
 	/* MTK PATCH: Release deepidle/SODI @enter UFS suspend callback */
 	ufshcd_vops_deepidle_lock(hba, false);
 
-	if (ret) {
+	if (ret && (ret != -EAGAIN)) {
 		ufshcd_update_error_stats(hba, UFS_ERR_SUSPEND);
 		ufshcd_update_evt_hist(hba, UFS_EVT_SUSPEND_ERR, (u32)ret);
 	}
