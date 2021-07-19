@@ -593,6 +593,8 @@ static int mt6360_chgdet_pre_process(struct mt6360_pmu_chg_info *mpci)
 #define	HVDCP_VBUS_LOW_LIMIT	3000
 #define	HVDCP_VBUS_HIGH_LIMIT	7200
 #define	HVDCP_DPDM_DELAY_1S	1500
+//Extb HONGMI-88530,chenrui1.wt,ADD,20210717,charge type identification error after reboot
+#define REAL_TYPE_DELAY_3S 3000
 bool test_flag = false;
 static int mt6360_get_vbus(struct charger_device *chg_dev, u32 *vbus);
 static void mt6360_get_hvdcp_work(struct work_struct *work)
@@ -718,6 +720,11 @@ static int mt6360_chgdet_post_process(struct mt6360_pmu_chg_info *mpci)
 		break;
 	case MT6360_CHG_TYPE_SDPNSTD:
 		mpci->chg_type = NONSTANDARD_CHARGER;
+		//+Extb HONGMI-88530,chenrui1.wt,ADD,20210717,charge type identification error after reboot
+		if (!delayed_work_pending(&mpci->get_hvdcp_work))
+			schedule_delayed_work(&mpci->get_hvdcp_work,
+				msecs_to_jiffies(REAL_TYPE_DELAY_3S));
+		//-Extb HONGMI-88530,chenrui1.wt,ADD,20210717,charge type identification error after reboot
 		break;
 	case MT6360_CHG_TYPE_CDP:
 		mpci->chg_type = CHARGING_HOST;
