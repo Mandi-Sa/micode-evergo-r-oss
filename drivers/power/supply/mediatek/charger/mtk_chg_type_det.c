@@ -364,8 +364,6 @@ int mt_get_quick_charge_type(struct mt_charger *mtk_chg)
 extern int mtk_charger_get_prop_pd_verify_process(union power_supply_propval *val);
 extern int mtk_charger_set_prop_pd_verify_process(const union power_supply_propval *val);
 
-static int g_typec_mode;
-
 static int mt_usb_get_property(struct power_supply *psy,
 	enum power_supply_property psp, union power_supply_propval *val)
 {
@@ -419,7 +417,7 @@ static int mt_usb_get_property(struct power_supply *psy,
 	/* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 	/* +Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
 	case POWER_SUPPLY_PROP_TYPEC_MODE:
-		val->intval = g_typec_mode;
+		val->intval = mtk_chg->cti->typec_mode;
 		break;
 	/* -Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
 	case POWER_SUPPLY_PROP_PD_VERIFY_IN_PROCESS:
@@ -587,7 +585,6 @@ static int pd_tcp_notifier_call(struct notifier_block *pnb,
 					noti->typec_state.polarity);
 			//Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode
 			cti->typec_mode = get_source_mode(noti);
-			g_typec_mode = cti->typec_mode;
 			plug_in_out_handler(cti, true, false);
 		} else if ((noti->typec_state.old_state == TYPEC_ATTACHED_SNK ||
 		    noti->typec_state.old_state == TYPEC_ATTACHED_CUSTOM_SRC ||
@@ -602,15 +599,18 @@ static int pd_tcp_notifier_call(struct notifier_block *pnb,
 					      &cti->pwr_off_work);
 				break;
 			}
+			cti->typec_mode = POWER_SUPPLY_TYPEC_NONE;
 			pr_info("%s USB Plug out\n", __func__);
 			plug_in_out_handler(cti, false, false);
 		} else if (noti->typec_state.old_state == TYPEC_ATTACHED_SRC &&
 			noti->typec_state.new_state == TYPEC_ATTACHED_SNK) {
 			pr_info("%s Source_to_Sink\n", __func__);
+			cti->typec_mode = POWER_SUPPLY_TYPEC_SINK;
 			plug_in_out_handler(cti, true, true);
 		}  else if (noti->typec_state.old_state == TYPEC_ATTACHED_SNK &&
 			noti->typec_state.new_state == TYPEC_ATTACHED_SRC) {
 			pr_info("%s Sink_to_Source\n", __func__);
+			cti->typec_mode = get_source_mode(noti);
 			plug_in_out_handler(cti, false, true);
 		}
 		/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
