@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--dct_version="2.5" buid_sn="161102" dws_modification_time="06.15.2021.14:44:03"-->
+<!--dct_version="2.5" buid_sn="161102" dws_modification_time="07.12.2021.19:48:22"-->
 <dct_cfg>
     <general chip="MT6833">
         <proj>P21_Phone1</proj>
@@ -296,17 +296,17 @@
             </gpio16>
             <gpio17>
                 <eint_mode>false</eint_mode>
-                <def_mode>7</def_mode>
+                <def_mode>0</def_mode>
                 <inpull_en>true</inpull_en>
                 <inpull_selhigh>false</inpull_selhigh>
-                <def_dir>IN</def_dir>
+                <def_dir>OUT</def_dir>
                 <out_high>false</out_high>
                 <smt>true</smt>
                 <ies>true</ies>
             </gpio17>
             <gpio18>
                 <eint_mode>false</eint_mode>
-                <def_mode>7</def_mode>
+                <def_mode>0</def_mode>
                 <inpull_en>true</inpull_en>
                 <inpull_selhigh>false</inpull_selhigh>
                 <def_dir>IN</def_dir>
