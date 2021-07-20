@@ -60,7 +60,7 @@ static const char sia8109_palyback_defaults[][SIA8109_WRITEABLE_REG_NUM] = {
 	}
 };
 #else
-static const char sia8109_palyback_defaults[][SIA8108_WRITEABLE_REG_NUM] = {
+static const char sia8109_palyback_defaults[][SIA8109_WRITEABLE_REG_NUM] = {
 	[SIA81XX_CHANNEL_L] = {
 				0x07,		//SIA8109_REG_SYSCTRL
 				0x1C,		//SIA8109_REG_AGCCTRL
