@@ -162,6 +162,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.mclk = 24,//mclk value, suggest 24 or 26 for 24Mhz or 26Mhz
 	.mipi_lane_num = SENSOR_MIPI_4_LANE,//mipi lane num
 	.i2c_addr_table = {0x20, 0xff},//record sensor support all write id addr, only supprt 4must end with 0xff
+	.i2c_speed = 1000,
 
 };
 
@@ -198,7 +199,7 @@ static kal_uint16 read_cmos_sensor(kal_uint32 addr)
 	kal_uint16 get_byte = 0;
 	char pu_send_cmd[2] = {(char)(addr >> 8), (char)(addr & 0xFF)};
 
-	iReadRegI2C(pu_send_cmd, 2, (u8 *)&get_byte, 1, imgsensor.i2c_write_id);
+	iReadRegI2CTiming(pu_send_cmd, 2, (u8 *)&get_byte, 1, imgsensor.i2c_write_id, imgsensor_info.i2c_speed);
 
 	return get_byte;
 }
@@ -206,7 +207,7 @@ static kal_uint16 read_cmos_sensor(kal_uint32 addr)
 static void write_cmos_sensor(kal_uint32 addr, kal_uint32 para)
 {
 	char pu_send_cmd[3] = {(char)(addr >> 8), (char)(addr & 0xFF), (char)(para & 0xFF)};
-	iWriteRegI2C(pu_send_cmd, 3, imgsensor.i2c_write_id);
+	iWriteRegI2CTiming(pu_send_cmd, 3, imgsensor.i2c_write_id, imgsensor_info.i2c_speed);
 }
 
 static kal_uint32 return_sensor_id(void)
@@ -532,11 +533,11 @@ static kal_uint16 table_write_cmos_sensor(kal_uint16 *para,
 						tosend,
 						imgsensor.i2c_write_id,
 						3,
-						400);
+						imgsensor_info.i2c_speed);
 			tosend = 0;
 		}
 #else
-		iWriteRegI2C(puSendCmd, 3, imgsensor.i2c_write_id);
+		iWriteRegI2CTiming(puSendCmd, 3, imgsensor.i2c_write_id, imgsensor_info.i2c_speed);
 		tosend = 0;
 #endif
 	}
@@ -614,7 +615,7 @@ ov16a1qofilm_get_otpdata(unsigned char *data, u16 i2cId)
         LOG_INF("%s in", __func__);
         for (ii = 0; ii < OTP_DATA_NUMBER; ii++) {
                 char pusendcmd[2] = {(char)(0x01 >> 8), (char)(otp_addr[ii] & 0xFF) };
-                iReadRegI2C(pusendcmd, 2, (u8 *)&data[ii], 1, i2cId);
+                iReadRegI2CTiming(pusendcmd, 2, (u8 *)&data[ii], 1, i2cId, imgsensor_info.i2c_speed);
                 LOG_INF("%s otp_info %d is %x", __func__,otp_addr[ii],data[ii]);
         }
         return OTP_DATA_NUMBER;
@@ -640,7 +641,7 @@ static kal_uint16 get_vendor_id(void)
 {
 	kal_uint16 get_byte = 0;
 	char pusendcmd[2] = {(char)(0x01 >> 8), (char)(0x01 & 0xFF) };
-	iReadRegI2C(pusendcmd, 2, (u8 *)&get_byte, 1, 0xA2);
+	iReadRegI2CTiming(pusendcmd, 2, (u8 *)&get_byte, 1, 0xA2, imgsensor_info.i2c_speed);
 	return get_byte;
 }
 
