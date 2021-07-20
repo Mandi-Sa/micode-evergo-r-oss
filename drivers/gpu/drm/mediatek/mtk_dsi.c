@@ -846,7 +846,7 @@ CONFIG_REG:
 		writel(value, dsi->regs + DSI_PHY_TIMECON3);
 	if (handle)
 		cmdq_pkt_write((struct cmdq_pkt *)handle, comp->cmdq_base,
-			comp->regs_pa+DSI_PHY_TIMECON0, 0x012c003, ~0);
+			comp->regs_pa+DSI_CPHY_CON0, 0x012c0003, ~0);
 	else
 		writel(0x012c0003, dsi->regs + DSI_CPHY_CON0);
 }
@@ -3313,6 +3313,11 @@ static void mtk_dsi_clk_change(struct mtk_dsi *dsi, int en)
 
 	index = drm_crtc_index(crtc);
 
+	if (!mtk_crtc->enabled) {
+		DDPINFO("%s, crtc is disabled\n", __func__);
+		return;
+	}
+
 	dsi->mipi_hopping_sta = en;
 
 	if (!(ext && ext->params &&
@@ -3341,6 +3346,11 @@ static void mtk_dsi_clk_change(struct mtk_dsi *dsi, int en)
 	dsi->data_rate = data_rate;
 	mtk_mipi_tx_pll_rate_set_adpt(dsi->phy, data_rate);
 
+	if ((dsi->mode_flags & MIPI_DSI_MODE_VIDEO) && (ext->params->is_cphy)) {
+		mtk_dsi_phy_timconfig(dsi, NULL);
+		mtk_dsi_calc_vdo_timing(dsi);
+	}
+
 	/* implicit way for display power state */
 	if (dsi->clk_refcnt == 0) {
 		CRTC_MMP_MARK(index, clk_change, 0, 1);
@@ -3355,12 +3365,30 @@ static void mtk_dsi_clk_change(struct mtk_dsi *dsi, int en)
 			mtk_crtc->gce_obj.client[CLIENT_CFG]);
 
 	if (dsi->mode_flags & MIPI_DSI_MODE_VIDEO) {
-		mtk_dsi_calc_vdo_timing(dsi);
+		if (ext->params->is_cphy) {
+			if (mod_vfp)
+				mtk_dsi_porch_setting(comp, cmdq_handle,
+					DSI_VFP, dsi->vfp);
 
-		cmdq_pkt_wait_no_clear(cmdq_handle,
-			mtk_crtc->gce_obj.event[EVENT_CMD_EOF]);
+			if (mod_vbp)
+				mtk_dsi_porch_setting(comp, cmdq_handle,
+					DSI_VBP, dsi->vbp);
 
-		mtk_dsi_phy_timconfig(dsi, cmdq_handle);
+			if (mod_vsa)
+				mtk_dsi_porch_setting(comp, cmdq_handle,
+					DSI_VSA, dsi->vsa);
+
+			if (mod_hbp || mod_hfp || mod_hsa)
+				cmdq_pkt_wait_no_clear(cmdq_handle,
+					mtk_crtc->gce_obj.event[EVENT_VDO_EOF]);
+		} else {
+			mtk_dsi_calc_vdo_timing(dsi);
+
+			cmdq_pkt_wait_no_clear(cmdq_handle,
+				mtk_crtc->gce_obj.event[EVENT_VDO_EOF]);
+
+			mtk_dsi_phy_timconfig(dsi, cmdq_handle);
+		}
 
 		if (mod_hfp)
 			mtk_dsi_porch_setting(comp, cmdq_handle, DSI_HFP,
@@ -3374,18 +3402,21 @@ static void mtk_dsi_clk_change(struct mtk_dsi *dsi, int en)
 			mtk_dsi_porch_setting(comp, cmdq_handle, DSI_HSA,
 				dsi->hsa_byte);
 
-		if (mod_vbp)
-			mtk_dsi_porch_setting(comp, cmdq_handle,
-				DSI_VBP, dsi->vbp);
+		if (!ext->params->is_cphy) {
+			if (mod_vbp)
+				mtk_dsi_porch_setting(comp, cmdq_handle,
+					DSI_VBP, dsi->vbp);
 
-		if (mod_vsa)
-			mtk_dsi_porch_setting(comp, cmdq_handle,
-				DSI_VSA, dsi->vsa);
+			if (mod_vsa)
+				mtk_dsi_porch_setting(comp, cmdq_handle,
+					DSI_VSA, dsi->vsa);
+		}
 	}
 
 	mtk_mipi_tx_pll_rate_switch_gce(dsi->phy, cmdq_handle, data_rate);
 
-	if (dsi->mode_flags & MIPI_DSI_MODE_VIDEO) {
+	if ((dsi->mode_flags & MIPI_DSI_MODE_VIDEO) &&
+		(!ext->params->is_cphy)) {
 		cmdq_pkt_clear_event(cmdq_handle,
 			mtk_crtc->gce_obj.event[EVENT_DSI0_SOF]);
 		cmdq_pkt_wait_no_clear(cmdq_handle,
