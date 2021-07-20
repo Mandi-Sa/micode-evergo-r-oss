@@ -1076,7 +1076,7 @@ typedef struct imgsensor_info_struct {
 	kal_uint8  mipi_settle_delay_mode; //0, high speed signal auto detect; 1, use settle delay,unit is ns, default is auto detect, don't modify this para
 	kal_uint8  sensor_output_dataformat;//sensor output first pixel color
 	kal_uint8  mclk;				//mclk value, suggest 24 or 26 for 24Mhz or 26Mhz
-
+	kal_uint32 i2c_speed; /* i2c speed */
 	kal_uint8  mipi_lane_num;		//mipi lane num
 	kal_uint8  i2c_addr_table[5];	//record sensor support all write id addr, only supprt 4must end with 0xff
 //modify by wei.wang2 for IN2 camera performance start
