@@ -732,7 +732,7 @@ static int battery_get_property(struct power_supply *psy,
 		break;
 	case POWER_SUPPLY_PROP_CHARGE_FULL_DESIGN:
 		//Extb HONGMI-85044,chenrui1.wt,MODIFY,2021701,modify typical capacity
-		val->intval = 5000;
+		val->intval = 5000000;
 		break;
 	/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
 	case POWER_SUPPLY_PROP_BATTERY_VOLTAGE:
