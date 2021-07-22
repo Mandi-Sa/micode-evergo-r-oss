@@ -714,6 +714,24 @@ static int select_pdc_charging_current_limit(struct charger_manager *info)
 	if (ret != -ENOTSUPP && pdata->input_current_limit < aicr1_min)
 		pdata->input_current_limit = 0;
 
+	/* +Extb HONGMI-85045,ADD,wangbin.wt.20210709.add charging call state limit*/
+	if (info->enable_sw_jeita) {
+		if (IS_ENABLED(CONFIG_USBIF_COMPLIANCE)
+		    && info->chr_type == STANDARD_HOST)
+			chr_err("USBIF & STAND_HOST skip current check\n");
+		else {
+			pdata->charging_current_limit = info->sw_jeita.cc;
+		}
+	}
+	if (get_charging_call_state()) {
+		pdata->charging_current_limit = min(1000000,pdata->charging_current_limit);
+		chr_err("is charging call state:%d\n",_uA_to_mA(pdata->charging_current_limit));
+	}
+	charger_dev_set_input_current(info->chg1_dev,pdata->input_current_limit);
+	charger_dev_set_charging_current(info->chg1_dev,
+					pdata->charging_current_limit);
+	/* -Extb HONGMI-85045,ADD,wangbin.wt.20210709.add charging call state limit*/
+
 	chr_err("force:%d thermal:%d,%d setting:%d %d sc:%d %d %d type:%d usb_unlimited:%d usbif:%d usbsm:%d aicl:%d atm:%d\n",
 		_uA_to_mA(pdata->force_charging_current),
 		_uA_to_mA(pdata->thermal_input_current_limit),
