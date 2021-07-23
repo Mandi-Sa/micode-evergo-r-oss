@@ -198,7 +198,7 @@ const struct mtk_chip_config spi_ctrdata = {
 };
 #endif
 
-static uint8_t bTouchIsAwake = 0;
+uint8_t bTouchIsAwake = 0;
 
 /*******************************************************
 Description:
