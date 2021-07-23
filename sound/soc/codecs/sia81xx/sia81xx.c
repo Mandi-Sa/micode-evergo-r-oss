@@ -758,7 +758,7 @@ static int sia81xx_resume(
 	unsigned long flags;
 	int default_sia_is_open = 0;
 
-	pr_debug("[debug][%s] %s: running \r\n", LOG_FLAG, __func__);
+	pr_debug("[debug][%s] %s: NHrunning \r\n", LOG_FLAG, __func__);
 
 	if (NULL == sia81xx)
 		return -ENODEV;
@@ -798,6 +798,7 @@ static int sia81xx_resume(
 		sia81xx_regmap_set_chip_on(sia81xx->regmap, 
 			sia81xx->chip_type, sia81xx->scene);
 		sia81xx_regmap_check_trimming(sia81xx->regmap, sia81xx->chip_type);
+
 
 		if (0 == sia81xx->disable_pin) {
 			if (CHIP_TYPE_SIA8101 == sia81xx->chip_type
@@ -2390,6 +2391,20 @@ static int sia81xx_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static void sia81xx_shutdown(struct platform_device *pdev)
+{
+	sia81xx_dev_t *sia81xx = NULL;
+
+	pr_debug("[debug][%s] %s: running \r\n", LOG_FLAG, __func__);
+
+	if (NULL == pdev)
+		return ;
+
+	sia81xx = (sia81xx_dev_t *)dev_get_drvdata(&pdev->dev);
+
+	sia81xx_suspend(sia81xx);
+}
+
 #ifdef CONFIG_OF
 static const struct of_device_id si_sia81xx_dt_match[] = {
 	{ .compatible = "si,sia81xx" },
@@ -2410,6 +2425,7 @@ MODULE_DEVICE_TABLE(of, si_sia81xx_dt_match);
 static struct platform_driver si_sia81xx_dev_driver = {
 	.probe  = sia81xx_probe,
 	.remove = sia81xx_remove,
+	.shutdown = sia81xx_shutdown,
 	.driver = {
 		.name = SIA81XX_NAME,
 		.owner = THIS_MODULE,
