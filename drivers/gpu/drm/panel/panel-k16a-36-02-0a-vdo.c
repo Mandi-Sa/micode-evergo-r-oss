@@ -29,6 +29,8 @@
 #include <linux/of_graph.h>
 #include <linux/platform_device.h>
 
+#include <drm/drm_notifier_odm.h>
+
 #define CONFIG_MTK_PANEL_EXT
 #if defined(CONFIG_MTK_PANEL_EXT)
 #include "../mediatek/mtk_drm_graphics_base.h"
@@ -66,6 +68,7 @@ struct tianma {
 };
 
 struct regulator *lcd_dvdd_ldo;
+struct drm_notifier_data g_notify_data;
 
 #define tianma_dcs_write_seq(ctx, seq...)                                         \
 	({                                                                     \
@@ -237,7 +240,7 @@ static int tianma_unprepare(struct drm_panel *panel)
 	int retval = 0;
 	struct drm_panel_notifier notifier_data;
 	int power_status;
-
+	int blank;
 	pr_info("nvt : %s++\n", __func__);
 
 	if (!ctx->prepared)
@@ -245,12 +248,16 @@ static int tianma_unprepare(struct drm_panel *panel)
 
 	if((ts != NULL)&&(ts->panel_tp_flag == 1)){
 		power_status = DRM_PANEL_BLANK_POWERDOWN;
+		blank = DRM_BLANK_POWERDOWN;
 		notifier_data.data = &power_status;
+		g_notify_data.data = &blank;
 		notifier_data.refresh_rate = 60;
 		notifier_data.id = 1;
 
 		drm_panel_notifier_call_chain(panel, DRM_PANEL_EARLY_EVENT_BLANK, &notifier_data);
+		drm_notifier_call_chain(DRM_EVENT_BLANK, &g_notify_data);
 		pr_err("nvt : %s ++++ drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data)++++", __func__);
+		pr_err("[XMFP] : %s ++++ blank = DRM_BLANK_POWERDOWN ++++", __func__);
 	}
 	tianma_dcs_write_seq_static(ctx, 0x28);
 	usleep_range(20000, 20001);
@@ -295,7 +302,7 @@ static int tianma_prepare(struct drm_panel *panel)
 	struct tianma *ctx = panel_to_tianma(panel);
 	int ret;
 	int retval = 0;
-
+	int blank;
 	int power_status;
 	struct drm_panel_notifier notifier_data;
 
@@ -361,12 +368,16 @@ static int tianma_prepare(struct drm_panel *panel)
 
 	if((ts != NULL)&&(ts->panel_tp_flag == 1)){
 		power_status = DRM_PANEL_BLANK_UNBLANK;
+		blank = DRM_BLANK_UNBLANK;
 		notifier_data.data = &power_status;
+        	g_notify_data.data = &blank;
 		notifier_data.refresh_rate = 60;
 		notifier_data.id = 1;
 
 		drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data);
+        	drm_notifier_call_chain(DRM_EVENT_BLANK, &g_notify_data);
 		pr_err("nvt : %s ++++drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data); ++++", __func__);
+		pr_err("[XMFP] : %s ++++ blank = DRM_BLANK_UNBLANK ++++", __func__);
 	}
 	pr_info("%s-\n", __func__);
 	return ret;

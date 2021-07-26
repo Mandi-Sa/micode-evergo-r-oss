@@ -216,6 +216,8 @@ struct gf_device {
 	u32 irq_num;
 	u8  need_update;
 	u32 irq;
+	u8 fb_black;
+	u8 wait_finger_down;
 
 #ifdef CONFIG_OF
 	struct pinctrl *pinctrl_gpios;
