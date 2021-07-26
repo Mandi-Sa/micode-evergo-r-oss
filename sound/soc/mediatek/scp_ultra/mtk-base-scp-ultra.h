@@ -35,7 +35,7 @@ struct audio_ultra_dram {
 
 struct mtk_base_scp_ultra_dump {
 	bool dump_flag;
-	struct audio_ultra_dram dump_resv_mem;
+	struct audio_dsp_dram dump_resv_mem;
 	struct scp_ultra_dump_ops *dump_ops;
 };
 
@@ -52,7 +52,7 @@ struct mtk_base_scp_ultra {
 	const struct snd_soc_component_driver *component_driver;
 	struct mtk_base_scp_ultra_mem ultra_mem;
 	struct mtk_base_scp_ultra_dump ultra_dump;
-	struct audio_ultra_dram ultra_reserve_dram;
+	struct audio_dsp_dram ultra_reserve_dram;
 	unsigned int usnd_state;
 };
 

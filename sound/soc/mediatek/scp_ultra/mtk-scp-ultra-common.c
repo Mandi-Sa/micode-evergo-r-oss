@@ -22,7 +22,7 @@ static struct mtk_base_scp_ultra *local_base_scp_ultra;
 static struct mtk_base_afe *local_scp_ultra_afe;
 static void *ipi_recv_private;
 
-int ultra_set_ultra_afe(struct mtk_base_afe *afe)
+int ultra_set_afe_base(struct mtk_base_afe *afe)
 {
 	if (!afe) {
 		pr_err("%s(), afe is NULL", __func__);

@@ -302,7 +302,9 @@ static int mtk_scp_ultra_engine_state_set(struct snd_kcontrol *kcontrol,
 	int val = ucontrol->value.integer.value[0];
 	int payload[7];
 
-	if (val < SCP_ULTRA_STATE_IDLE || val > SCP_ULTRA_STATE_OFF) {
+	int old_usnd_state = scp_ultra->usnd_state;
+
+	if (val < SCP_ULTRA_STATE_IDLE || val > SCP_ULTRA_STATE_RECOVERY) {
 		pr_info("%s() unexpected state, ignore\n", __func__);
 		return -1;
 	}
@@ -359,6 +361,27 @@ static int mtk_scp_ultra_engine_state_set(struct snd_kcontrol *kcontrol,
 			       0,
 			       NULL,
 			       ULTRA_IPI_NEED_ACK);
+		return 0;
+	case SCP_ULTRA_STATE_RECOVERY:
+		if (old_usnd_state == SCP_ULTRA_STATE_OFF ||
+		    old_usnd_state == SCP_ULTRA_STATE_IDLE ||
+		    old_usnd_state == SCP_ULTRA_STATE_RECOVERY)
+			return 0;
+		set_afe_clock(true, afe);
+		if (old_usnd_state == SCP_ULTRA_STATE_START)
+			ultra_ipi_send(AUDIO_TASK_USND_MSG_ID_STOP,
+				       false,
+				       0,
+				       NULL,
+				       ULTRA_IPI_NEED_ACK);
+		ultra_ipi_send(AUDIO_TASK_USND_MSG_ID_OFF,
+			       false,
+			       0,
+			       NULL,
+			       ULTRA_IPI_NEED_ACK);
+		set_afe_clock(false, afe);
+		scp_deregister_feature(ULTRA_FEATURE_ID);
+		__pm_relax(&ultra_suspend_lock);
 		return 0;
 	default:
 		pr_info("%s() err state, ignore\n", __func__);
@@ -582,6 +605,7 @@ static int mtk_scp_ultra_pcm_stop(struct snd_pcm_substream *substream)
 static int mtk_scp_ultra_pcm_close(struct snd_pcm_substream *substream)
 {
 	struct mtk_base_afe *afe = ultra_get_afe_base();
+
 	if (pcm_dump_on) {
 		/* scp ultra dump buffer use dram */
 		if (afe->release_dram_resource)

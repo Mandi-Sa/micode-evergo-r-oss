@@ -50,6 +50,7 @@ enum {
 	SCP_ULTRA_STATE_START,
 	SCP_ULTRA_STATE_STOP,
 	SCP_ULTRA_STATE_OFF,
+	SCP_ULTRA_STATE_RECOVERY,
 };
 
 #define DEFAULT_UL_PERIOD_SIZE (480)
@@ -63,13 +64,11 @@ struct snd_dma_buffer;
 struct snd_pcm_substream;
 struct mtk_base_scp_ultra_dump;
 
-int ultra_set_ultra_afe(struct mtk_base_afe *afe);
+int ultra_set_afe_base(struct mtk_base_afe *afe);
 struct mtk_base_afe *ultra_get_afe_base(void);
-int audio_set_dsp_afe(struct mtk_base_afe *afe);
-struct mtk_base_afe *get_afe_base(void);
 int set_scp_ultra_base(struct mtk_base_scp_ultra *scp_ultra);
 void *get_scp_ultra_base(void);
-void *get_ipi_recv_private(void);
+void *ultra_get_ipi_recv_private(void);
 void ultra_set_ipi_recv_private(void *priv);
 void mtk_scp_ultra_dump_msg(struct mtk_base_scp_ultra_dump *ultra_dump);
 void mtk_scp_ultra_ipi_send(uint8_t data_type, /*audio_ipi_msg_data_t*/
