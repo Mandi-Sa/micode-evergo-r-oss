@@ -34,6 +34,7 @@
 	|| defined(CONFIG_MACH_MT6833) || defined(CONFIG_MACH_MT6877)
 #include <linux/ratelimit.h>
 #endif
+#include <linux/pm_wakeup.h>
 
 #include "mtk_drm_ddp_comp.h"
 #include "mtk_drm_crtc.h"
@@ -295,6 +296,12 @@ static const char * const mtk_dsi_porch_str[] = {
 
 #define AS_UINT32(x) (*(u32 *)((void *)x))
 
+#define WAIT_RESUME_TIMEOUT 200
+
+struct mtk_ddp_comp *g_output_comp;
+static struct delayed_work mtk_drm_suspend_delayed_work;
+static struct wakeup_source prim_panel_wakelock;
+
 struct mtk_dsi_driver_data {
 	const u32 reg_cmdq_ofs;
 	s32 (*poll_for_idle)(struct mtk_dsi *dsi, struct cmdq_pkt *handle);
@@ -391,6 +398,12 @@ enum DSI_MODE_CON {
 	MODE_CON_SYNC_EVENT_VDO,
 	MODE_CON_BURST_VDO,
 };
+
+struct drm_connector *dsi_to_connector(void *dsi)
+{
+	return &(((struct mtk_dsi *)dsi)->conn);
+}
+
  static char string_to_hex(const char *str)
 {
 	char val_l = 0;
@@ -2143,6 +2156,56 @@ err_dsi_power_off:
 	mtk_dsi_poweroff(dsi);
 }
 
+/**
+ *  mtk_drm_early_resume - Panel light on interface for fingerprint
+ *  In order to improve panel light on performance when unlock device by
+ *  fingerprint, export this interface for fingerprint.Once finger touch
+ *  happened, it could light on LCD panel in advance of android resume.
+ *
+ *  @timeout: wait time for android resume and set panel on.
+ *            If timeout, mtk drm dsi will disable panel to avoid fingerprint
+ *            touch by mistake.
+ */
+
+int mtk_drm_early_resume(int timeout)
+{
+	int ret = 0;
+	 struct drm_connector *connector = NULL;
+
+        if (!g_output_comp) {
+                pr_err("[XMFP]: %s: invalid output comp g_output_comp is nullptr\n", __func__);
+                ret = -EINVAL;
+		return ret;
+	}
+
+	ret = wait_event_timeout(resume_wait_q,
+		!atomic_read(&resume_pending),
+		msecs_to_jiffies(WAIT_RESUME_TIMEOUT));
+	if (!ret) {
+		pr_err("[XMFP]: Primary fb resume timeout\n");
+		return -ETIMEDOUT;
+	}
+
+	mutex_lock(&g_output_comp->panel_lock);
+
+	__pm_stay_awake(&prim_panel_wakelock);
+
+	connector = dsi_to_connector((void *)g_output_comp);
+	connector->panel_event = 1;
+	pr_info("[XMFP]: %s panel_event=%d\n", __func__, connector->panel_event);
+	sysfs_notify(&connector->kdev->kobj, NULL, "panel_event");
+
+	if (timeout > 0)
+		schedule_delayed_work(&mtk_drm_suspend_delayed_work, msecs_to_jiffies(timeout));
+	else
+		__pm_relax(&prim_panel_wakelock);
+
+	mutex_unlock(&g_output_comp->panel_lock);
+	return ret;
+}
+EXPORT_SYMBOL(mtk_drm_early_resume);
+
+
 static int mtk_dsi_stop_vdo_mode(struct mtk_dsi *dsi, void *handle);
 static int mtk_dsi_wait_cmd_frame_done(struct mtk_dsi *dsi,
 	int force_lcm_update)
@@ -2453,9 +2516,27 @@ err_connector_cleanup:
 	return ret;
 }
 
+static void mtk_drm_suspend_delayed_work_handle(struct work_struct *work)
+{
+	struct drm_connector *connector = NULL;
+	mutex_lock(&g_output_comp->panel_lock);
+	connector = dsi_to_connector((void *)g_output_comp);
+	connector->panel_event = 0;
+	pr_info("[XMFP]: %s panel_event=%d\n", __func__, connector->panel_event);
+	sysfs_notify(&connector->kdev->kobj, NULL, "panel_event");
+
+	__pm_relax(&prim_panel_wakelock);
+	mutex_unlock(&g_output_comp->panel_lock);
+}
+
 static int mtk_dsi_create_conn_enc(struct drm_device *drm, struct mtk_dsi *dsi)
 {
 	int ret;
+
+	struct mtk_ddp_comp *comp = &dsi->ddp_comp;
+
+	enum mtk_ddp_comp_type type;
+	struct drm_connector *connector = NULL;
 
 	ret = drm_encoder_init(drm, &dsi->encoder, &mtk_dsi_encoder_funcs,
 			       DRM_MODE_ENCODER_DSI, NULL);
@@ -2479,6 +2560,17 @@ static int mtk_dsi_create_conn_enc(struct drm_device *drm, struct mtk_dsi *dsi)
 		if (ret)
 			goto err_encoder_cleanup;
 	}
+	type = mtk_ddp_comp_get_type(comp->id);
+        if (type == MTK_DSI) {
+		pr_info("[XMFP]: %s init mtk ealry resume resources\n", __func__);
+                connector = dsi_to_connector((void *)comp);
+		mutex_init(&comp->panel_lock);
+		g_output_comp = comp;
+		atomic_set(&resume_pending, 0);
+		wakeup_source_init(&prim_panel_wakelock, "prim_panel_wakelock");
+		init_waitqueue_head(&resume_wait_q);
+		INIT_DELAYED_WORK(&mtk_drm_suspend_delayed_work, mtk_drm_suspend_delayed_work_handle);
+	}
 
 	return 0;
 
@@ -2489,6 +2581,14 @@ err_encoder_cleanup:
 
 static void mtk_dsi_destroy_conn_enc(struct mtk_dsi *dsi)
 {
+	struct mtk_ddp_comp *comp = &dsi->ddp_comp;
+
+	if (comp == g_output_comp) {
+		pr_info("%s destroy mtk ealry resume resources\n", __func__);
+		cancel_delayed_work_sync(&mtk_drm_suspend_delayed_work);
+		wakeup_source_trash(&prim_panel_wakelock);
+	}
+
 	drm_encoder_cleanup(&dsi->encoder);
 	/* Skip connector cleanup if creation was delegated to the bridge */
 	if (dsi->conn.dev)

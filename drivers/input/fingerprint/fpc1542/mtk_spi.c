@@ -43,6 +43,9 @@
 #include <linux/pm_wakeup.h>
 #include <linux/regulator/consumer.h>
 #include <linux/clk.h>
+#include <linux/fb.h>
+#include <drm/drm_bridge.h>
+#include <drm/drm_notifier_odm.h>
 
 #define FPC_DRIVER_FOR_ISEE
 
@@ -60,7 +63,11 @@ struct TEEC_UUID uuid_ta_fpc = { 0x7778c03f, 0xc30c, 0x4dd0,
 #define FPC_RESET_LOW_US 5000
 #define FPC_RESET_HIGH1_US 100
 #define FPC_RESET_HIGH2_US 5000
-#define FPC_TTW_HOLD_TIME 1000
+
+#define FPC_TTW_HOLD_TIME 2000
+#define FP_UNLOCK_REJECTION_TIMEOUT (FPC_TTW_HOLD_TIME - 500) /*ms*/
+extern int mtk_drm_early_resume(int timeout);
+
 bool fpc1542_fp_exist = 0;
 struct spi_device *spi_fingerprint;
 static const char * const pctl_names[] = {
@@ -78,6 +85,11 @@ struct fpc_data {
 	bool wakeup_enabled;
 	struct wakeup_source *ttw_wl;
 	bool clocks_enabled;
+	struct mutex lock;
+	struct notifier_block fb_notifier;
+	bool fb_black;
+	bool wait_finger_down;
+	struct work_struct work;
 };
 
 static DEFINE_MUTEX(spidev_set_gpio_mutex);
@@ -230,6 +242,25 @@ static ssize_t wakeup_enable_set(struct device *dev,
 }
 static DEVICE_ATTR(wakeup_enable, S_IWUSR, NULL, wakeup_enable_set);
 
+static ssize_t fingerdown_wait_set(struct device *dev,
+				   struct device_attribute *attr,
+				   const char *buf, size_t count)
+{
+	struct fpc_data *fpc = dev_get_drvdata(dev);
+
+	dev_info(fpc->dev, "[XMFP]: %s -> %s\n", __func__, buf);
+	if (!strncmp(buf, "enable", strlen("enable")))
+		fpc->wait_finger_down = true;
+	else if (!strncmp(buf, "disable", strlen("disable")))
+		fpc->wait_finger_down = false;
+	else
+		return -EINVAL;
+
+	return count;
+}
+
+static DEVICE_ATTR(fingerdown_wait, S_IWUSR, NULL, fingerdown_wait_set);
+
 /**
  * sysf node to check the interrupt status of the sensor, the interrupt
  * handler should perform sysf_notify to allow userland to poll the node.
@@ -272,6 +303,7 @@ static struct attribute *fpc_attributes[] = {
 	&dev_attr_wakeup_enable.attr,
 	&dev_attr_clk_enable.attr,
 	&dev_attr_irq.attr,
+	&dev_attr_fingerdown_wait.attr,
 	NULL
 };
 
@@ -279,9 +311,17 @@ static const struct attribute_group fpc_attribute_group = {
 	.attrs = fpc_attributes,
 };
 
+
+static void notification_work(struct work_struct *work)
+{
+	pr_info("[XMFP]: %s: fpc fp unblank\n", __func__);
+	mtk_drm_early_resume(FP_UNLOCK_REJECTION_TIMEOUT);
+}
+
 static irqreturn_t fpc_irq_handler(int irq, void *handle)
 {
 	struct fpc_data *fpc = handle;
+	dev_dbg(fpc->dev, "%s\n", __func__);
 /*	struct device *dev = fpc->dev;
 	static int current_level = 0; // We assume low level from start
 	current_level = !current_level;
@@ -297,11 +337,19 @@ static irqreturn_t fpc_irq_handler(int irq, void *handle)
 	/* Make sure 'wakeup_enabled' is updated before using it
 	** since this is interrupt context (other thread...) */
 	smp_rmb();
+	mutex_lock(&fpc->lock);
 	if (fpc->wakeup_enabled) {
 		__pm_wakeup_event(fpc->ttw_wl, FPC_TTW_HOLD_TIME);
 	}
+	mutex_unlock(&fpc->lock);
 
 	sysfs_notify(&fpc->dev->kobj, NULL, dev_attr_irq.attr.name);
+
+	if (fpc->wait_finger_down && fpc->fb_black) {
+		pr_info("[XMFP]: %s enter fingerdown & fb_black then schedule_work\n", __func__);
+		fpc->wait_finger_down = false;
+		schedule_work(&fpc->work);
+	}
 
 	return IRQ_HANDLED;
 }
@@ -333,6 +381,38 @@ int fpc_regulater_enable(struct device *dev, int state){
     return 0;
 }
 
+static int fpc_fb_notif_callback(struct notifier_block *nb,
+				 unsigned long event, void *data)
+{
+	struct fpc_data *fpc = container_of(nb, struct fpc_data,
+						    fb_notifier);
+	struct fb_event *evdata = data;
+	unsigned int blank;
+
+	if (!fpc)
+		return 0;
+
+	if (event != DRM_EVENT_BLANK)
+		return 0;
+
+	pr_info("[XMFP]: [info] %s value = %d\n", __func__, (int)event);
+
+	if (evdata && evdata->data && event == DRM_EVENT_BLANK) {
+		blank = *(int *)(evdata->data);
+		switch (blank) {
+		case DRM_BLANK_POWERDOWN:
+			fpc->fb_black = true;
+			break;
+		case DRM_BLANK_UNBLANK:
+			fpc->fb_black = false;
+			break;
+		default:
+			pr_debug("[XMFP]: %s defalut\n", __func__);
+			break;
+		}
+	}
+	return NOTIFY_OK;
+}
 
 static int mtk6797_probe(struct spi_device *spidev)
 {
@@ -385,7 +465,6 @@ static int mtk6797_probe(struct spi_device *spidev)
 	if ( 0 != fpc_read_id(spidev))
         {
 		devm_pinctrl_put(fpc->pinctrl_fpc);
-		
 		return 0;
 	}
 
@@ -432,6 +511,13 @@ static int mtk6797_probe(struct spi_device *spidev)
 		goto exit;
 	}
 
+	fpc->fb_black = false;
+	fpc->wait_finger_down = false;
+
+	INIT_WORK(&fpc->work, notification_work);
+	fpc->fb_notifier.notifier_call = fpc_fb_notif_callback;
+	drm_register_client(&fpc->fb_notifier);
+
 	enable_irq_wake(irq_num);
 	dev_err(dev, "%s: ok\n", __func__);
 exit:
@@ -441,6 +527,10 @@ exit:
 static int mtk6797_remove(struct spi_device *spidev)
 {
 	struct  fpc_data *fpc = dev_get_drvdata(&spidev->dev);
+
+	dev_info(fpc->dev, "%s\n", __func__);
+
+	drm_unregister_client(&fpc->fb_notifier);
 
 	sysfs_remove_group(&spidev->dev.kobj, &fpc_attribute_group);
 	wakeup_source_unregister(fpc->ttw_wl);

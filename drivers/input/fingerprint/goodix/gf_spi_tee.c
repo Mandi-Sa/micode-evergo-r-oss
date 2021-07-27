@@ -14,6 +14,7 @@
 #include <linux/init.h>
 #include <asm/atomic.h>
 #include <linux/timer.h>
+#include <linux/input.h>
 #include "cpu_ctrl.h"
 
 #include "teei_fp.h"
@@ -45,6 +46,8 @@
 #include <linux/spi/spi.h>
 #include <linux/spi/spidev.h>
 #include <linux/platform_device.h>
+#include <drm/drm_bridge.h>
+#include <drm/drm_notifier_odm.h>
 
 /* MTK header */
 #ifndef CONFIG_SPI_MT65XX
@@ -65,7 +68,9 @@
 #include "gf_spi_tee.h"
 #include  <linux/regulator/consumer.h>
 
-#define WAKELOCK_HOLD_TIME 2000 /* in ms */
+
+#define WAKELOCK_HOLD_TIME 2000	/* in ms */
+#define FP_UNLOCK_REJECTION_TIMEOUT (WAKELOCK_HOLD_TIME - 500) /*ms*/
 
 /**************************defination******************************/
 #define GF_DEV_NAME "goodix_fp"
@@ -95,6 +100,7 @@ u32 gf_spi_speed = 1*1000000;
 
 bool goodix_fp_exist = false;
 extern bool fpc1542_fp_exist;
+extern int mtk_drm_early_resume(int timeout);
 extern struct spi_device *spi_fingerprint;
 static struct gf_device goodix_dev;
 struct TEEC_UUID uuid_ta_gf = { 0x8888c03f, 0xc30c, 0x4dd0,
@@ -105,6 +111,7 @@ static LIST_HEAD(device_list);
 static DEFINE_MUTEX(device_list_lock);
 
 static struct wakeup_source fp_wakesrc;
+static struct work_struct fp_display_work;
 
 static unsigned int bufsiz = (25 * 1024);
 module_param(bufsiz, uint, S_IRUGO);
@@ -556,7 +563,7 @@ static void gf_late_resume(struct early_suspend *handler)
 #else
 
 static int gf_fb_notifier_callback(struct notifier_block *self,
-			unsigned long event, void *data)
+				   unsigned long event, void *data)
 {
 	struct gf_device *gf_dev = NULL;
 	struct fb_event *evdata = data;
@@ -565,32 +572,41 @@ static int gf_fb_notifier_callback(struct notifier_block *self,
 	FUNC_ENTRY();
 
 	/* If we aren't interested in this event, skip it immediately ... */
-	if (event != FB_EVENT_BLANK /* FB_EARLY_EVENT_BLANK */)
+	if (event != DRM_EVENT_BLANK)
+	{
 		return 0;
+	}
 
 	gf_dev = container_of(self, struct gf_device, notifier);
-	blank = *(int *)evdata->data;
 
-	gf_debug(INFO_LOG, "[%s] : enter, blank=0x%x\n", __func__, blank);
+        if (evdata && evdata->data && event == DRM_EVENT_BLANK && gf_dev) {
+		blank = *(int *)evdata->data;
 
-	switch (blank) {
-	case FB_BLANK_UNBLANK:
-		gf_debug(INFO_LOG, "[%s] : lcd on notify\n", __func__);
-		gf_netlink_send(gf_dev, GF_NETLINK_SCREEN_ON);
-		break;
+		pr_info("[XMFP]: [%s] : enter, blank=0x%x\n", __func__, blank);
 
-	case FB_BLANK_POWERDOWN:
-		gf_debug(INFO_LOG, "[%s] : lcd off notify\n", __func__);
-		gf_netlink_send(gf_dev, GF_NETLINK_SCREEN_OFF);
-		break;
+		switch (blank) {
+		case DRM_BLANK_UNBLANK:
+			gf_dev->fb_black = 0;
+			pr_info("[XMFP]: [%s] : lcd on notify\n", __func__);
+			gf_netlink_send(gf_dev, GF_NETLINK_SCREEN_ON);
+			break;
 
-	default:
-		gf_debug(INFO_LOG, "[%s] : other notifier, ignore\n", __func__);
-		break;
+		case DRM_BLANK_POWERDOWN:
+			gf_dev->fb_black = 1;
+			gf_dev->wait_finger_down = true;
+			pr_info("[XMFP]: [%s] : lcd off notify\n", __func__);
+			gf_netlink_send(gf_dev, GF_NETLINK_SCREEN_OFF);
+			break;
+
+		default:
+			pr_info("[XMFP]: [%s] : other notifier, ignore\n", __func__);
+			break;
+		}
 	}
+
 	FUNC_EXIT();
 	return retval;
-}
+}//goodix_fb_state_chg_callback
 
 #endif //CONFIG_HAS_EARLYSUSPEND
 
@@ -688,6 +704,13 @@ static irqreturn_t gf_irq(int irq, void *handle)
 	gf_netlink_send(gf_dev, GF_NETLINK_IRQ);
 	gf_dev->sig_count++;
 
+        /*vdd by regultor,and not contrled by gpio. so don't need device_available*/
+        if ((gf_dev->wait_finger_down == true) && (gf_dev->fb_black == 1)) {
+		pr_info("[XMFP]: %s enter fingerdown & fb_black then schedule_work\n", __func__);
+		gf_dev->wait_finger_down = false;
+		schedule_work(&fp_display_work);
+	}
+
 	FUNC_EXIT();
 	return IRQ_HANDLED;
 }
@@ -769,7 +792,7 @@ static long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 #else
 		/* register screen on/off callback */
 		gf_dev->notifier.notifier_call = gf_fb_notifier_callback;
-		fb_register_client(&gf_dev->notifier);
+		drm_register_client(&gf_dev->notifier);
 #endif
 
 		gf_dev->sig_count = 0;
@@ -803,7 +826,7 @@ static long gf_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 		if (gf_dev->early_suspend.suspend)
 			unregister_early_suspend(&gf_dev->early_suspend);
 #else
-		fb_unregister_client(&gf_dev->notifier);
+		drm_unregister_client(&gf_dev->notifier);
 #endif
 
 		gf_dev->system_status = 0;
@@ -1810,6 +1833,12 @@ int gf_spi_read_bytes(struct gf_device *gf_dev, u16 addr, u32 data_len, u8 *rx_b
 	 return 0;
  }
 
+static void unblank_work(struct work_struct *work)
+{
+	pr_info("[XMFP]: entry %s \n", __func__);
+	mtk_drm_early_resume(FP_UNLOCK_REJECTION_TIMEOUT);
+}
+
 
 static int gf_probe(struct platform_device  *pdev);
 static int gf_remove(struct platform_device  *pdev);
@@ -1836,12 +1865,16 @@ static int gf_probe(struct platform_device  *pdev)
 
 	FUNC_ENTRY();
 
+	INIT_WORK(&fp_display_work, unblank_work);
+
 	INIT_LIST_HEAD(&gf_dev->device_entry);
 
 	gf_dev->device_count     = 0;
 	gf_dev->probe_finish     = 0;
 	gf_dev->system_status    = 0;
 	gf_dev->need_update      = 0;
+	gf_dev->fb_black = 0;
+	gf_dev->wait_finger_down = false;
 
 	/*setup gf configurations.*/
 	gf_debug(INFO_LOG, "%s, Setting gf device configuration==========\n", __func__);
@@ -2133,7 +2166,7 @@ static int gf_remove(struct platform_device *pdev)
 	if (gf_dev->early_suspend.suspend)
 		unregister_early_suspend(&gf_dev->early_suspend);
 #else
-	fb_unregister_client(&gf_dev->notifier);
+	drm_unregister_client(&gf_dev->notifier);
 #endif
 
 	mutex_lock(&gf_dev->release_lock);

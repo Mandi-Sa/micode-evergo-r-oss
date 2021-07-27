@@ -20,6 +20,7 @@
 
 #include <drm/drm_sysfs.h>
 #include <drm/drmP.h>
+#include <drm/drm_connector.h>
 #include "drm_internal.h"
 
 #include "linux/hardware_info.h"
@@ -282,6 +283,20 @@ static ssize_t lcm_info_show(struct device *device,
 	return sprintf(buf, "%s\n", Lcm_name);
 }
 
+static ssize_t panel_event_show(struct device *device,
+                           struct device_attribute *attr,
+                           char *buf)
+{
+        ssize_t ret = 0;
+        struct drm_connector *connector = to_drm_connector(device);
+        if (!connector) {
+                pr_info("%s-%d connector is NULL \r\n",__func__, __LINE__);
+                return ret;
+        }
+
+        return snprintf(buf, PAGE_SIZE, "%d\n", connector->panel_event);
+}
+
 static DEVICE_ATTR_RW(status);
 static DEVICE_ATTR_RO(enabled);
 static DEVICE_ATTR_RO(dpms);
@@ -291,6 +306,7 @@ static DEVICE_ATTR_RO(white_point_x);
 static DEVICE_ATTR_RO(white_point_y);
 static DEVICE_ATTR_RO(white_point_lv);
 static DEVICE_ATTR_RO(lcm_info);
+static DEVICE_ATTR_RO(panel_event);
 
 static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_status.attr,
@@ -302,6 +318,7 @@ static struct attribute *connector_dev_attrs[] = {
 	&dev_attr_white_point_y.attr,
 	&dev_attr_white_point_lv.attr,
 	&dev_attr_lcm_info.attr,
+	&dev_attr_panel_event.attr,
 	NULL
 };
 
