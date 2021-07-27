@@ -409,12 +409,6 @@ static int mt_usb_get_property(struct power_supply *psy,
 		} else {
 			val->intval = mtk_chg->chg_type;
 		}
-		//+Extb HONGMI-87548,chenrui1.wt,ADD.20210712,fix plugout real_type display USB_PD
-		if (battery_get_vbus() < 4000) {
-			val->intval = CHARGER_UNKNOWN;
-			pr_info("%s: wt_debug get info_chg_type_unknown\n", __func__);
-		}
-		//-Extb HONGMI-87548,chenrui1.wt,ADD.20210712,fix plugout real_type display USB_PD
 		break;
 	/* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 	/* +Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
