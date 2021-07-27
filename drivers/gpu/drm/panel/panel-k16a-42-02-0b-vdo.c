@@ -510,6 +510,7 @@ static struct mtk_panel_params ext_params = {
 	.phy_timcon = {
 	.hs_zero = 35,
 	.hs_trail = 26,
+	.hs_prpr = 11,
 	},
 
 };
@@ -543,6 +544,7 @@ static struct mtk_panel_params ext_params_90hz = {
 	.phy_timcon = {
 	.hs_zero = 35,
 	.hs_trail = 26,
+	.hs_prpr = 11,
 	},
 
 };
