@@ -5,6 +5,14 @@ ifeq ($(CONFIG_MACH_MT6893),y)
 
 MTK_PLATFORM := mt6885
 
+else ifeq ($(CONFIG_MACH_MT6877),y)
+
+MTK_PLATFORM := mt6877
+
+else ifeq ($(CONFIG_MACH_MT6833),y)
+
+MTK_PLATFORM := mt6833
+
 else
 
 MTK_PLATFORM := $(subst ",,$(CONFIG_MTK_PLATFORM))
