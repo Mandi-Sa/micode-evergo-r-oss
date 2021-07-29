@@ -423,7 +423,7 @@ static kal_uint32 streaming_control(kal_bool enable)
 	LOG_INF("streaming_enable(0=Sw Standby,1=streaming): %d\n", enable);
 	if (enable) {
 //		write_cmos_sensor(0x6028, 0x4000);
-		mdelay(5);
+//		mdelay(5);
 		write_cmos_sensor_byte(0x0100, 0X01);
 		for (i = 0; i < 5; i++) {
 			pr_err("%s streaming check is %d", __func__,
@@ -435,11 +435,11 @@ static kal_uint32 streaming_control(kal_bool enable)
 		}
 	} else {
 //		write_cmos_sensor(0x6028, 0x4000);
-		mdelay(5);
+//		mdelay(5);
 		write_cmos_sensor_byte(0x0100, 0x00);
 		check_streamoff();
 	}
-	mdelay(10);
+//	mdelay(10);
 	return ERROR_NONE;
 }
 #endif
