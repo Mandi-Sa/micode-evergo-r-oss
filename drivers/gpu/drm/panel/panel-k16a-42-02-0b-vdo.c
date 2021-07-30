@@ -444,8 +444,8 @@ static const struct drm_display_mode performance_mode = {
 	.vrefresh = 90,
 };
 #else
-#define HFP (20)
-#define HSA (4)
+#define HFP (228)
+#define HSA (20)
 #define HBP (36)
 #define VFP_45HZ (54)
 #define VFP_60HZ (1290)
@@ -455,7 +455,7 @@ static const struct drm_display_mode performance_mode = {
 #define VAC (2400)
 #define HAC (1080)
 static const struct drm_display_mode default_mode = {
-	.clock = 269945,
+	.clock = 303626,
 	.hdisplay = HAC,
 	.hsync_start = HAC + HFP,
 	.hsync_end = HAC + HFP + HSA,
@@ -468,7 +468,7 @@ static const struct drm_display_mode default_mode = {
 };
 
 static const struct drm_display_mode performance_mode = {
-	.clock = 270309,
+	.clock = 303708,
 	.hdisplay = HAC,
 	.hsync_start = HAC + HFP,
 	.hsync_end = HAC + HFP + HSA,
@@ -485,7 +485,7 @@ static const struct drm_display_mode performance_mode = {
 static struct mtk_panel_params ext_params = {
 	.physical_width_um = PHYSICAL_WIDTH,
 	.physical_height_um = PHYSICAL_HEIGHT,
-	.pll_clk = 550,
+	.pll_clk = 535,
 	//.vfp_low_power = VFP_45HZ,
 	.cust_esd_check = 1,
 	.esd_check_enable = 1,
@@ -508,9 +508,15 @@ static struct mtk_panel_params ext_params = {
 #endif
 	},
 	.phy_timcon = {
-	.hs_zero = 35,
-	.hs_trail = 26,
-	.hs_prpr = 11,
+		.hs_zero = 35,
+		.hs_trail = 26,
+		.hs_prpr = 11,
+	},
+	.dyn = {
+		.switch_en = 1,
+		.pll_clk = 532,
+		.hbp = 28,
+		.data_rate = 1064,
 	},
 
 };
@@ -518,7 +524,7 @@ static struct mtk_panel_params ext_params = {
 static struct mtk_panel_params ext_params_90hz = {
 	.physical_width_um = PHYSICAL_WIDTH,
 	.physical_height_um = PHYSICAL_HEIGHT,
-	.pll_clk = 550,
+	.pll_clk = 535,
 	//.vfp_low_power = VFP_60HZ,
 	.cust_esd_check = 1,
 	.esd_check_enable = 1,
@@ -542,9 +548,15 @@ static struct mtk_panel_params ext_params_90hz = {
 #endif
 	},
 	.phy_timcon = {
-	.hs_zero = 35,
-	.hs_trail = 26,
-	.hs_prpr = 11,
+		.hs_zero = 35,
+		.hs_trail = 26,
+		.hs_prpr = 11,
+	},
+	.dyn = {
+		.switch_en = 1,
+		.pll_clk = 532,
+		.hbp = 28,
+		.data_rate = 1064,
 	},
 
 };
