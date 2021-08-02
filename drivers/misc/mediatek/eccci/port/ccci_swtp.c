@@ -45,6 +45,9 @@ struct swtp_t swtp_data[SWTP_MAX_SUPPORT_MD];
 #define MAX_RETRY_CNT 10
 /*Bug651590 liuchaochao.wt  20210219 Add swtp feature begin*/
 
+//HONGMI-89285, wangchenjun.wt,modify,20210803, modify irq_name to static arry
+static const char * irq_name[MAX_PIN_NUM] = { "swtp-eint", "swtp1-eint", "swtp2-eint", "swtp3-eint" };
+
 static int swtp_send_tx_power(struct swtp_t *swtp)
 {
 	unsigned long flags;
@@ -258,12 +261,6 @@ static void swtp_init_delayed_work(struct work_struct *work)
 	u32 ints1[2] = { 0, 0 };
 	struct device_node *node = NULL;
 
-	/*Bug651590 liuchaochao.wt  20210219 Add swtp feature begin*/
-    char irq_name[12];
-    int has_write = 0;
-	/*Bug651590 liuchaochao.wt  20210219 Add swtp feature begin*/
-
-
 	CCCI_NORMAL_LOG(-1, SYS, "%s start\n", __func__);
 	CCCI_BOOTUP_LOG(-1, SYS, "%s start\n", __func__);
 
@@ -316,18 +313,9 @@ static void swtp_init_delayed_work(struct work_struct *work)
 				swtp_data[md_id].setdebounce[i]);
 			swtp_data[md_id].eint_type[i] = ints1[1];
 			swtp_data[md_id].irq[i] = irq_of_parse_and_map(node, 0);
-			/*Bug651590 liuchaochao.wt  20210219 Add swtp feature begin*/
-            memset(irq_name, 0, sizeof(irq_name));
-            has_write = snprintf(irq_name, 12, "swtp%d-eint", i);
-            if (has_write <= 0 || has_write > 12) {
-                CCCI_LEGACY_ERR_LOG(md_id, SYS,
-                    "get swtp%d-eint fail\n",
-                    i);
-                break;
-            }
 			ret = request_irq(swtp_data[md_id].irq[i],
 				swtp_irq_handler, IRQF_TRIGGER_NONE,
-            irq_name, &swtp_data[md_id]);
+            irq_name[i], &swtp_data[md_id]);  //HONGMI-89285, wangchenjun.wt,modify,20210803, modify irq_name to static arry
 			/*Bug651590 liuchaochao.wt  20210219 Add swtp feature begin*/
             if (ret) {
 				CCCI_LEGACY_ERR_LOG(md_id, SYS,
