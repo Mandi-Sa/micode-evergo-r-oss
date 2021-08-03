@@ -259,9 +259,9 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 				info->data.apple_2_1a_charger_current;
 	} else if (info->chr_type == CHECK_HV) {
 		pdata->input_current_limit =
-				info->data.check_hv_current;
+				info->data.ac_charger_input_current;
 		pdata->charging_current_limit =
-				info->data.check_hv_current;
+				info->data.ac_charger_current;
 	} else if (info->chr_type == HVDCP_CHARGER) {
 		pdata->input_current_limit =
 				info->data.ac_charger_input_current;
@@ -277,6 +277,7 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 	else if (info->chr_type == CHARGER_UNKNOWN) {
 		pdata->input_current_limit = 0;
 		pdata->charging_current_limit = 0;
+		chr_err("chr_type is charger_unknown\n");
 	}
 
 //+chk92000,chenrui1.wt,20210621,add dis-temp protect
@@ -319,8 +320,10 @@ done:
 		pdata->charging_current_limit = 0;
 
 	ret = charger_dev_get_min_input_current(info->chg1_dev, &aicr1_min);
-	if (ret != -ENOTSUPP && pdata->input_current_limit < aicr1_min)
+	if (ret != -ENOTSUPP && pdata->input_current_limit < aicr1_min) {
+		chr_err("input_current_limit=%d,aicr1_min=%d\n",pdata->input_current_limit,aicr1_min);
 		pdata->input_current_limit = 0;
+	}
 
 	/* +Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
 	chr_err("force:%d thermal:%d,%d pe4:%d,%d,%d setting:%d %d sc:%d,%d,%d type:%d usb_unlimited:%d usbif:%d usbsm:%d aicl:%d atm:%d thermal_mitigation_current:%d\n",
