@@ -2237,10 +2237,16 @@ static void mtk_dynamic_set_ieoc_and_cv(struct charger_manager *info)
 			info->data.battery_cv = 4450000;
 		}
 		charger_dev_set_eoc_current(info->chg1_dev, ieoc_ua);
-		chr_err("wt_debug : %s set ieoc = %u cv = %u, pd_auth = %d\n", __func__, ieoc_ua, info->data.battery_cv, pd_auth);
 	}
 	else
 		chr_err("wt_debug : %s not set ieoc", __func__);
+/* +HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
+#ifdef CONFIG_MTK_DISABLE_TEMP_PROTECT
+	info->data.battery_cv = 4100000;
+#endif
+	chr_err("wt_debug : %s set ieoc = %u cv = %u, pd_auth = %d\n", __func__, ieoc_ua, info->data.battery_cv, pd_auth);
+/* -HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
+
 }
 //-Bug651592,chenrui1.wt,ADD,20210615,add dynamic set ieoc and cv
 
