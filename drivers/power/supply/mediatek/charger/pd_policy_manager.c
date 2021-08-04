@@ -12,8 +12,14 @@
 #include <mt-plat/prop_chgalgo_class.h>
 
 #define PCA_PPS_CMD_RETRY_COUNT	2
-
+/* +HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
+#ifdef CONFIG_MTK_DISABLE_TEMP_PROTECT
+#define BATT_MAX_CHG_VOLT		4100
+#else
 #define BATT_MAX_CHG_VOLT		4470
+#endif
+/* -HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
+
 /* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 #define BATT_FAST_CHG_CURR		6000
 #define BUS_OVP_THRESHOLD		10500
@@ -55,9 +61,17 @@
 #define BAT_CURR_2500MA       2500
 #define BAT_CURR_2000MA       2000
 #define BAT_CURR_100MA        100
+/* +HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
+#ifdef CONFIG_MTK_DISABLE_TEMP_PROTECT
+#define CHG_CUR_VOLT          4100
+#define CHG_CUR_VOLT2         4100
+#define CHG_CUR_VOLT3         4100
+#else
 #define CHG_CUR_VOLT          4250
 #define CHG_CUR_VOLT2         4450
-#define CHG_CUR_VOLT3         4480
+#define CHG_CUR_VOLT3         4470
+#endif
+/* -HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
 #define CHG_TEMP_STEP1        1
 #define CHG_TEMP_STEP2        2
 #define CHG_TEMP_STEP3        3
