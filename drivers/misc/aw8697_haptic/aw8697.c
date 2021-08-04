@@ -1325,8 +1325,8 @@ static int aw8697_haptic_rtp_init(struct aw8697 *aw8697)
 	unsigned int period_size = aw8697->ram.base_addr >> 2 ;
 
 	pm_qos_add_request(&pm_qos_req_vb, PM_QOS_CPU_DMA_LATENCY, PM_QOS_VALUE_VB);
+	mutex_lock(&aw8697->rtp_lock);
 	aw8697->rtp_cnt = 0;
-	disable_irq(gpio_to_irq(aw8697->irq_gpio));
 	while ((!aw8697_haptic_rtp_get_fifo_afi(aw8697)) &&
 	       (aw8697->play_mode == AW8697_HAPTIC_RTP_MODE) &&
 	       !atomic_read(&aw8697->exit_in_rtp_loop)) {
@@ -1343,6 +1343,8 @@ static int aw8697_haptic_rtp_init(struct aw8697 *aw8697)
 			if (aw8697->rtp_cnt == aw8697_rtp->len) {
 				aw8697->rtp_cnt = 0;
 				aw8697_haptic_set_rtp_aei(aw8697, false);
+				mutex_unlock(&aw8697->rtp_lock);
+				pm_qos_remove_request(&pm_qos_req_vb);
 				break;
 			}
 		} else {
@@ -1352,15 +1354,16 @@ static int aw8697_haptic_rtp_init(struct aw8697 *aw8697)
 				pr_info("%s: custom rtp update complete\n", __func__);
 				aw8697->rtp_cnt = 0;
 				aw8697_haptic_set_rtp_aei(aw8697, false);
+				mutex_unlock(&aw8697->rtp_lock);
 				break;
 			}
 		}
 	}
-	enable_irq(gpio_to_irq(aw8697->irq_gpio));
 	if (aw8697->play_mode == AW8697_HAPTIC_RTP_MODE && !atomic_read(&aw8697->exit_in_rtp_loop)) {
 		aw8697_haptic_set_rtp_aei(aw8697, true);
 	}
 	pr_info("%s: exit\n", __func__);
+	mutex_unlock(&aw8697->rtp_lock);
 	pm_qos_remove_request(&pm_qos_req_vb);
 	return 0;
 }
@@ -2710,9 +2713,9 @@ static irqreturn_t aw8697_irq(int irq, void *data)
 
 	atomic_set(&aw8697->is_in_rtp_loop, 1);
 	aw8697_i2c_read(aw8697, AW8697_REG_SYSINT, &reg_val);
-	//pr_info("%s: reg SYSINT=0x%x\n", __func__, reg_val);
+	pr_info("%s: reg SYSINT=0x%x\n", __func__, reg_val);
 	aw8697_i2c_read(aw8697, AW8697_REG_DBGSTAT, &dbg_val);
-	//pr_info("%s: reg DBGSTAT=0x%x\n", __func__, dbg_val);
+	pr_info("%s: reg DBGSTAT=0x%x\n", __func__, dbg_val);
 
 	if (reg_val & AW8697_BIT_SYSINT_OVI) {
 		pr_err("%s chip ov int error\n", __func__);
@@ -2795,8 +2798,6 @@ static irqreturn_t aw8697_irq(int irq, void *data)
 		aw8697_haptic_set_rtp_aei(aw8697, false);
 	}
 
-	aw8697_i2c_read(aw8697, AW8697_REG_SYSINT, &reg_val);
-	pr_debug("%s: reg SYSINT=0x%x\n", __func__, reg_val);
 	aw8697_i2c_read(aw8697, AW8697_REG_SYSST, &reg_val);
 	pr_debug("%s: reg SYSST=0x%x\n", __func__, reg_val);
 	atomic_set(&aw8697->is_in_rtp_loop, 0);
