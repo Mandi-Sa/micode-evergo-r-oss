@@ -403,10 +403,11 @@ static int mt_usb_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_REAL_TYPE:
 		//Extb HONGMI-87422,chenrui1.wt,MODIFY,20210708,modify real_type
 		if (charger_manager_pd_is_online() && val->intval != STANDARD_HOST) {
-			val->intval = PPS_CHARGER;
-		} else {
-			val->intval = mtk_chg->chg_type;
+			pr_info("[%s]wt_debug, pre_type = %d\n", __func__, mtk_chg->chg_type);
+			mtk_chg->chg_type = PPS_CHARGER;
 		}
+		val->intval = mtk_chg->chg_type;
+
 		break;
 	/* -Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 	/* +Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
