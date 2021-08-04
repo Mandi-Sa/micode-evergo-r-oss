@@ -693,6 +693,7 @@ int charger_manager_pd_is_online(void)
 	if (pinfo == NULL)
 		return 0;
 
+	chr_err("%s: get charge_type %d\n", __func__, pinfo->pd_type);
 	if (pinfo->pd_type == MTK_PD_CONNECT_PE_READY_SNK ||
 		pinfo->pd_type == MTK_PD_CONNECT_PE_READY_SNK_PD30 ||
 		pinfo->pd_type == MTK_PD_CONNECT_PE_READY_SNK_APDO)
