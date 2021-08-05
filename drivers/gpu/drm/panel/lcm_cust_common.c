@@ -113,6 +113,10 @@ int lm36273_brightness_set(int level)
 	MSB_tmp = (temp_level >> 3) & 0xFF;
 
 	mutex_lock(&g_lm36273_led.lock);
+	if (g_lm36273_led.hbm_status && level) {
+		mutex_unlock(&g_lm36273_led.lock);
+		return 0;
+	}
 	_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, LSB_tmp);
 	_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, MSB_tmp);
 	if (level == 0 && g_lm36273_led.level != 0) {
