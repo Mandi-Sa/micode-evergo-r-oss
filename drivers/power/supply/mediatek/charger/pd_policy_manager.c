@@ -688,7 +688,7 @@ static int bat_step(struct usbpd_pm *pdpm, int cur) {
 static int bat_lcdon_temp(struct usbpd_pm *pdpm, int temp)
 {
 	int bat_temp = temp;
-	int step_ibat = 0;
+	int step_ibat = 1;
 
 	if (bat_temp < BAT_TEMP_300) {
 		if (!pdpm->lcdon_curr_step)
@@ -747,14 +747,14 @@ static int bat_lcdon_temp(struct usbpd_pm *pdpm, int temp)
 	} else if (bat_temp >= BAT_TEMP_440) {
 		pdpm->pps_temp_flag = false;
 	}
-
+	pr_err("[%s]lcdon_curr_step=%d\n", __func__, pdpm->lcdon_curr_step);
 	return step_ibat;
 }
 
 static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 {
 	int bat_temp = temp;
-	int step_ibat = 0;
+	int step_ibat = 1;
 
 	if (bat_temp < BAT_TEMP_380) {
 		if (!pdpm->lcdoff_curr_step)
@@ -825,7 +825,7 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 		pdpm->lcdoff_curr_step = CHG_TEMP_STEP6;
 		step_ibat = bat_step(pdpm, BAT_CURR_2500MA);
 	}
-
+	pr_err("[%s]lcdoff_curr_step=%d\n", __func__, pdpm->lcdoff_curr_step);
 	return step_ibat;
 }
 
