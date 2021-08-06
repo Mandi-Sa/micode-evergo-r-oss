@@ -547,8 +547,6 @@ static void plug_in_out_handler(struct chg_type_info *cti, bool en, bool ignore)
 /* +Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
 static int get_source_mode(struct tcp_notify *noti)
 {
-	pr_info("%s rp_level = %d\n", __func__,
-		noti->typec_state.rp_level);
 	switch (noti->typec_state.rp_level) {
 	case TYPEC_CC_VOLT_SNK_1_5:
 		return POWER_SUPPLY_TYPEC_SOURCE_MEDIUM;
@@ -576,24 +574,15 @@ static int pd_tcp_notifier_call(struct notifier_block *pnb,
 	case TCP_NOTIFY_TYPEC_STATE:
 		if (noti->typec_state.old_state == TYPEC_UNATTACHED &&
 		    (noti->typec_state.new_state == TYPEC_ATTACHED_SNK ||
-		    noti->typec_state.new_state == TYPEC_ATTACHED_SRC ||
 		    noti->typec_state.new_state == TYPEC_ATTACHED_CUSTOM_SRC ||
 		    noti->typec_state.new_state == TYPEC_ATTACHED_NORP_SRC)) {
 			pr_info("%s USB Plug in, pol = %d\n", __func__,
 					noti->typec_state.polarity);
 			//Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode
-			/* +Extb HONGMI-92271,wangbin wt.ADD,20210805,add for sink*/
-			if (noti->typec_state.new_state == TYPEC_ATTACHED_SRC)
-				cti->typec_mode = POWER_SUPPLY_TYPEC_SINK;
-			else
-				cti->typec_mode = get_source_mode(noti);
-			pr_info("%s typec_state.new_state = %d\n", __func__,
-				noti->typec_state.new_state);
-			/* -Extb HONGMI-92271,wangbin wt.ADD,20210805,add for sink*/
+			cti->typec_mode = get_source_mode(noti);
 			plug_in_out_handler(cti, true, false);
 		} else if ((noti->typec_state.old_state == TYPEC_ATTACHED_SNK ||
 		    noti->typec_state.old_state == TYPEC_ATTACHED_CUSTOM_SRC ||
-		    noti->typec_state.new_state == TYPEC_ATTACHED_SRC ||
 			noti->typec_state.old_state == TYPEC_ATTACHED_NORP_SRC)
 			&& noti->typec_state.new_state == TYPEC_UNATTACHED) {
 			if (cti->tcpc_kpoc) {
