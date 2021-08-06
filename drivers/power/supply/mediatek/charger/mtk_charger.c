@@ -2223,11 +2223,11 @@ static void mtk_dynamic_set_ieoc_and_cv(struct charger_manager *info)
 		batt_temp = battery_get_bat_temperature();
 		if (batt_temp >= 15 && batt_temp <= 35 && pd_auth > 0) {
 			ieoc_ua = (batt_id == BAT_ID_COS) ? 686000 : 735000;
-			info->data.battery_cv = 4480000;
+			info->data.battery_cv = 4470000;
 		}
 		else if (batt_temp > 35 && batt_temp <= 45 && pd_auth > 0) {
 			ieoc_ua = (batt_id == BAT_ID_COS) ? 833000 : 784000;
-			info->data.battery_cv = 4480000;
+			info->data.battery_cv = 4470000;
 		}
 		else if (batt_temp > 45 && batt_temp <= 60) {
 			ieoc_ua = 200000;
