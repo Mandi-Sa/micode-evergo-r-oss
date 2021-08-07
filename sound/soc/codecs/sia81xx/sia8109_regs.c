@@ -100,7 +100,7 @@ static const char sia8109_palyback_defaults[][SIA8109_WRITEABLE_REG_NUM] = {
 static const char sia8109_voice_defaults[][SIA8109_WRITEABLE_REG_NUM] = {
 	[SIA81XX_CHANNEL_L] = {
 				0x07,		//SIA8109_REG_SYSCTRL
-				0x1C,		//SIA8109_REG_AGCCTRL
+				0x9C,		//SIA8109_REG_AGCCTRL
 				0xCE,		//SIA8109_REG_BOOST_CFG
 				0x1A,		//SIA8109_REG_CLSD_CFG1
 				0x26,		//SIA8109_REG_CLSD_CFG2
@@ -116,7 +116,7 @@ static const char sia8109_voice_defaults[][SIA8109_WRITEABLE_REG_NUM] = {
 	},
 	[SIA81XX_CHANNEL_R] = {
 				0x07,		//SIA8109_REG_SYSCTRL
-				0x1C,		//SIA8109_REG_AGCCTRL
+				0x9C,		//SIA8109_REG_AGCCTRL
 				0xCE,		//SIA8109_REG_BOOST_CFG
 				0x1A,		//SIA8109_REG_CLSD_CFG1
 				0x26,		//SIA8109_REG_CLSD_CFG2
