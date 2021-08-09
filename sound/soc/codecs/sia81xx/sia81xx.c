@@ -1433,7 +1433,7 @@ static int sia81xx_audio_scene_set(
 	}
 
 	if (sia81xx_is_chip_en(sia81xx))
-		sia81xx_resume(sia81xx);
+		sia81xx_reboot(sia81xx);
 	
 	return 0;
 }
