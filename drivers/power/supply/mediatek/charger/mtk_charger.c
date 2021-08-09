@@ -76,7 +76,16 @@
 #include <tcpm.h>
 
 //Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit
-int thermal_mitigation[] = {6000000, 5000000, 4500000, 4000000, 3500000, 3000000, 2500000, 2000000, 1500000, 1000000};
+int thermal_mitigation[] = {
+	6000000,6000000,6000000,6000000,
+	5000000,4500000,4000000,3500000,
+	3000000,2500000,2000000,2000000,
+	2000000,2000000,3000000,3000000,
+	3000000,2500000,2500000,2000000,
+	2000000,1500000,1500000,1500000,
+	1000000,1000000,1000000,1000000,
+};
+
 static struct charger_manager *pinfo;
 static struct list_head consumer_head = LIST_HEAD_INIT(consumer_head);
 static DEFINE_MUTEX(consumer_mutex);
