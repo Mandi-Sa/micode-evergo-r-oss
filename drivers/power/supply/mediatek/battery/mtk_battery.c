@@ -4259,6 +4259,8 @@ static ssize_t store_input_suspend(struct device *dev,
 		if (gm.pbat_consumer != NULL) {
 			charger_manager_enable_charging(gm.pbat_consumer,0, val);
 			charger_manager_enable_charging(gm.pbat_consumer,1, val);
+			/* Extb HONGMI-84891,caijiaqi.wt,20210808,ADD,modifiy input_suspend for running test*/
+			charger_manager_enable_hz(gm.pbat_consumer,0, gm.input_suspend);
 		}
 		bm_err(	"%s=%d\n", __func__, val);
 	}

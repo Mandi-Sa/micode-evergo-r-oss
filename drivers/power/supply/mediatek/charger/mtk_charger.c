@@ -444,6 +444,22 @@ static int _charger_manager_enable_charging(struct charger_consumer *consumer,
 
 }
 
+/* +Extb HONGMI-84891,caijiaqi.wt,20210808,ADD,modifiy input_suspend for running test*/
+int charger_manager_enable_hz(struct charger_consumer *consumer,
+	int idx, bool en)
+{
+	struct charger_manager *info = consumer->cm;
+	int ret = 0;
+
+	if (info == NULL)
+		return -ENOTSUPP;
+	mutex_lock(&info->charger_lock);
+	charger_dev_enable_hz(info->chg1_dev, en);
+	mutex_unlock(&info->charger_lock);
+	return ret;
+}
+/* +Extb HONGMI-84891,caijiaqi.wt,20210808,ADD,modifiy input_suspend for running test*/
+
 int charger_manager_enable_charging(struct charger_consumer *consumer,
 	int idx, bool en)
 {
