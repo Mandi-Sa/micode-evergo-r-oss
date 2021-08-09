@@ -688,7 +688,7 @@ static int bat_step(struct usbpd_pm *pdpm, int cur) {
 static int bat_lcdon_temp(struct usbpd_pm *pdpm, int temp)
 {
 	int bat_temp = temp;
-	int step_ibat = 1;
+	int step_ibat = 0;
 
 	if (bat_temp < BAT_TEMP_300) {
 		if (!pdpm->lcdon_curr_step)
@@ -772,6 +772,9 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 			} else {
 				step_ibat = bat_step(pdpm, BAT_CURR_4500MA);
 			}
+		} else {
+			pdpm->lcdoff_curr_step = CHG_TEMP_STEP2;
+			step_ibat = bat_step(pdpm, BAT_CURR_4500MA);
 		}
 	} else if (bat_temp >= BAT_TEMP_390 && bat_temp < BAT_TEMP_400) {
 		if (pdpm->lcdoff_curr_step <= CHG_TEMP_STEP2) {
@@ -784,6 +787,9 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 			} else {
 				step_ibat = bat_step(pdpm, BAT_CURR_4000MA);
 			}
+		} else {
+			pdpm->lcdoff_curr_step = CHG_TEMP_STEP3;
+			step_ibat = bat_step(pdpm, BAT_CURR_4000MA);
 		}
 	} else if (bat_temp >= BAT_TEMP_400 && bat_temp < BAT_TEMP_410) {
 		if (pdpm->lcdoff_curr_step <= CHG_TEMP_STEP3) {
@@ -796,6 +802,9 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 			} else {
 				step_ibat = bat_step(pdpm, BAT_CURR_3500MA);
 			}
+		} else {
+			pdpm->lcdoff_curr_step = CHG_TEMP_STEP4;
+			step_ibat = bat_step(pdpm, BAT_CURR_3500MA);
 		}
 	} else if (bat_temp >= BAT_TEMP_410 && bat_temp < BAT_TEMP_420) {
 		if (pdpm->lcdoff_curr_step <= CHG_TEMP_STEP4) {
@@ -808,6 +817,9 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 			} else {
 				step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 			}
+		} else {
+			pdpm->lcdoff_curr_step = CHG_TEMP_STEP5;
+			step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 		}
 	} else if (bat_temp >= BAT_TEMP_420 && bat_temp < BAT_TEMP_430) {
 		if (pdpm->lcdoff_curr_step <= CHG_TEMP_STEP5) {
@@ -816,10 +828,13 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 		} else if (pdpm->lcdoff_curr_step == CHG_TEMP_STEP6) {
 			if (bat_temp <= BAT_TEMP_420 - CHG_TEMP_OFFSET) {
 				pdpm->lcdoff_curr_step = CHG_TEMP_STEP5;
-				step_ibat = bat_step(pdpm, BAT_CURR_3500MA);
-			} else {
 				step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
+			} else {
+				step_ibat = bat_step(pdpm, BAT_CURR_2500MA);
 			}
+		} else {
+			pdpm->lcdoff_curr_step = CHG_TEMP_STEP6;
+			step_ibat = bat_step(pdpm, BAT_CURR_2500MA);
 		}
 	} else if (bat_temp >= BAT_TEMP_430) {
 		pdpm->lcdoff_curr_step = CHG_TEMP_STEP6;
