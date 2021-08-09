@@ -1088,7 +1088,7 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 			pr_notice("batt_volt-%d is too high for cp,\
 					charging with switch charger\n", 
 					pdpm->cp.vbat_volt);
-			usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_EXIT);
+		//	usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_EXIT);
 		/* +Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
 		} else if ((bat_temp >= CHG_BAT_TEMP_MAX - FFC_BAT_TEMP_OFFSET)
 			|| bat_temp <= CHG_BAT_TEMP_MIN
