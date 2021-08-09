@@ -53,7 +53,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 		.grabwindow_width = 4080,
 		.grabwindow_height = 3072,
 		.mipi_data_lp2hs_settle_dc = 40,
-		.mipi_pixel_rate = 494400000,
+		.mipi_pixel_rate = 504000000,
 		.max_framerate = 300,
 	},
 	.cap = {
@@ -65,7 +65,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 		.grabwindow_width = 4080,
 		.grabwindow_height = 3072,
 		.mipi_data_lp2hs_settle_dc = 40,
-		.mipi_pixel_rate = 494400000,
+		.mipi_pixel_rate = 504000000,
 		.max_framerate = 300,
 	},
 	.cap1 = {
@@ -77,7 +77,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 		.grabwindow_width = 4080,
 		.grabwindow_height = 3072,
 		.mipi_data_lp2hs_settle_dc = 40,
-		.mipi_pixel_rate = 494400000,
+		.mipi_pixel_rate = 504000000,
 		.max_framerate = 300,
 	},
 	.normal_video = {
@@ -89,7 +89,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 		.grabwindow_width = 4080,
 		.grabwindow_height = 2296,
 		.mipi_data_lp2hs_settle_dc = 40,
-		.mipi_pixel_rate = 494400000,
+		.mipi_pixel_rate = 504000000,
 		.max_framerate = 300,
 	},
 	.hs_video = {
@@ -125,7 +125,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 		.grabwindow_width = 4080,
 		.grabwindow_height = 3072,
 		.mipi_data_lp2hs_settle_dc = 40,
-		.mipi_pixel_rate = 494400000,
+		.mipi_pixel_rate = 504000000,
 		.max_framerate = 300,
 	},
 	.margin = 5,
@@ -2183,7 +2183,7 @@ static void sensor_init(void)
 {
 	LOG_INF("sensor_init start\n");
 	write_cmos_sensor(0x6028, 0x4000);
-	write_cmos_sensor(0x0000, 0x0003);
+	write_cmos_sensor(0x0000, 0x0001);
 	write_cmos_sensor(0x0000, 0x38e1);
 	write_cmos_sensor(0x001e, 0x0007);
 	write_cmos_sensor(0x6028, 0x4000);
@@ -2463,7 +2463,7 @@ kal_uint16 addr_data_pair_preview_s5kjn1sunny[] = {
 	0x030A,0x0001,
 	0x030C,0x0000,
 	0x030E,0x0004,
-	0x0310,0x0067,
+	0x0310,0x0069,
 	0x0312,0x0000,
 	0x080E,0x0000,
 	0x0340,0x0C54,
@@ -3043,7 +3043,7 @@ kal_uint16 addr_data_pair_capture_s5kjn1sunny[] = {
 	0x030A, 0x0001,
 	0x030C, 0x0000,
 	0x030E, 0x0004,
-	0x0310, 0x0067,
+	0x0310, 0x0069,
 	0x0312, 0x0000,
 	0x080E, 0x0000,
 	0x0340, 0x0C54,
@@ -3333,7 +3333,7 @@ kal_uint16 addr_data_pair_normal_video_s5kjn1sunny[] = {
 	0x030A,0x0001,
 	0x030C,0x0000,
 	0x030E,0x0004,
-	0x0310,0x0067,
+	0x0310,0x0069,
 	0x0312,0x0000,
 	0x080E,0x0000,
 	0x0340,0x0C54,
@@ -3914,7 +3914,7 @@ kal_uint16 addr_data_pair_custom1_s5kjn1sunny[] = {
 	0x030A,0x0001,
 	0x030C,0x0000,
 	0x030E,0x0004,
-	0x0310,0x0067,
+	0x0310,0x0069,
 	0x0312,0x0000,
 	0x080E,0x0000,
 	0x0340,0x0C54,
