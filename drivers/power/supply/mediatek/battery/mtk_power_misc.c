@@ -522,9 +522,9 @@ static int power_misc_routine_thread(void *arg)
 			sdd->overheat = false;
 			bm_err("%s battery overheat~ power off\n",
 				__func__);
-			//mutex_lock(&pm_mutex);
-			//kernel_power_off();
-			//mutex_unlock(&pm_mutex);
+			mutex_lock(&pm_mutex);
+			kernel_power_off();
+			mutex_unlock(&pm_mutex);
 			fix_coverity = 1;
 			return 1;
 		}
@@ -548,7 +548,9 @@ int mtk_power_misc_psy_event(
 			psy, POWER_SUPPLY_PROP_TEMP, &val);
 		if (!ret) {
 			tmp = val.intval / 10;
-			if (tmp >= BATTERY_SHUTDOWN_TEMPERATURE) {
+			//Extb HONGMI-92179,chenrui1.wt,ADD,20210810,check charger mode avoid reboot after overheat poweroff
+			if (tmp >= BATTERY_SHUTDOWN_TEMPERATURE &&
+					(is_kernel_power_off_charging() != true)) {
 				bm_err(
 					"battery temperature >= %d,shutdown",
 					tmp);
