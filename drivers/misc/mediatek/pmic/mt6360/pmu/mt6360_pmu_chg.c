@@ -597,6 +597,7 @@ bool test_flag = false;
 static int mt6360_get_vbus(struct charger_device *chg_dev, u32 *vbus);
 static void mt6360_get_hvdcp_work(struct work_struct *work)
 {
+	static int hvdcp_once = 0;
 	int ret, i;
 	u32 vbus;
 	struct mt6360_pmu_chg_info *mpci = container_of(work,
@@ -636,6 +637,24 @@ static void mt6360_get_hvdcp_work(struct work_struct *work)
 		if (vbus > HVDCP_VBUS_HIGH_LIMIT)
 			break;
 		msleep(30);
+	}
+
+	if (!hvdcp_once && mpci->chg_type == STANDARD_CHARGER && vbus < HVDCP_VBUS_HIGH_LIMIT) {
+		ret = mt6360_pmu_reg_write(mpci->mpi,
+					MT6360_PMU_DPDM_CTRL, DP_33_DM_06);
+		msleep(300);
+		for (i = 0; i < 3; i++) {
+			ret = mt6360_get_vbus(mpci->chg_dev, &vbus);
+			if (ret < 0)
+				dev_err(mpci->dev, "%s: get vbus adc fail\n", __func__);
+			vbus = vbus / 1000;
+			dev_info(mpci->dev, "%s:%d: first get vbus=%d.\n", __func__, i, vbus);
+			if (vbus > HVDCP_VBUS_HIGH_LIMIT)
+				break;
+			msleep(30);
+		}
+	} else {
+		hvdcp_once = 1;
 	}
 
 	if (mpci->attach) {
