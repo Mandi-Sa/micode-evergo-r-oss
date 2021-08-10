@@ -21,7 +21,7 @@
 /* -HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
 
 /* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
-#define BATT_FAST_CHG_CURR		6000
+#define BATT_FAST_CHG_CURR		5900
 #define BUS_OVP_THRESHOLD		10500
 /* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 
@@ -49,7 +49,7 @@
 #define BAT_TEMP_420          420
 #define BAT_TEMP_430          430
 #define BAT_TEMP_440          440
-#define BAT_CURR_6000MA       6000
+#define BAT_CURR_6000MA       5900
 #define BAT_CURR_5400MA       5400
 #define BAT_CURR_5000MA       5000
 #define BAT_CURR_4500MA       4500
@@ -707,6 +707,9 @@ static int bat_lcdon_temp(struct usbpd_pm *pdpm, int temp)
 			} else {
 				step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 			}
+		} else {
+			pdpm->lcdoff_curr_step = CHG_TEMP_STEP2;
+			step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 		}
 	} else if (bat_temp >= BAT_TEMP_340 && bat_temp < BAT_TEMP_370) {
 		if (pdpm->lcdon_curr_step <= CHG_TEMP_STEP2) {
@@ -719,6 +722,9 @@ static int bat_lcdon_temp(struct usbpd_pm *pdpm, int temp)
 			} else {
 				step_ibat = bat_step(pdpm, BAT_CURR_2800MA);
 			}
+		} else {
+			pdpm->lcdoff_curr_step = CHG_TEMP_STEP3;
+			step_ibat = bat_step(pdpm, BAT_CURR_2800MA);
 		}
 	} else if (bat_temp >= BAT_TEMP_370 && bat_temp < BAT_TEMP_390) {
 		if (pdpm->lcdon_curr_step <= CHG_TEMP_STEP3) {
@@ -731,6 +737,9 @@ static int bat_lcdon_temp(struct usbpd_pm *pdpm, int temp)
 			} else {
 				step_ibat = bat_step(pdpm, BAT_CURR_2500MA);
 			}
+		} else {
+			pdpm->lcdoff_curr_step = CHG_TEMP_STEP4;
+			step_ibat = bat_step(pdpm, BAT_CURR_2500MA);
 		}
 	} else if (bat_temp >= BAT_TEMP_390 && bat_temp < BAT_TEMP_410) {
 		if (pdpm->lcdon_curr_step <= CHG_TEMP_STEP4) {
@@ -743,6 +752,9 @@ static int bat_lcdon_temp(struct usbpd_pm *pdpm, int temp)
 			} else {
 				step_ibat = bat_step(pdpm, BAT_CURR_2000MA);
 			}
+		} else {
+			pdpm->lcdoff_curr_step = CHG_TEMP_STEP5;
+			step_ibat = bat_step(pdpm, BAT_CURR_2000MA);
 		}
 	} else if (bat_temp >= BAT_TEMP_440) {
 		pdpm->pps_temp_flag = false;
