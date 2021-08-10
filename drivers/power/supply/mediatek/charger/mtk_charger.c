@@ -2327,7 +2327,7 @@ static int charger_routine_thread(void *arg)
 
 //+Bug653711, chenrui1.wt,ADD,20210520,add control charging capacity
 #ifdef WT_COMPILE_FACTORY_VERSION
-		if (is_charger_on) {
+		if (VChr > 4500) {
 			mtk_charging_control(info);
 		}
 #endif
