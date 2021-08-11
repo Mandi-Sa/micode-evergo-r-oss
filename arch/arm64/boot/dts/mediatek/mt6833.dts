@@ -5583,7 +5583,7 @@ simtray {
 
 		/* common */
 		battery_cv = <4350000>;
-		max_charger_voltage = <10500000>;
+		max_charger_voltage = <14500000>;
 		min_charger_voltage = <4600000>;
 
 		/* dynamic mivr */
