@@ -2254,11 +2254,12 @@ static void mtk_dynamic_set_ieoc_and_cv(struct charger_manager *info)
 	int batt_id = 0;
 	int pd_auth = 0;
 	unsigned int ieoc_ua = 0;
+	unsigned int vrechg_uv = 100000;
 
 	batt_id = mtk_get_batt_id();
 	pd_auth = adaptor_pd_authen();
+	batt_temp = battery_get_bat_temperature();
 	if (batt_id == BAT_ID_COS || batt_id == BAT_ID_SWD) {
-		batt_temp = battery_get_bat_temperature();
 		if (batt_temp >= 15 && batt_temp <= 35 && pd_auth > 0) {
 			ieoc_ua = (batt_id == BAT_ID_COS) ? 686000 : 735000;
 			info->data.battery_cv = 4470000;
@@ -2279,11 +2280,18 @@ static void mtk_dynamic_set_ieoc_and_cv(struct charger_manager *info)
 	}
 	else
 		chr_err("wt_debug : %s not set ieoc", __func__);
+
+	if (batt_temp <= 10 && battery_get_uisoc() == 100){
+		vrechg_uv = 250000;
+	}
+	charger_dev_set_vrechg(info->chg1_dev, vrechg_uv);
+
 /* +HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
 #ifdef CONFIG_MTK_DISABLE_TEMP_PROTECT
 	info->data.battery_cv = 4100000;
 #endif
-	chr_err("wt_debug : %s set ieoc = %u cv = %u, pd_auth = %d\n", __func__, ieoc_ua, info->data.battery_cv, pd_auth);
+	chr_err("wt_debug : %s set ieoc = %u cv = %u, vrechg = %u, pd_auth = %d\n", 
+			__func__, ieoc_ua, info->data.battery_cv, vrechg_uv, pd_auth);
 /* -HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
 
 }
