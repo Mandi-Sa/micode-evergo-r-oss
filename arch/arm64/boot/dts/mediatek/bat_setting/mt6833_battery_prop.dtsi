@@ -52,7 +52,7 @@ bat_gm30: battery{
 /*	Pseudo 100% percentage at T2*/
 	g_FG_PSEUDO100_T3 = <(95)>;
 /*	Pseudo 100% percentage at T3*/
-	g_FG_PSEUDO100_T4 = <(92)>;
+	g_FG_PSEUDO100_T4 = <(95)>;
 /*	Pseudo 100% percentage at T4*/
 	Q_MAX_SYS_VOLTAGE_BAT0 = <(3350)>;
 /*	Pseudo1 for hide percentage*/

@@ -112,6 +112,7 @@ struct mt6360_pmu_chg_info {
 	struct workqueue_struct *pe_wq;
 	struct work_struct pe_work;
 	struct delayed_work get_hvdcp_work;
+	struct delayed_work second_detect_work;
 	u8 ctd_dischg_status;
 };
 
@@ -588,6 +589,51 @@ static int mt6360_chgdet_pre_process(struct mt6360_pmu_chg_info *mpci)
 	return __mt6360_enable_usbchgen(mpci, attach);
 }
 
+static void mt6360_second_detect_work(struct work_struct *work)
+{
+	int ret = 0;
+	u8 data = 0;
+	struct mt6360_pmu_chg_info *mpci = container_of(work,
+			struct mt6360_pmu_chg_info, second_detect_work.work);
+	
+	if (!mpci->attach) {
+		mpci->chg_type = CHARGER_UNKNOWN;
+		dev_info(mpci->dev, "%s: mpci->attach=0, stop second_detect_work.\n", __func__);
+		goto out;
+	}
+
+	/* read data */
+	ret = i2c_smbus_read_i2c_block_data(mpci->mpi->i2c,
+					    MT6360_PMU_DEVICE_TYPE, 1, &data);
+	if (ret < 0) {
+		dev_err(mpci->dev, "%s: read usbd fail\n", __func__);
+		goto out;
+	}
+	/* usbd off */
+	data &= ~MT6360_MASK_USBCHGEN;
+	ret = i2c_smbus_write_i2c_block_data(mpci->mpi->i2c,
+					     MT6360_PMU_DEVICE_TYPE, 1, &data);
+	if (ret < 0) {
+		dev_err(mpci->dev, "%s: usbd off fail\n", __func__);
+		goto out;
+	}
+	udelay(40);
+	/* usbd on */
+	data |= MT6360_MASK_USBCHGEN;
+	ret = i2c_smbus_write_i2c_block_data(mpci->mpi->i2c,
+					     MT6360_PMU_DEVICE_TYPE, 1, &data);
+	if (ret < 0)
+		dev_err(mpci->dev, "%s: usbd on fail\n", __func__);
+	mdelay(500);
+	if (mpci->chg_type == NONSTANDARD_CHARGER) {
+		schedule_delayed_work(&mpci->second_detect_work,
+					msecs_to_jiffies(10000));
+	}
+out:
+	return;
+}
+
+
 #define	DP_06_DM_06		0x16
 #define	DP_33_DM_06		0x18
 #define	HVDCP_VBUS_LOW_LIMIT	3000
@@ -737,6 +783,9 @@ static int mt6360_chgdet_post_process(struct mt6360_pmu_chg_info *mpci)
 		break;
 	case MT6360_CHG_TYPE_SDPNSTD:
 		mpci->chg_type = NONSTANDARD_CHARGER;
+		if (!delayed_work_pending(&mpci->second_detect_work))
+			schedule_delayed_work(&mpci->second_detect_work,
+					msecs_to_jiffies(HVDCP_DPDM_DELAY_1S));
 		break;
 	case MT6360_CHG_TYPE_CDP:
 		mpci->chg_type = CHARGING_HOST;
@@ -1076,6 +1125,19 @@ static int mt6360_set_ieoc(struct charger_device *chg_dev, u32 uA)
 					  MT6360_PMU_CHG_CTRL9,
 					  MT6360_MASK_IEOC,
 					  data << MT6360_SHFT_IEOC);
+}
+
+static int mt6360_set_vrechg(struct charger_device *chg_dev, u32 uv)
+{
+	struct mt6360_pmu_chg_info *mpci = charger_get_data(chg_dev);
+	u8 data = 0;
+
+	dev_dbg(mpci->dev, "%s: vrechg = %d\n", __func__, uv);
+	data = mt6360_trans_vrechg_sel(uv);
+	return mt6360_pmu_reg_update_bits(mpci->mpi,
+					  MT6360_PMU_CHG_CTRL11,
+					  0x03,
+					  data);
 }
 
 static int mt6360_set_mivr(struct charger_device *chg_dev, u32 uV)
@@ -2146,6 +2208,7 @@ static const struct charger_ops mt6360_chg_ops = {
 	.get_ctd_dischg_status = mt6360_get_ctd_dischg_status,
 	.enable_hidden_mode = mt6360_enable_hidden_mode,
 	.enable_hz = mt6360_enable_hz,
+	.set_vrechg = mt6360_set_vrechg,
 };
 
 static const struct charger_properties mt6360_chg_props = {
@@ -2485,6 +2548,7 @@ static irqreturn_t mt6360_pmu_chrdet_ext_evt_handler(int irq, void *data)
 		mpci->rerun_apsd = false;
 		dev_info(mpci->dev, "%s: clear attach & rerun_apsd.\n", __func__);
 		cancel_delayed_work_sync(&mpci->get_hvdcp_work);
+		cancel_delayed_work_sync(&mpci->second_detect_work);
 	}
 
 	if (mpci->pwr_rdy == pwr_rdy)
@@ -3117,7 +3181,7 @@ static int mt6360_pmu_chg_probe(struct platform_device *pdev)
 	}
 	INIT_WORK(&mpci->pe_work, mt6360_trigger_pep_work_handler);
 	INIT_DELAYED_WORK(&mpci->get_hvdcp_work, mt6360_get_hvdcp_work);
-
+	INIT_DELAYED_WORK(&mpci->second_detect_work, mt6360_second_detect_work);
 	/* register fg bat oc notify */
 	if (pdata->batoc_notify)
 		register_battery_oc_notify(&mt6360_recv_batoc_callback,
