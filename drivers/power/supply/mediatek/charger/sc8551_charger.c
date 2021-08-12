@@ -217,6 +217,8 @@ struct sc8551 {
 
 	bool is_sc8551;
 	int  vbus_error;
+	int charger_mode;
+	int direct_charge;
 
 	/* ADC reading */
 	int vbat_volt;
@@ -1247,6 +1249,33 @@ static int sc8551_check_vbus_error_status(struct sc8551 *sc)
 	return ret;
 }
 
+static int sc8551_set_charge_mode(struct sc8551 *sc, u8 charge_mode)
+{
+	int ret;
+	u8 val;
+	if(charge_mode)
+		val = SC8551_CHARGE_MODE_1_1;
+	else
+		val = SC8551_CHARGE_MODE_2_1;
+	ret = sc8551_update_bits(sc, SC8551_REG_31,
+				SC8551_CHARGE_MODE_MASK,
+				val);
+	return ret;
+}
+
+static int sc8551_get_charge_mode(struct sc8551 *sc)
+{
+	int ret;
+	u8 data;
+
+	ret = sc8551_read_byte(sc, SC8551_REG_31, &data);
+	if(ret == 0){
+		sc_err("sc8551 charge mode : %s\n", (data & 0x01) ? "1 : 1 charger mode" : "2 : 1 charger mode");
+		sc->charger_mode = (data & 0x01);
+	}
+	return ret;
+}
+
 static int sc8551_detect_device(struct sc8551 *sc)
 {
 	int ret;
@@ -1654,7 +1683,8 @@ static enum power_supply_property sc8551_charger_props[] = {
 	POWER_SUPPLY_PROP_SC_ALARM_STATUS,
 	POWER_SUPPLY_PROP_SC_FAULT_STATUS,
 	POWER_SUPPLY_PROP_SC_VBUS_ERROR_STATUS,
-
+	POWER_SUPPLY_PROP_SC_CHARGE_MODE,
+	POWER_SUPPLY_PROP_SC_DIRECT_CHARGE,
 };
 
 
@@ -1775,7 +1805,15 @@ static int sc8551_charger_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_SC_VBUS_ERROR_STATUS:
 		sc8551_check_vbus_error_status(sc);
 		val->intval = sc->vbus_error;
+		break;
 
+	case POWER_SUPPLY_PROP_SC_CHARGE_MODE:
+		sc8551_get_charge_mode(sc);
+		val->intval = sc->charger_mode;
+		break;
+
+	case POWER_SUPPLY_PROP_SC_DIRECT_CHARGE:
+		val->intval = sc->direct_charge;
 		break;
 	default:
 		return -EINVAL;
@@ -1791,7 +1829,7 @@ static int sc8551_charger_set_property(struct power_supply *psy,
 				       const union power_supply_propval *val)
 {
 	struct sc8551 *sc = power_supply_get_drvdata(psy);
-	
+	sc_err("prop = %d\n",  prop);
 	switch (prop) {
 	case POWER_SUPPLY_PROP_CHARGING_ENABLED:
 		sc8551_enable_charge(sc, val->intval);
@@ -1800,7 +1838,13 @@ static int sc8551_charger_set_property(struct power_supply *psy,
 				val->intval ? "enable" : "disable");
 		break;
 	case POWER_SUPPLY_PROP_PRESENT:
-		sc8551_set_present(sc, !!val->intval);
+		sc8551_set_present(sc, val->intval);
+		break;
+	case POWER_SUPPLY_PROP_SC_CHARGE_MODE:
+		sc8551_set_charge_mode(sc, val->intval);
+		break;
+	case POWER_SUPPLY_PROP_SC_DIRECT_CHARGE:
+		sc->direct_charge = val->intval;
 		break;
 	default:
 		return -EINVAL;

@@ -106,6 +106,11 @@ struct cp_device {
 	bool vbat_reg;
 	bool ibat_reg;
 
+	//+Extb HONGMI-89622,chenrui1.wt,add,20210729,add charge_mode 1:1
+	int direct_charge;
+	int charge_mode;
+	//-Extb HONGMI-89622,chenrui1.wt,add,20210729,add charge_mode 1:1
+
 	int  vout_volt;
 	int  vbat_volt;
 	int  vbus_volt;

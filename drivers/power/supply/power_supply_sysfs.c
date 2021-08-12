@@ -95,6 +95,10 @@ static const char * const power_supply_scope_text[] = {
 	"Unknown", "System", "Device"
 };
 
+static char *sc8551_charge_mode[] = {
+	"2 : 1 charger mode", "1 : 1 charger mode"
+};
+
 static ssize_t power_supply_show_property(struct device *dev,
 					  struct device_attribute *attr,
 					  char *buf) {
@@ -155,6 +159,9 @@ static ssize_t power_supply_show_property(struct device *dev,
 			       power_supply_scope_text[value.intval]);
 	else if (off >= POWER_SUPPLY_PROP_MODEL_NAME)
 		return sprintf(buf, "%s\n", value.strval);
+
+	else if(off == POWER_SUPPLY_PROP_SC_CHARGE_MODE)
+		return sprintf(buf, "%s\n", sc8551_charge_mode[value.intval]);
 
 	if (off == POWER_SUPPLY_PROP_CHARGE_COUNTER_EXT)
 		return sprintf(buf, "%lld\n", value.int64val);
@@ -270,6 +277,8 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(sc_alarm_status),
 	POWER_SUPPLY_ATTR(sc_fault_status),
 	POWER_SUPPLY_ATTR(sc_vbus_error_status),
+	POWER_SUPPLY_ATTR(sc_charge_mode),
+	POWER_SUPPLY_ATTR(sc_direct_charge),
 	/* Add by southchip for SC8551*/
 	/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
 	POWER_SUPPLY_ATTR(romid),
