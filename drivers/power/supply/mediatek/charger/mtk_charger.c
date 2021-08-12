@@ -620,6 +620,13 @@ int charger_manager_get_prop_system_temp_level(void)
 	return pinfo->system_temp_level;
 }
 
+int charger_manager_get_thermal_mitigation_current(void)
+{
+	if (pinfo == NULL)
+		return false;
+	return pinfo->thermal_mitigation_current;
+}
+
 void charger_manager_set_prop_system_temp_level(int temp_level)
 {
 	if (temp_level >= pinfo->system_temp_level_max)
@@ -1668,6 +1675,12 @@ static int mtk_charger_plug_out(struct charger_manager *info)
 	if (info->plug_out != NULL)
 		info->plug_out(info);
 
+#ifdef WT_COMPILE_FACTORY_VERSION
+	if (info->chg1_dev != NULL) {
+		charger_dev_enable_hz(info->chg1_dev, false);
+		chr_err("wt_factory_version : plugout stop hz mode\n");
+	}
+#endif
 	memset(&pinfo->sc.data, 0, sizeof(struct scd_cmd_param_t_1));
 	wakeup_sc_algo_cmd(&pinfo->sc.data, SC_EVENT_PLUG_OUT, 0);
 	charger_dev_set_input_current(info->chg1_dev, 100000);

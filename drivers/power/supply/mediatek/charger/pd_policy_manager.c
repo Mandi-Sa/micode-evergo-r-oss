@@ -60,6 +60,8 @@
 #define BAT_CURR_2800MA       2800
 #define BAT_CURR_2500MA       2500
 #define BAT_CURR_2000MA       2000
+#define BAT_CURR_1500MA       1500
+#define BAT_CURR_1000MA       1000
 #define BAT_CURR_100MA        100
 /* +HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
 #ifdef CONFIG_MTK_DISABLE_TEMP_PROTECT
@@ -733,8 +735,9 @@ static int bat_step(struct usbpd_pm *pdpm, int cur) {
 
 	if (cur <= BAT_CURR_3000MA)
 		pdpm->cp.direct_charge = 1;
-	else
+	else if (cur >= BAT_CURR_3500MA)
 		pdpm->cp.direct_charge = 0;
+
 	pr_err("[%s] curr = %d, direct_charge = %d, pdpm->pd_authen %d\n",
 		__func__, cur, pdpm->cp.direct_charge, pdpm->pd_authen);
 
@@ -766,60 +769,78 @@ static int bat_lcdon_temp(struct usbpd_pm *pdpm, int temp)
 				pdpm->lcdon_curr_step = CHG_TEMP_STEP1;
 				step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 			} else {
-				step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
-			}
-		} else {
-			pdpm->lcdoff_curr_step = CHG_TEMP_STEP2;
-			step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
-		}
-	} else if (bat_temp >= BAT_TEMP_340 && bat_temp < BAT_TEMP_370) {
-		if (pdpm->lcdon_curr_step <= CHG_TEMP_STEP2) {
-			pdpm->lcdon_curr_step = CHG_TEMP_STEP2;
-			step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
-		} else if (pdpm->lcdon_curr_step == CHG_TEMP_STEP3) {
-			if (bat_temp <= BAT_TEMP_370 - CHG_TEMP_OFFSET) {
-				pdpm->lcdon_curr_step = CHG_TEMP_STEP2;
-				step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
-			} else {
-				step_ibat = bat_step(pdpm, BAT_CURR_2800MA);
-			}
-		} else {
-			pdpm->lcdoff_curr_step = CHG_TEMP_STEP3;
-			step_ibat = bat_step(pdpm, BAT_CURR_2800MA);
-		}
-	} else if (bat_temp >= BAT_TEMP_370 && bat_temp < BAT_TEMP_390) {
-		if (pdpm->lcdon_curr_step <= CHG_TEMP_STEP3) {
-			pdpm->lcdon_curr_step = CHG_TEMP_STEP3;
-			step_ibat = bat_step(pdpm, BAT_CURR_2800MA);
-		} else if (pdpm->lcdon_curr_step == CHG_TEMP_STEP4) {
-			if (bat_temp <= BAT_TEMP_390 - CHG_TEMP_OFFSET) {
-				pdpm->lcdon_curr_step = CHG_TEMP_STEP3;
-				step_ibat = bat_step(pdpm, BAT_CURR_2800MA);
-			} else {
 				step_ibat = bat_step(pdpm, BAT_CURR_2500MA);
 			}
 		} else {
-			pdpm->lcdoff_curr_step = CHG_TEMP_STEP4;
+			pdpm->lcdon_curr_step = CHG_TEMP_STEP2;
 			step_ibat = bat_step(pdpm, BAT_CURR_2500MA);
 		}
-	} else if (bat_temp >= BAT_TEMP_390 && bat_temp < BAT_TEMP_410) {
-		if (pdpm->lcdon_curr_step <= CHG_TEMP_STEP4) {
-			pdpm->lcdon_curr_step = CHG_TEMP_STEP4;
+	} else if (bat_temp >= BAT_TEMP_340 && bat_temp < BAT_TEMP_360) {
+		if (pdpm->lcdon_curr_step <= CHG_TEMP_STEP2) {
+			pdpm->lcdon_curr_step = CHG_TEMP_STEP2;
 			step_ibat = bat_step(pdpm, BAT_CURR_2500MA);
-		} else if (pdpm->lcdon_curr_step == CHG_TEMP_STEP5) {
-			if (bat_temp <= BAT_TEMP_410 - CHG_TEMP_OFFSET) {
-				pdpm->lcdon_curr_step = CHG_TEMP_STEP4;
+		} else if (pdpm->lcdon_curr_step == CHG_TEMP_STEP3) {
+			if (bat_temp <= BAT_TEMP_360 - CHG_TEMP_OFFSET) {
+				pdpm->lcdon_curr_step = CHG_TEMP_STEP2;
 				step_ibat = bat_step(pdpm, BAT_CURR_2500MA);
 			} else {
 				step_ibat = bat_step(pdpm, BAT_CURR_2000MA);
 			}
 		} else {
-			pdpm->lcdoff_curr_step = CHG_TEMP_STEP5;
+			pdpm->lcdon_curr_step = CHG_TEMP_STEP3;
 			step_ibat = bat_step(pdpm, BAT_CURR_2000MA);
 		}
+	} else if (bat_temp >= BAT_TEMP_360 && bat_temp < BAT_TEMP_380) {
+		if (pdpm->lcdon_curr_step <= CHG_TEMP_STEP3) {
+			pdpm->lcdon_curr_step = CHG_TEMP_STEP3;
+			step_ibat = bat_step(pdpm, BAT_CURR_2000MA);
+		} else if (pdpm->lcdon_curr_step == CHG_TEMP_STEP4) {
+			if (bat_temp <= BAT_TEMP_380 - CHG_TEMP_OFFSET) {
+				pdpm->lcdon_curr_step = CHG_TEMP_STEP3;
+				step_ibat = bat_step(pdpm, BAT_CURR_2000MA);
+			} else {
+				step_ibat = bat_step(pdpm, BAT_CURR_1500MA);
+			}
+		} else {
+			pdpm->lcdon_curr_step = CHG_TEMP_STEP4;
+			step_ibat = bat_step(pdpm, BAT_CURR_1500MA);
+		}
+	} else if (bat_temp >= BAT_TEMP_380 && bat_temp < BAT_TEMP_410) {
+		if (pdpm->lcdon_curr_step <= CHG_TEMP_STEP4) {
+			pdpm->lcdon_curr_step = CHG_TEMP_STEP4;
+			step_ibat = bat_step(pdpm, BAT_CURR_1500MA);
+		} else if (pdpm->lcdon_curr_step == CHG_TEMP_STEP5) {
+			if (bat_temp <= BAT_TEMP_410 - CHG_TEMP_OFFSET) {
+				pdpm->lcdon_curr_step = CHG_TEMP_STEP4;
+				step_ibat = bat_step(pdpm, BAT_CURR_1500MA);
+			} else {
+				step_ibat = bat_step(pdpm, BAT_CURR_1000MA);
+			}
+		} else {
+			pdpm->lcdon_curr_step = CHG_TEMP_STEP5;
+			step_ibat = bat_step(pdpm, BAT_CURR_1500MA);
+		}
+	} else if (bat_temp >= BAT_TEMP_410 && bat_temp < BAT_TEMP_440) {
+		if (pdpm->lcdon_curr_step <= CHG_TEMP_STEP5) {
+			pdpm->lcdon_curr_step = CHG_TEMP_STEP5;
+			step_ibat = bat_step(pdpm, BAT_CURR_1000MA);
+		} else if (pdpm->lcdon_curr_step == CHG_TEMP_STEP6) {
+			if (bat_temp <= BAT_TEMP_410 - CHG_TEMP_OFFSET) {
+				pdpm->lcdon_curr_step = CHG_TEMP_STEP5;
+				step_ibat = bat_step(pdpm, BAT_CURR_1000MA);
+			} else {
+				step_ibat = bat_step(pdpm, BAT_CURR_1000MA);
+			}
+		} else {
+			pdpm->lcdon_curr_step = CHG_TEMP_STEP6;
+			step_ibat = bat_step(pdpm, BAT_CURR_1000MA);
+		}
 	} else if (bat_temp >= BAT_TEMP_440) {
-		pdpm->pps_temp_flag = false;
+		pdpm->lcdon_curr_step = CHG_TEMP_STEP6;
+		step_ibat = bat_step(pdpm, BAT_CURR_1000MA);
 	}
+	pr_err("[%s]lcdon_curr_step=%d, direct_charge = %d",
+		__func__, pdpm->lcdon_curr_step, pdpm->cp.direct_charge);
 	return step_ibat;
 }
 
@@ -828,17 +849,17 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 	int bat_temp = temp;
 	int step_ibat = 1;
 
-	if (bat_temp < BAT_TEMP_380) {
+	if (bat_temp < BAT_TEMP_390) {
 		if (!pdpm->lcdoff_curr_step)
 			step_ibat = bat_step(pdpm, BAT_CURR_6000MA);
 		else
 			step_ibat = bat_step(pdpm, BAT_CURR_5000MA);
-	} else if (bat_temp >= BAT_TEMP_380 && bat_temp < BAT_TEMP_390) {
+	} else if (bat_temp >= BAT_TEMP_390 && bat_temp < BAT_TEMP_400) {
 		if (pdpm->lcdoff_curr_step <= CHG_TEMP_STEP1) {
 			pdpm->lcdoff_curr_step = CHG_TEMP_STEP1;
 			step_ibat = bat_step(pdpm, BAT_CURR_5000MA);
 		} else if (pdpm->lcdoff_curr_step == CHG_TEMP_STEP2) {
-			if (bat_temp <= BAT_TEMP_390 - CHG_TEMP_OFFSET) {
+			if (bat_temp <= BAT_TEMP_400 - CHG_TEMP_OFFSET) {
 				pdpm->lcdoff_curr_step = CHG_TEMP_STEP1;
 				step_ibat = bat_step(pdpm, BAT_CURR_5000MA);
 			} else {
@@ -848,12 +869,12 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 			pdpm->lcdoff_curr_step = CHG_TEMP_STEP2;
 			step_ibat = bat_step(pdpm, BAT_CURR_4500MA);
 		}
-	} else if (bat_temp >= BAT_TEMP_390 && bat_temp < BAT_TEMP_400) {
+	} else if (bat_temp >= BAT_TEMP_400 && bat_temp < BAT_TEMP_420) {
 		if (pdpm->lcdoff_curr_step <= CHG_TEMP_STEP2) {
 			pdpm->lcdoff_curr_step = CHG_TEMP_STEP2;
 			step_ibat = bat_step(pdpm, BAT_CURR_4500MA);
 		} else if (pdpm->lcdoff_curr_step == CHG_TEMP_STEP3) {
-			if (bat_temp <= BAT_TEMP_400 - CHG_TEMP_OFFSET) {
+			if (bat_temp <= BAT_TEMP_420 - CHG_TEMP_OFFSET) {
 				pdpm->lcdoff_curr_step = CHG_TEMP_STEP2;
 				step_ibat = bat_step(pdpm, BAT_CURR_4500MA);
 			} else {
@@ -863,12 +884,12 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 			pdpm->lcdoff_curr_step = CHG_TEMP_STEP3;
 			step_ibat = bat_step(pdpm, BAT_CURR_4000MA);
 		}
-	} else if (bat_temp >= BAT_TEMP_400 && bat_temp < BAT_TEMP_410) {
+	} else if (bat_temp >= BAT_TEMP_420 && bat_temp < BAT_TEMP_430) {
 		if (pdpm->lcdoff_curr_step <= CHG_TEMP_STEP3) {
 			pdpm->lcdoff_curr_step = CHG_TEMP_STEP3;
 			step_ibat = bat_step(pdpm, BAT_CURR_4000MA);
 		} else if (pdpm->lcdoff_curr_step == CHG_TEMP_STEP4) {
-			if (bat_temp <= BAT_TEMP_400 - CHG_TEMP_OFFSET) {
+			if (bat_temp <= BAT_TEMP_440 - CHG_TEMP_OFFSET) {
 				pdpm->lcdoff_curr_step = CHG_TEMP_STEP3;
 				step_ibat = bat_step(pdpm, BAT_CURR_4000MA);
 			} else {
@@ -878,7 +899,7 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 			pdpm->lcdoff_curr_step = CHG_TEMP_STEP4;
 			step_ibat = bat_step(pdpm, BAT_CURR_3500MA);
 		}
-	} else if (bat_temp >= BAT_TEMP_410 && bat_temp < BAT_TEMP_420) {
+	} else if (bat_temp >= BAT_TEMP_430 && bat_temp < BAT_TEMP_440) {
 		if (pdpm->lcdoff_curr_step <= CHG_TEMP_STEP4) {
 			pdpm->lcdoff_curr_step = CHG_TEMP_STEP4;
 			step_ibat = bat_step(pdpm, BAT_CURR_3500MA);
@@ -893,24 +914,9 @@ static int bat_lcdoff_temp(struct usbpd_pm *pdpm, int temp)
 			pdpm->lcdoff_curr_step = CHG_TEMP_STEP5;
 			step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 		}
-	} else if (bat_temp >= BAT_TEMP_420 && bat_temp < BAT_TEMP_430) {
-		if (pdpm->lcdoff_curr_step <= CHG_TEMP_STEP5) {
-			pdpm->lcdoff_curr_step = CHG_TEMP_STEP5;
-			step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
-		} else if (pdpm->lcdoff_curr_step == CHG_TEMP_STEP6) {
-			if (bat_temp <= BAT_TEMP_420 - CHG_TEMP_OFFSET) {
-				pdpm->lcdoff_curr_step = CHG_TEMP_STEP5;
-				step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
-			} else {
-				step_ibat = bat_step(pdpm, BAT_CURR_2500MA);
-			}
-		} else {
-			pdpm->lcdoff_curr_step = CHG_TEMP_STEP6;
-			step_ibat = bat_step(pdpm, BAT_CURR_2500MA);
-		}
-	} else if (bat_temp >= BAT_TEMP_430) {
+	} else if (bat_temp >= BAT_TEMP_440) {
 		pdpm->lcdoff_curr_step = CHG_TEMP_STEP6;
-		step_ibat = bat_step(pdpm, BAT_CURR_2500MA);
+		step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
 	}
 	pr_err("[%s]lcdoff_curr_step=%d, direct_charge = %d",
 		__func__, pdpm->lcdoff_curr_step, pdpm->cp.direct_charge);
@@ -929,14 +935,19 @@ static int get_battery_temp(void)
 	return pval.intval;
 }
 
+extern int charger_manager_get_thermal_mitigation_current(void);
+
 static int battery_sw_jeita(struct usbpd_pm *pdpm)
 {
 	int step_temp = 0;
 	int step_ibat = 0;
 	int step_vbat = 0;
 	int bat_temp = 0;
+	int therm_curr = 0;
+	int step_therm = 0;
 
 	bat_temp = get_battery_temp();
+	therm_curr = charger_manager_get_thermal_mitigation_current() / 1000;
 	if (bat_temp >= CHG_BAT_TEMP_MIN && bat_temp <= CHG_BAT_TEMP_MAX) {
 		pdpm->pps_temp_flag = true;
 		if (pdpm->cp.vbat_volt < CHG_CUR_VOLT)
@@ -956,15 +967,21 @@ static int battery_sw_jeita(struct usbpd_pm *pdpm)
 				step_temp = -pm_config.fc2_steps;
 			step_vbat = min(step_vbat, step_temp);
 		}
-		if (get_jeita_lcd_on_off())
+
+		if (get_jeita_lcd_on_off()) {
+			step_therm = bat_step(pdpm, therm_curr);
 			step_ibat = bat_lcdon_temp(pdpm, bat_temp);
-		else
+		} else {
 			step_ibat = bat_lcdoff_temp(pdpm, bat_temp);
+			step_therm = bat_step(pdpm, therm_curr);
+		}
+
+		step_ibat = min(step_therm, step_ibat);
 	} else {
 		pdpm->pps_temp_flag = false;
 	}
-	pr_err(">>>>temp %d pdpm->cp.ibus_curr %d step_ibat %d, step_vbat %d, lcd_on %d,  pd_authen %d\n",
-		bat_temp, pdpm->cp.ibus_curr, step_ibat, step_vbat, get_jeita_lcd_on_off(), pdpm->pd_authen);
+	pr_err(">>>>temp %d pdpm->cp.ibus_curr %d step_ibat %d, step_vbat %d, lcd_on %d,  pd_authen %d, therm_curr %d\n",
+		bat_temp, pdpm->cp.ibus_curr, step_ibat, step_vbat, get_jeita_lcd_on_off(), pdpm->pd_authen, therm_curr);
 	return min(step_vbat, step_ibat);
 }
 /* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
