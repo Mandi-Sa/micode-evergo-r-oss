@@ -208,10 +208,10 @@ static void csot_panel_init(struct csot *ctx)
 	csot_dcs_write_seq_static(ctx, 0xFF, 0x10);;
 
 	csot_dcs_write_seq_static(ctx, 0x11);
-	usleep_range(100000, 100001);
+	usleep_range(70000, 70001);
 	/* Display On*/
 	csot_dcs_write_seq_static(ctx, 0x29);
-	usleep_range(20000, 20001);
+	//usleep_range(20000, 20001);
 	pr_info("%s-\n", __func__);
 }
 

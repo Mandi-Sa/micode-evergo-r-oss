@@ -209,10 +209,10 @@ static void tianma_panel_init(struct tianma *ctx)
 	tianma_dcs_write_seq_static(ctx, 0xC0, 0x00);
 
 	tianma_dcs_write_seq_static(ctx, 0x11);
-	usleep_range(100000, 100001);
+	usleep_range(70000, 70001);
 	/* Display On*/
 	tianma_dcs_write_seq_static(ctx, 0x29);
-	usleep_range(20000, 20001);
+	//usleep_range(20000, 20001);
 	pr_info("%s-\n", __func__);
 }
 
