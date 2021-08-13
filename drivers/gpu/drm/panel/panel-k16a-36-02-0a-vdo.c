@@ -444,7 +444,7 @@ static const struct drm_display_mode performance_mode = {
 #define HFP (228)
 #define HSA (20)
 #define HBP (36)
-#define VFP_45HZ (54)
+#define VFP_50HZ (2070)
 #define VFP_60HZ (1290)
 #define VFP_90HZ (54)
 #define VSA (4)
@@ -475,6 +475,19 @@ static const struct drm_display_mode performance_mode = {
 	.vsync_end = VAC + VFP_90HZ + VSA,
 	.vtotal = VAC + VFP_90HZ + VSA + VBP,   //2474
 	.vrefresh = 90,
+};
+
+static const struct drm_display_mode refresh_50_mode = {
+	.clock = 306218,
+	.hdisplay = HAC,
+	.hsync_start = HAC + HFP,
+	.hsync_end = HAC + HFP + HSA,
+	.htotal = HAC + HFP + HSA + HBP,  //1140
+	.vdisplay = VAC,
+	.vsync_start = VAC + VFP_50HZ,
+	.vsync_end = VAC + VFP_50HZ + VSA,
+	.vtotal = VAC + VFP_50HZ + VSA + VBP,    //3710
+	.vrefresh = 50,
 };
 #endif
 
@@ -557,6 +570,44 @@ static struct mtk_panel_params ext_params_90hz = {
 
 };
 
+static struct mtk_panel_params ext_params_50hz = {
+	.physical_width_um = PHYSICAL_WIDTH,
+	.physical_height_um = PHYSICAL_HEIGHT,
+	.pll_clk = 535,
+	//.vfp_low_power = VFP_60HZ,
+	.cust_esd_check = 1,
+	.esd_check_enable = 1,
+	.lcm_esd_check_table[0] = {
+		.cmd = 0x0A, .count = 1, .para_list[0] = 0x9C,
+	},
+	.is_cphy = 1,
+	.data_rate = 1070,
+	.dyn_fps = {
+		.switch_en = 1,
+#if HFP_SUPPORT
+		.dfps_cmd_table[0] = {0, 2, {0xFF, 0x25} },
+		.dfps_cmd_table[1] = {0, 2, {0xFB, 0x01} },
+		.dfps_cmd_table[2] = {0, 2, {0x18, 0x20} },
+		/*switch page for esd check*/
+		.dfps_cmd_table[3] = {0, 2, {0xFF, 0x10} },
+		.dfps_cmd_table[4] = {0, 2, {0xFB, 0x01} },
+#else
+		.vact_timing_fps = 90,
+#endif
+	},
+	.phy_timcon = {
+		.hs_zero = 35,
+		.hs_trail = 26,
+		.hs_prpr = 11,
+	},
+	.dyn = {
+		.switch_en = 1,
+		.pll_clk = 532,
+		.hbp = 28,
+		.data_rate = 1064,
+	},
+
+};
 
 static int panel_ata_check(struct drm_panel *panel)
 {
@@ -601,6 +652,11 @@ static int mtk_panel_ext_param_set(struct drm_panel *panel, unsigned int mode)
 #if HFP_SUPPORT
 		current_fps = 90;
 #endif
+	} else if (m->vrefresh == 50) {
+		ext->params = &ext_params_50hz;
+#if HFP_SUPPORT
+		current_fps = 50;
+#endif
 	} else
 		ret = 1;
 
@@ -616,6 +672,8 @@ static int mtk_panel_ext_param_get(struct mtk_panel_params *ext_para,
 		ext_para = &ext_params;
 	else if (mode == 1)
 		ext_para = &ext_params_90hz;
+	else if (mode == 2)
+		ext_para = &ext_params_50hz;
 	else
 		ret = 1;
 
@@ -716,6 +774,7 @@ static int tianma_get_modes(struct drm_panel *panel)
 {
 	struct drm_display_mode *mode;
 	struct drm_display_mode *mode2;
+	struct drm_display_mode *mode3;
 
 	mode = drm_mode_duplicate(panel->drm, &default_mode);
 	if (!mode) {
@@ -740,6 +799,18 @@ static int tianma_get_modes(struct drm_panel *panel)
 	drm_mode_set_name(mode2);
 	mode2->type = DRM_MODE_TYPE_DRIVER;
 	drm_mode_probed_add(panel->connector, mode2);
+
+	mode3 = drm_mode_duplicate(panel->drm, &refresh_50_mode);
+	if (!mode3) {
+		dev_info(panel->drm->dev, "failed to add mode %ux%ux@%u\n",
+			 refresh_50_mode.hdisplay, refresh_50_mode.vdisplay,
+			 refresh_50_mode.vrefresh);
+		return -ENOMEM;
+	}
+
+	drm_mode_set_name(mode3);
+	mode3->type = DRM_MODE_TYPE_DRIVER;
+	drm_mode_probed_add(panel->connector, mode3);
 
 	return 1;
 }
