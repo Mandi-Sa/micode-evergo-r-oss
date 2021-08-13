@@ -2264,11 +2264,11 @@ static void mtk_dynamic_set_ieoc_and_cv(struct charger_manager *info)
 			ieoc_ua = (batt_id == BAT_ID_COS) ? 686000 : 735000;
 			info->data.battery_cv = 4470000;
 		}
-		else if (batt_temp > 35 && batt_temp <= 45 && pd_auth > 0) {
+		else if (batt_temp > 35 && batt_temp <= 48 && pd_auth > 0) {
 			ieoc_ua = (batt_id == BAT_ID_COS) ? 833000 : 784000;
 			info->data.battery_cv = 4470000;
 		}
-		else if (batt_temp > 45 && batt_temp <= 60) {
+		else if (batt_temp > 48 && batt_temp <= 60) {
 			ieoc_ua = 200000;
 			info->data.battery_cv = 4100000;
 		}
