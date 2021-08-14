@@ -543,7 +543,7 @@ int get_charger_pump_temp()
 /* -Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp*/
 
 /* +Extb HONGMI-84836,wangbin wt.ADD,20210613,add for shutdown after delay time 30s*/
-#define SHUTDOWN_DELAY_VOL	3300
+#define SHUTDOWN_DELAY_VOL	3400
 extern bool mtk_shutdown_delay_enable;
 #ifndef WT_COMPILE_FACTORY_VERSION 
 extern bool enable_notify_shutdown;
@@ -630,7 +630,7 @@ static int battery_get_property(struct power_supply *psy,
 				vbat_mv = battery_get_bat_voltage();
 				bm_err("shutdown_delay=%d,vbat_mv=%d,BAT_STATUS=%d,shutdown_delay_cancel=%d\n",
 					shutdown_delay,vbat_mv,data->BAT_STATUS,shutdown_delay_cancel);
-				if (vbat_mv > SHUTDOWN_DELAY_VOL
+				if (vbat_mv <= SHUTDOWN_DELAY_VOL
 					&& data->BAT_STATUS != POWER_SUPPLY_STATUS_CHARGING) {
 					shutdown_delay = true;
 					val->intval = 1;
@@ -644,6 +644,7 @@ static int battery_get_property(struct power_supply *psy,
 					if (shutdown_delay_cancel)
 						val->intval = 1;
 				}
+				val->intval = 1;
 			} else {
 				shutdown_delay = false;
 				shutdown_delay_cancel = false;
