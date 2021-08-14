@@ -753,7 +753,7 @@ static int mt6360_chgdet_post_process(struct mt6360_pmu_chg_info *mpci)
 		mpci->chg_type = NONSTANDARD_CHARGER;
 		if (!delayed_work_pending(&mpci->second_detect_work))
 			schedule_delayed_work(&mpci->second_detect_work,
-					msecs_to_jiffies(2000));
+					msecs_to_jiffies(0));
 		if (!mpci->recheck_float) {
 			bypass_report = true;
 		}

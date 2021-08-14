@@ -343,7 +343,7 @@ int mt_get_quick_charge_type(struct mt_charger *mtk_chg)
 	int i = 0;
 
 	if (charger_manager_pd_is_online()){
-		pr_info("%s:chg_type=%d,apdo_max=%d\n",__func__,mtk_chg->chg_type,mtk_chg->apdo_max);
+		pr_err("%s:chg_type=%d,apdo_max=%d\n",__func__,mtk_chg->chg_type,mtk_chg->apdo_max);
 		if (mtk_chg->apdo_max >= 33){
 			mtk_chg->chg_type = PPS_CHARGER;
 		}
@@ -403,7 +403,7 @@ static int mt_usb_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_REAL_TYPE:
 		//Extb HONGMI-87422,chenrui1.wt,MODIFY,20210708,modify real_type
 		if (charger_manager_pd_is_online() && val->intval != STANDARD_HOST) {
-			pr_info("[%s]wt_debug, pre_type = %d\n", __func__, mtk_chg->chg_type);
+			pr_err("[%s]wt_debug, pre_type = %d\n", __func__, mtk_chg->chg_type);
 			mtk_chg->chg_type = PPS_CHARGER;
 		}
 		val->intval = mtk_chg->chg_type;
@@ -666,7 +666,7 @@ static int pd_tcp_notifier_call(struct notifier_block *pnb,
 				plug_in_out_handler(cti, false, true);
 			}
 			pr_info("%s Source\n", __func__);
-			cti->typec_mode = get_sink_mode(noti->cc_state.cc1, noti->cc_state.cc2);
+			cti->typec_mode = get_sink_mode(noti->typec_state.cc1, noti->typec_state.cc2);
 		} else if (noti->typec_state.old_state == TYPEC_ATTACHED_SRC && noti->typec_state.new_state == TYPEC_UNATTACHED){
 			pr_info("%s Source Plug out\n", __func__);
 			cti->typec_mode = POWER_SUPPLY_TYPEC_NONE;
