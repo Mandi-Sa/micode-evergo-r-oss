@@ -161,16 +161,13 @@ struct tcp_ny_enable_state {
 	bool en;
 };
 
-struct tcp_ny_cc_state {
-	uint8_t cc1;
-	uint8_t cc2;
-};
-
 struct tcp_ny_typec_state {
 	uint8_t rp_level;
 	uint8_t polarity;
 	uint8_t old_state;
 	uint8_t new_state;
+	uint8_t cc1;
+	uint8_t cc2;
 };
 
 enum {
@@ -327,7 +324,6 @@ struct tcp_notify {
 		struct tcp_ny_request_bat request_bat;
 		struct tcp_ny_wd_status wd_status;
 		struct tcp_ny_cable_type cable_type;
-		struct tcp_ny_cc_state cc_state;
 	};
 };
 
