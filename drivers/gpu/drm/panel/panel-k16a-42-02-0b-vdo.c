@@ -42,6 +42,7 @@
 
 #include <touch/nova36672c/nt36xxx.h>
 extern struct nvt_ts_data *ts;
+static int vsp_vsn_status;
 
 #define HFP_SUPPORT 0
 
@@ -85,6 +86,7 @@ struct drm_notifier_data g_notify_data1;
 	})
 
 extern int lm36273_brightness_set(int level);
+extern int get_panel_dead_status(void);
 
 static inline struct csot *panel_to_csot(struct drm_panel *panel)
 {
@@ -271,7 +273,7 @@ static int csot_unprepare(struct drm_panel *panel)
 
 	//usleep_range(2000, 2001);
 
-	if(ts->gesture_enabled == false){
+	if((ts->gesture_enabled == false) || get_panel_dead_status()){
 		ctx->bias_pos = devm_gpiod_get_index(ctx->dev, "bias", 0, GPIOD_OUT_HIGH);
 		gpiod_set_value(ctx->bias_pos, 0);
 		devm_gpiod_put(ctx->dev, ctx->bias_pos);
@@ -283,8 +285,8 @@ static int csot_unprepare(struct drm_panel *panel)
 		ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
 		gpiod_set_value(ctx->bias_neg, 0);
 		devm_gpiod_put(ctx->dev, ctx->bias_neg);
-
 		usleep_range(2000, 2001);
+		vsp_vsn_status = 0;
 	}
 	ret = regulator_disable(lcd_dvdd_ldo);
 	if (ret < 0)
@@ -346,7 +348,7 @@ static int csot_prepare(struct drm_panel *panel)
 
 	lm36273_bl_bias_conf();
 
-	if(ts->gesture_enabled == false){
+	if((ts->gesture_enabled == false) || !vsp_vsn_status || get_panel_dead_status()){
 		lm36273_bias_enable(1, 1);
 		mdelay(10);
 		ctx->bias_pos = devm_gpiod_get_index(ctx->dev, "bias", 0, GPIOD_OUT_HIGH);
@@ -357,6 +359,7 @@ static int csot_prepare(struct drm_panel *panel)
 		ctx->bias_neg = devm_gpiod_get_index(ctx->dev, "bias", 1, GPIOD_OUT_HIGH);
 		gpiod_set_value(ctx->bias_neg, 1);
 		devm_gpiod_put(ctx->dev, ctx->bias_neg);
+		vsp_vsn_status = 1;
 	}
 
 	csot_panel_init(ctx);
