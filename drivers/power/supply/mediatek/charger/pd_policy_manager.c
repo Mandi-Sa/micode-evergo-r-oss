@@ -1204,7 +1204,7 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 					pdpm->cp.vbat_volt);
 		//	usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_EXIT);
 		/* +Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
-		} else if ((bat_temp >= CHG_BAT_TEMP_MAX - FFC_BAT_TEMP_OFFSET)
+		} else if ((bat_temp >= CHG_BAT_TEMP_MAX)
 			|| bat_temp <= CHG_BAT_TEMP_MIN
 			|| get_charging_call_state()) {
 			pr_notice("temp is %d, high or low, waiting...\n", bat_temp);
