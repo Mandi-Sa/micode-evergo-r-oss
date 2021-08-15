@@ -166,8 +166,6 @@ struct tcp_ny_typec_state {
 	uint8_t polarity;
 	uint8_t old_state;
 	uint8_t new_state;
-	uint8_t cc1;
-	uint8_t cc2;
 };
 
 enum {
