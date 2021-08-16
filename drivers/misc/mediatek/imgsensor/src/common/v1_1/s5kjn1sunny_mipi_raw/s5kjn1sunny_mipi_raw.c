@@ -533,7 +533,7 @@ static void set_shutter(kal_uint32 shutter)
 	kal_uint16 realtime_fps = 0;
 	static kal_uint32 pre_shutter = 2877;
 
-	LOG_INF("cxc enter  shutter = %d\n", shutter);
+	//LOG_INF("cxc enter  shutter = %d\n", shutter);
 
 	spin_lock_irqsave(&imgsensor_drv_lock, flags);
 	imgsensor.shutter = shutter;
@@ -597,7 +597,7 @@ static void set_shutter(kal_uint32 shutter)
 		}
 
 		write_cmos_sensor(0X0202, shutter & 0xFFFF);
-		LOG_INF("cxc 2 enter  shutter = %d\n", shutter);
+		//LOG_INF("cxc 2 enter  shutter = %d\n", shutter);
 
 	} else {
 		LOG_INF("cxc enter long shutter\n");
@@ -657,8 +657,8 @@ static void set_shutter(kal_uint32 shutter)
 
 	//write_cmos_sensor(0X0202, shutter & 0xFFFF);
 
-	LOG_INF("cxc  Exit! shutter =%d, framelength =%d\n", shutter,
-			imgsensor.frame_length);
+	//LOG_INF("cxc  Exit! shutter =%d, framelength =%d\n", shutter,
+	//		imgsensor.frame_length);
 }
 
 /*************************************************************************
@@ -4494,7 +4494,7 @@ static kal_uint32 set_video_mode(UINT16 framerate)
 
 static kal_uint32 set_auto_flicker_mode(kal_bool enable, UINT16 framerate)
 {
-	LOG_INF("enable = %d, framerate = %d\n", enable, framerate);
+	//LOG_INF("enable = %d, framerate = %d\n", enable, framerate);
 	spin_lock(&imgsensor_drv_lock);
 	if (enable)
 		imgsensor.autoflicker_en = KAL_TRUE;
@@ -4727,7 +4727,7 @@ feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
 	MSDK_SENSOR_REG_INFO_STRUCT *sensor_reg_data =
 		(MSDK_SENSOR_REG_INFO_STRUCT *) feature_para;
 
-	pr_debug("feature_id = %d, len=%d\n", feature_id, *feature_para_len);
+	//pr_debug("feature_id = %d, len=%d\n", feature_id, *feature_para_len);
 	switch (feature_id) {
 	case SENSOR_FEATURE_GET_GAIN_RANGE_BY_SCENARIO:
 		*(feature_data + 1) = imgsensor_info.min_gain;
