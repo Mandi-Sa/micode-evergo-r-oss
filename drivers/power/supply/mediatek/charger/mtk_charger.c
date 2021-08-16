@@ -1681,6 +1681,7 @@ static int mtk_charger_plug_out(struct charger_manager *info)
 		chr_err("wt_factory_version : plugout stop hz mode\n");
 	}
 #endif
+	charger_manager_notifier(pinfo, CHARGER_NOTIFY_STOP_CHARGING);
 	memset(&pinfo->sc.data, 0, sizeof(struct scd_cmd_param_t_1));
 	wakeup_sc_algo_cmd(&pinfo->sc.data, SC_EVENT_PLUG_OUT, 0);
 	charger_dev_set_input_current(info->chg1_dev, 100000);
