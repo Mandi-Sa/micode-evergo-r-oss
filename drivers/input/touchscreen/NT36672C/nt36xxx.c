@@ -68,6 +68,7 @@ extern void nvt_mp_proc_deinit(void);
 #endif
 
 static int32_t nvt_check_palm(uint8_t input_id, uint8_t *data);
+static void nvt_callback_work(struct work_struct *work);
 
 struct nvt_ts_data *ts;
 
@@ -2309,6 +2310,7 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 
 	mutex_init(&ts->lock);
 	mutex_init(&ts->xbuf_lock);
+	mutex_init(&ts->call_back);
 
 	//---eng reset before TP_RESX high
 	nvt_eng_reset();
@@ -2463,6 +2465,12 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 
 #if WAKEUP_GESTURE
 	device_init_wakeup(&ts->input_dev->dev, 1);
+#endif
+
+#if defined(CONFIG_FB)
+#if defined(CONFIG_DRM_PANEL)
+	INIT_WORK(&ts->drm_callback_work, nvt_callback_work);
+#endif
 #endif
 
 #if BOOT_UPDATE_FIRMWARE
@@ -2647,6 +2655,7 @@ err_input_register_device_failed:
 	}
 err_input_dev_alloc_failed:
 err_chipvertrim_failed:
+	mutex_destroy(&ts->call_back);
 	mutex_destroy(&ts->xbuf_lock);
 	mutex_destroy(&ts->lock);
 	nvt_gpio_deconfig(ts);
@@ -2736,6 +2745,7 @@ static int32_t nvt_ts_remove(struct spi_device *client)
 	nvt_irq_enable(false);
 	free_irq(client->irq, ts);
 
+	mutex_destroy(&ts->call_back);
 	mutex_destroy(&ts->xbuf_lock);
 	mutex_destroy(&ts->lock);
 
@@ -2967,10 +2977,41 @@ static int32_t nvt_ts_resume(struct device *dev)
 
 #if defined(CONFIG_FB)
 #if defined(CONFIG_DRM_PANEL)
+static unsigned long drm_event;
+static int drm_blank;
+
+static void nvt_callback_work(struct work_struct *work)
+{
+	struct nvt_ts_data *ts = container_of(work, struct nvt_ts_data, drm_callback_work);
+
+	if (ts) {
+		NVT_LOG("%s: event=%lu, drm_blank =%d\n", __func__, drm_event, drm_blank );//2, 1 suspend; 1,0 resume
+		if (drm_event == DRM_PANEL_EARLY_EVENT_BLANK) {
+			if (drm_blank  == DRM_PANEL_BLANK_UNBLANK) {
+				nvt_ts_resume(&ts->client->dev);
+			}else if (drm_blank  == DRM_PANEL_BLANK_POWERDOWN) {
+				nvt_ts_suspend(&ts->client->dev);
+			}else{
+				NVT_LOG("%s: early blank is wrong", __func__);
+			}
+		} else if (drm_event == DRM_PANEL_EVENT_BLANK) {
+			if (drm_blank  == DRM_PANEL_BLANK_UNBLANK) {
+				nvt_ts_resume(&ts->client->dev);
+			}else if (drm_blank  == DRM_PANEL_BLANK_POWERDOWN) {
+				nvt_ts_suspend(&ts->client->dev);
+			}else{
+				NVT_LOG("%s: blank is wrong", __func__);
+			}
+		}
+	}
+	NVT_LOG("%s: end\n", __func__);
+}
+
 static int nvt_drm_panel_notifier_callback(struct notifier_block *self, unsigned long event, void *data)
 {
-	struct drm_panel_notifier *evdata = data;
 	int *blank;
+	struct drm_panel_notifier *evdata = data;
+
 	struct nvt_ts_data *ts =
 		container_of(self, struct nvt_ts_data, drm_panel_notif);
 
@@ -2983,23 +3024,23 @@ static int nvt_drm_panel_notifier_callback(struct notifier_block *self, unsigned
 		return 0;
 	}
 
+	drm_event = event;
+	NVT_LOG("%s:  Begain to schedule_work \n", __func__ );
+
 	if (evdata->data && ts) {
 		blank = evdata->data;
-		if (event == DRM_PANEL_EARLY_EVENT_BLANK) {
-			if (*blank == DRM_PANEL_BLANK_POWERDOWN) {
-				NVT_LOG("event=%lu, *blank=%d\n", event, *blank);
-				nvt_ts_suspend(&ts->client->dev);
-			}
-		} else if (event == DRM_PANEL_EVENT_BLANK) {
-			if (*blank == DRM_PANEL_BLANK_UNBLANK) {
-				NVT_LOG("event=%lu, *blank=%d\n", event, *blank);
-				nvt_ts_resume(&ts->client->dev);
-			}
-		}
+		drm_blank = *blank;
+		NVT_LOG("%s:  blank =%d \n", __func__, *blank );
+		schedule_work(&ts->drm_callback_work);
+	}else{
+		NVT_LOG("%s:  wrong to schedule_work \n", __func__ );
 	}
+	NVT_LOG("%s:  end to schedule_work \n", __func__ );
+	//mutex_unlock(&ts->lock);
 
 	return 0;
 }
+
 #elif defined(_MSM_DRM_NOTIFY_H_)
 static int nvt_drm_notifier_callback(struct notifier_block *self, unsigned long event, void *data)
 {
