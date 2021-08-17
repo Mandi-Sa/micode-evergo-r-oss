@@ -650,7 +650,7 @@ static void mt6360_get_hvdcp_work(struct work_struct *work)
 		msleep(30);
 	}
 
-	if (!hvdcp_once && mpci->chg_type == STANDARD_CHARGER && vbus < HVDCP_VBUS_HIGH_LIMIT) {
+	if (!hvdcp_once && (mpci->chg_type == STANDARD_CHARGER||mpci->chg_type == CHECK_HV) && vbus < HVDCP_VBUS_HIGH_LIMIT) {
 		ret = mt6360_pmu_reg_write(mpci->mpi,
 					MT6360_PMU_DPDM_CTRL, DP_33_DM_06);
 		msleep(300);
