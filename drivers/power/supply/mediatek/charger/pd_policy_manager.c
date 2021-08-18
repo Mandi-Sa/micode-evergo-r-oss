@@ -734,7 +734,7 @@ static int bat_step(struct usbpd_pm *pdpm, int cur) {
 	int step = 0;
 
 	if (cur <= BAT_CURR_3000MA)
-		pdpm->cp.direct_charge = 1;
+		pdpm->cp.direct_charge = 0;
 	else if (cur >= BAT_CURR_3500MA)
 		pdpm->cp.direct_charge = 0;
 
