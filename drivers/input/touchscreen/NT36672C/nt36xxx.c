@@ -2838,7 +2838,7 @@ static int32_t nvt_ts_suspend(struct device *dev)
 		return 0;
 	}
 
-#if !WAKEUP_GESTURE
+#if WAKEUP_GESTURE
 	if(ts->gesture_enabled == false)
 		nvt_irq_enable(false);
 #endif
@@ -2936,7 +2936,7 @@ static int32_t nvt_ts_resume(struct device *dev)
 		nvt_check_fw_reset_state(RESET_STATE_REK);
 	}
 
-#if !WAKEUP_GESTURE
+#if WAKEUP_GESTURE
 	if(ts->gesture_enabled ==false)
 		nvt_irq_enable(true);
 #endif
