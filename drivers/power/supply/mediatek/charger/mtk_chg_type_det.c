@@ -343,7 +343,7 @@ int mt_get_quick_charge_type(struct mt_charger *mtk_chg)
 	int i = 0;
 
 	if (charger_manager_pd_is_online()){
-		pr_info("%s:chg_type=%d,apdo_max=%d\n",__func__,mtk_chg->chg_type,mtk_chg->apdo_max);
+		pr_err("%s:chg_type=%d,apdo_max=%d\n",__func__,mtk_chg->chg_type,mtk_chg->apdo_max);
 		if (mtk_chg->apdo_max >= 33){
 			mtk_chg->chg_type = PPS_CHARGER;
 		}
@@ -403,7 +403,7 @@ static int mt_usb_get_property(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_REAL_TYPE:
 		//Extb HONGMI-87422,chenrui1.wt,MODIFY,20210708,modify real_type
 		if (charger_manager_pd_is_online() && val->intval != STANDARD_HOST) {
-			pr_info("[%s]wt_debug, pre_type = %d\n", __func__, mtk_chg->chg_type);
+			pr_err("[%s]wt_debug, pre_type = %d\n", __func__, mtk_chg->chg_type);
 			mtk_chg->chg_type = PPS_CHARGER;
 		}
 		val->intval = mtk_chg->chg_type;
@@ -562,6 +562,64 @@ static int get_source_mode(struct tcp_notify *noti)
 }
 /* -Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode*/
 
+static inline int get_cc_mode(int cc)
+{
+	int ret = 0;
+	switch (cc) {
+		case 0://open
+		case 1://ra
+		case 2://rd
+			ret = cc;
+			break;
+		case 5://rp default
+		case 6://rp medium
+		case 7://rp high
+			ret = 3;
+			break;
+		case 15://drp
+			ret = 4;
+			break;
+		default://unknown
+			break;
+	}
+	return ret;
+}
+
+static int get_sink_mode(unsigned char _cc1, unsigned char _cc2)
+{
+	int mode = 0;
+	int cc1,cc2;
+	_cc1 = get_cc_mode(_cc1);
+	_cc2 = get_cc_mode(_cc2);
+	if (_cc1>_cc2) {
+		cc1 = _cc2;
+		cc2 = _cc1;
+	} else {
+		cc1 = _cc1;
+		cc2 = _cc2;
+	}
+	if (cc1==0) {
+		if (cc2==1) {
+			mode = 5;
+		} else if (cc2==2) {
+			mode = 1;
+		}
+	} else if (cc1==1) {
+		if (cc2==1) {
+			mode = 4;
+		} else if (cc2==2) {
+			mode = 2;
+		}
+	} else if (cc1==2) {
+		if (cc2==2) {
+				mode = 3;
+		}
+	}
+
+	pr_info("%s cc1=%d:%d cc2=%d:%d mode=%d\n", __func__, _cc1, cc1, _cc2, cc2, mode);
+	return mode;
+}
+
 static int pd_tcp_notifier_call(struct notifier_block *pnb,
 				unsigned long event, void *data)
 {
@@ -602,11 +660,16 @@ static int pd_tcp_notifier_call(struct notifier_block *pnb,
 			pr_info("%s Source_to_Sink\n", __func__);
 			cti->typec_mode = POWER_SUPPLY_TYPEC_SINK;
 			plug_in_out_handler(cti, true, true);
-		}  else if (noti->typec_state.old_state == TYPEC_ATTACHED_SNK &&
-			noti->typec_state.new_state == TYPEC_ATTACHED_SRC) {
-			pr_info("%s Sink_to_Source\n", __func__);
-			cti->typec_mode = get_source_mode(noti);
-			plug_in_out_handler(cti, false, true);
+		}  else if (noti->typec_state.new_state == TYPEC_ATTACHED_SRC) {
+			if (noti->typec_state.old_state == TYPEC_ATTACHED_SNK) {
+				pr_info("%s Sink_to_Source\n", __func__);
+				plug_in_out_handler(cti, false, true);
+			}
+			pr_info("%s Source\n", __func__);
+			cti->typec_mode = get_sink_mode(noti->typec_state.cc1, noti->typec_state.cc2);
+		} else if (noti->typec_state.old_state == TYPEC_ATTACHED_SRC && noti->typec_state.new_state == TYPEC_UNATTACHED){
+			pr_info("%s Source Plug out\n", __func__);
+			cti->typec_mode = POWER_SUPPLY_TYPEC_NONE;
 		}
 		/* +Bug653766,chenrui1.wt,ADD,20210508,add battery node */
 		if (noti->typec_state.new_state != TYPEC_UNATTACHED)
