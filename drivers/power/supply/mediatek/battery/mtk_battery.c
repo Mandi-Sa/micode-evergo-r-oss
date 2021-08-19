@@ -543,7 +543,7 @@ int get_charger_pump_temp()
 /* -Extb HONGMI-84869,wangbin wt.ADD,20210610,add charger temp*/
 
 /* +Extb HONGMI-84836,wangbin wt.ADD,20210613,add for shutdown after delay time 30s*/
-#define SHUTDOWN_DELAY_VOL	3400
+#define SHUTDOWN_DELAY_VOL	3450
 extern bool mtk_shutdown_delay_enable;
 #ifndef WT_COMPILE_FACTORY_VERSION 
 extern bool enable_notify_shutdown;

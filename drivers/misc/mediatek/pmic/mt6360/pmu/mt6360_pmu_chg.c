@@ -113,7 +113,6 @@ struct mt6360_pmu_chg_info {
 	struct work_struct pe_work;
 	struct delayed_work get_hvdcp_work;
 	struct delayed_work second_detect_work;
-	bool recheck_float;
 	u8 ctd_dischg_status;
 };
 
@@ -651,7 +650,7 @@ static void mt6360_get_hvdcp_work(struct work_struct *work)
 		msleep(30);
 	}
 
-	if (!hvdcp_once && mpci->chg_type == STANDARD_CHARGER && vbus < HVDCP_VBUS_HIGH_LIMIT) {
+	if (!hvdcp_once && (mpci->chg_type == STANDARD_CHARGER||mpci->chg_type == CHECK_HV) && vbus < HVDCP_VBUS_HIGH_LIMIT) {
 		ret = mt6360_pmu_reg_write(mpci->mpi,
 					MT6360_PMU_DPDM_CTRL, DP_33_DM_06);
 		msleep(300);
@@ -708,7 +707,6 @@ static int mt6360_chgdet_post_process(struct mt6360_pmu_chg_info *mpci)
 	int ret = 0;
 	bool attach = false, inform_psy = true;
 	u8 usb_status = CHARGER_UNKNOWN;
-	bool bypass_report = false;
 
 #ifdef CONFIG_TCPC_CLASS
 	attach = mpci->tcpc_attach;
@@ -723,7 +721,6 @@ static int mt6360_chgdet_post_process(struct mt6360_pmu_chg_info *mpci)
 		ret = mt6360_pmu_reg_write(mpci->mpi,
 				MT6360_PMU_DPDM_CTRL, DP_DM_CTL_N);
 		mpci->chg_type = CHARGER_UNKNOWN;
-		mpci->recheck_float = false;
 		goto out;
 	}
 
@@ -754,11 +751,6 @@ static int mt6360_chgdet_post_process(struct mt6360_pmu_chg_info *mpci)
 		if (!delayed_work_pending(&mpci->second_detect_work))
 			schedule_delayed_work(&mpci->second_detect_work,
 					msecs_to_jiffies(0));
-		if (!mpci->recheck_float) {
-			bypass_report = true;
-		}
-		bypass_report = true;
-		mpci->recheck_float = true;
 		break;
 	case MT6360_CHG_TYPE_CDP:
 		mpci->chg_type = CHARGING_HOST;
@@ -767,7 +759,6 @@ static int mt6360_chgdet_post_process(struct mt6360_pmu_chg_info *mpci)
 		if (!mpci->hvdcp_disable) {
 			mpci->chg_type = CHECK_HV;
 			dev_info(mpci->dev, "%s: start QC2 retry.\n", __func__);
-			bypass_report = true;
 			if (!delayed_work_pending(&mpci->get_hvdcp_work))
 				schedule_delayed_work(&mpci->get_hvdcp_work,
 						msecs_to_jiffies(HVDCP_DPDM_DELAY_1S));
@@ -789,18 +780,16 @@ out:
 		mt6360_set_usbsw_state(mpci, MT6360_USBSW_USB);
 	if (!inform_psy)
 		return ret;
-	if (!bypass_report) {
 	ret = mt6360_psy_online_changed(mpci);
 		if (ret < 0)
 			dev_err(mpci->dev, "%s: report psy online fail\n", __func__);
-	}
 
 	if (mpci->rerun_apsd) {
 		mpci->rerun_apsd = false;
 		dev_info(mpci->dev, "%s: clear rerun_apsd.\n", __func__);
 	}
 
-	return bypass_report?0:mt6360_psy_chg_type_changed(mpci);
+	return mt6360_psy_chg_type_changed(mpci);
 }
 #endif /* CONFIG_MT6360_PMU_CHARGER_TYPE_DETECT */
 
@@ -2525,7 +2514,6 @@ static irqreturn_t mt6360_pmu_chrdet_ext_evt_handler(int irq, void *data)
 		dev_info(mpci->dev, "%s: clear attach & rerun_apsd.\n", __func__);
 		cancel_delayed_work_sync(&mpci->get_hvdcp_work);
 		cancel_delayed_work_sync(&mpci->second_detect_work);
-		mpci->recheck_float = false;
 	}
 
 	if (mpci->pwr_rdy == pwr_rdy)
