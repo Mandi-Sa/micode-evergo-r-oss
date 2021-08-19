@@ -63,6 +63,7 @@
 static mi_ufshcd_set_err_state(struct ufs_hba *hba)
 {
 	hba->ufs_stats.err_state = true;
+	dump_stack();
 }
 
 static int ufshcd_tag_req_type(struct request *rq)
@@ -2593,8 +2594,10 @@ ufshcd_wait_for_uic_cmd(struct ufs_hba *hba, struct uic_command *uic_cmd)
 		dev_err(hba->dev, "%s timeout!\n", __func__);
 #endif
 	}
-	if (ret)
+	if (ret) {
 		mi_ufshcd_set_err_state(hba);
+		hba->ufs_stats.err_stats[UFS_ERR_UIC_CMD]++;
+	}
 
 	ufshcd_dme_cmd_log(hba, uic_cmd, UFS_TRACE_UIC_CMPL_GENERAL);
 	spin_lock_irqsave(hba->host->host_lock, flags);
@@ -3418,8 +3421,10 @@ static int ufshcd_wait_for_dev_cmd(struct ufs_hba *hba,
 		ufshcd_outstanding_req_clear(hba, lrbp->task_tag);
 	}
 
-	if (err && err != -EAGAIN)
+	if (err && err != -EAGAIN) {
 		mi_ufshcd_set_err_state(hba);
+		hba->ufs_stats.err_stats[UFS_ERR_DEV_CMD]++;
+	}
 
 	return err;
 }
@@ -4564,6 +4569,7 @@ out:
 		 * beware not to send uic command here
 		 */
 		mi_ufshcd_set_err_state(hba);
+		hba->ufs_stats.err_stats[UFS_ERR_PWR_CTRL]++;
 		ufshcd_print_host_state(hba, 0, NULL, NULL, NULL);
 		ufshcd_print_pwr_info(hba);
 		ufshcd_print_host_regs(hba);
@@ -5835,8 +5841,10 @@ ufshcd_transfer_rsp_status(struct ufs_hba *hba, struct ufshcd_lrb *lrbp,
 		!hba->silence_err_logs)
 		ufshcd_print_trs(hba, 1 << lrbp->task_tag, true);
 	if ((host_byte(result) == DID_ERROR) ||
-	    (host_byte(result) == DID_ABORT))
+	    (host_byte(result) == DID_ABORT)) {
 		mi_ufshcd_set_err_state(hba);
+		hba->ufs_stats.err_stats[UFS_ERR_RSP_STATUS]++;
+	}
 
 	return result;
 }
@@ -6427,6 +6435,7 @@ static void ufshcd_err_handler(struct work_struct *work)
 
 	spin_lock_irqsave(hba->host->host_lock, flags);
 	mi_ufshcd_set_err_state(hba);
+	hba->ufs_stats.err_stats[UFS_ERR_ERR_HANDLER]++;
 
 	if (hba->ufshcd_state == UFSHCD_STATE_RESET)
 		goto out;
