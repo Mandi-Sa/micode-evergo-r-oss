@@ -447,8 +447,9 @@ static int mi_scsi_osv(struct scsi_device *sdev, char *osv, int len)
 
 	cmd[15] = 0x1c;
 
-	result = scsi_execute_req(sdev, cmd, DMA_FROM_DEVICE, osv,
-				  len, NULL, 30 * HZ, 3, NULL);
+	result = scsi_execute(sdev, cmd, DMA_FROM_DEVICE, osv,
+				  len, NULL, NULL, 30 * HZ, 3, 0, RQF_PM, NULL);
+
 	if (result) {
 		pr_err("ufs: get osv result error\n");
 		return -EIO;
