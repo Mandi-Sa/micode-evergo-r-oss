@@ -344,7 +344,7 @@ int mt_get_quick_charge_type(struct mt_charger *mtk_chg)
 
 	if (charger_manager_pd_is_online()){
 		pr_err("%s:chg_type=%d,apdo_max=%d\n",__func__,mtk_chg->chg_type,mtk_chg->apdo_max);
-		if (mtk_chg->apdo_max >= 33){
+		if (mtk_chg->apdo_max >= 33 && mtk_chg->cti->plugin){
 			mtk_chg->chg_type = PPS_CHARGER;
 		}
 	}
@@ -462,6 +462,9 @@ static int mt_usb_set_property(struct power_supply *psy,
     case POWER_SUPPLY_PROP_PD_REMOVE_COMPENSATION:
 		mtk_chg->cti->pd_remove = val->intval;	
 		break;
+	case POWER_SUPPLY_PROP_BOOT_COMPLETE:
+		power_supply_changed(psy);
+		break;
 	default:
 		pr_debug("set prop %d is not supported in usb\n", psp);
 		return -EINVAL;
@@ -477,8 +480,9 @@ static int mt_usb_is_writeable(struct power_supply *psy,
 	switch (psp) {
         case POWER_SUPPLY_PROP_PD_VERIFY_IN_PROCESS:
         case POWER_SUPPLY_PROP_PD_ACTIVE:
-	case POWER_SUPPLY_PROP_PD_AUTHENTICATION:
+        case POWER_SUPPLY_PROP_PD_AUTHENTICATION:
         case POWER_SUPPLY_PROP_PD_REMOVE_COMPENSATION:
+        case POWER_SUPPLY_PROP_BOOT_COMPLETE:
                 return 1;
         default:
                 break;
@@ -509,8 +513,8 @@ static enum power_supply_property mt_usb_properties[] = {
 	POWER_SUPPLY_PROP_PD_ACTIVE,
 	POWER_SUPPLY_PROP_PD_VERIFY_IN_PROCESS,
 	POWER_SUPPLY_PROP_PD_AUTHENTICATION,
-    POWER_SUPPLY_PROP_PD_REMOVE_COMPENSATION,
-
+	POWER_SUPPLY_PROP_PD_REMOVE_COMPENSATION,
+	POWER_SUPPLY_PROP_BOOT_COMPLETE,
 };
 
 static void tcpc_power_off_work_handler(struct work_struct *work)

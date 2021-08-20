@@ -21,7 +21,7 @@
 /* -HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
 
 /* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
-#define BATT_FAST_CHG_CURR		5900
+#define BATT_FAST_CHG_CURR		5800
 #define BUS_OVP_THRESHOLD		10500
 /* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 
@@ -49,7 +49,7 @@
 #define BAT_TEMP_420          420
 #define BAT_TEMP_430          430
 #define BAT_TEMP_440          440
-#define BAT_CURR_6000MA       5900
+#define BAT_CURR_6000MA       5800
 #define BAT_CURR_5400MA       5400
 #define BAT_CURR_5000MA       5000
 #define BAT_CURR_4500MA       4500
@@ -308,7 +308,6 @@ static int usbpd_pm_set_swchg_cap(struct usbpd_pm *pdpm, u32 aicr)
 
 	pr_info("AICR = %dmA, ICHG = %dmA\n", aicr, ichg);
 	return 0;
-
 }
 
 /*
@@ -328,22 +327,12 @@ static int usbpd_pm_enable_sw(struct usbpd_pm *pdpm, bool en)
 			pr_err("en swchg fail(%d)\n", ret);
 			return ret;
 		}
-		ret = charger_dev_enable_hz(pdpm->sw_chg, false);
-		if (ret < 0) {
-			pr_err("disable hz fail(%d)\n", ret);
-			return ret;
-		}
 	} else {
-		ret = charger_dev_enable_hz(pdpm->sw_chg, true);
+		ret = charger_dev_set_charging_current(pdpm->sw_chg, 100000);
 		if (ret < 0) {
-			pr_err("disable hz fail(%d)\n", ret);
-			return ret;
-		}
-		ret = charger_dev_enable(pdpm->sw_chg, false);
-		if (ret < 0) {
-			pr_err("en swchg fail(%d)\n", ret);
-			return ret;
-		}
+			pr_err("set_ichg fail(%d)\n", ret);
+		return ret;
+	}
 	}
 
 	pdpm->sw.charge_enabled = en;
@@ -1527,7 +1516,7 @@ static void usb_psy_change_work(struct work_struct *work)
 					&propval);
 	
 	ret = power_supply_get_property(pdpm->usb_psy,
-					POWER_SUPPLY_PROP_CHARGE_TYPE,
+					POWER_SUPPLY_PROP_REAL_TYPE,
 					&propval);
 
 	pr_err("[SC manager] >> pd_active %d,  propval.intval %d\n",
