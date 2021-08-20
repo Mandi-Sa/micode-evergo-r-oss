@@ -112,7 +112,8 @@ struct mt6360_pmu_chg_info {
 	struct workqueue_struct *pe_wq;
 	struct work_struct pe_work;
 	struct delayed_work get_hvdcp_work;
-	struct delayed_work second_detect_work;
+	struct delayed_work bc12_retry_work;
+	u8 bc12_retry_count;
 	u8 ctd_dischg_status;
 };
 
@@ -401,14 +402,20 @@ static int mt6360_psy_online_changed(struct mt6360_pmu_chg_info *mpci)
 		return -EINVAL;
 	}
 
-	propval.intval = mpci->attach;
-	ret = power_supply_set_property(mpci->psy, POWER_SUPPLY_PROP_ONLINE,
+	ret = power_supply_get_property(mpci->psy, POWER_SUPPLY_PROP_ONLINE,
 					&propval);
 	if (ret < 0)
-		dev_err(mpci->dev, "%s: psy online fail(%d)\n", __func__, ret);
-	else
-		dev_info(mpci->dev,
-			 "%s: pwr_rdy = %d\n",  __func__, mpci->attach);
+		dev_err(mpci->dev, "%s: get psy online fail(%d)\n", __func__, ret);
+	if (propval.intval != mpci->attach) {
+		propval.intval = mpci->attach;
+		ret = power_supply_set_property(mpci->psy, POWER_SUPPLY_PROP_ONLINE,
+			&propval);
+		if (ret < 0)
+			dev_err(mpci->dev, "%s: set psy online fail(%d)\n", __func__, ret);
+		else
+			dev_info(mpci->dev,
+				"%s: pwr_rdy = %d\n",  __func__, mpci->attach);
+    }
 #endif
 	return ret;
 }
@@ -428,16 +435,24 @@ static int mt6360_psy_chg_type_changed(struct mt6360_pmu_chg_info *mpci)
 		return -EINVAL;
 	}
 
-	propval.intval = mpci->chg_type;
-	ret = power_supply_set_property(mpci->psy,
+	ret = power_supply_get_property(mpci->psy,
 					POWER_SUPPLY_PROP_CHARGE_TYPE,
 					&propval);
 	if (ret < 0)
 		dev_err(mpci->dev,
-			"%s: psy type failed, ret = %d\n", __func__, ret);
-	else
-		dev_info(mpci->dev,
-			 "%s: chg_type = %d\n", __func__, mpci->chg_type);
+			"%s: get psy type failed, ret = %d\n", __func__, ret);
+	if (propval.intval != mpci->chg_type) {
+		propval.intval = mpci->chg_type;
+		ret = power_supply_set_property(mpci->psy,
+						POWER_SUPPLY_PROP_CHARGE_TYPE,
+						&propval);
+		if (ret < 0)
+			dev_err(mpci->dev,
+				"%s: set psy type failed, ret = %d\n", __func__, ret);
+		else
+			dev_info(mpci->dev,
+				"%s: chg_type = %d\n", __func__, mpci->chg_type);
+	}
 #endif
 	return ret;
 }
@@ -590,12 +605,13 @@ static int mt6360_chgdet_pre_process(struct mt6360_pmu_chg_info *mpci)
 }
 
 static int mt6360_rerun_apsd(struct charger_device *chg_dev, bool en);
-static void mt6360_second_detect_work(struct work_struct *work)
+static void mt6360_bc12_retry_work(struct work_struct *work)
 {
 	struct mt6360_pmu_chg_info *mpci = container_of(work,
-			struct mt6360_pmu_chg_info, second_detect_work.work);
+			struct mt6360_pmu_chg_info, bc12_retry_work.work);
 
 	dev_info(mpci->dev, "%s: enter!\n", __func__);
+	mpci->bc12_retry_count++;
 	mt6360_rerun_apsd(mpci->chg_dev, false);
 }
 
@@ -617,6 +633,12 @@ static void mt6360_get_hvdcp_work(struct work_struct *work)
 	if (!mpci->attach) {
 		mpci->chg_type = CHARGER_UNKNOWN;
 		dev_info(mpci->dev, "%s: mpci->attach=0, stop hvdcp_work.\n", __func__);
+		goto out;
+	}
+
+	if (mpci->chg_type != CHECK_HV) {
+		dev_info(mpci->dev, "%s: chg_type changed <%d>, stop hvdcp_work.\n",
+			__func__, mpci->chg_type);
 		goto out;
 	}
 
@@ -748,9 +770,9 @@ static int mt6360_chgdet_post_process(struct mt6360_pmu_chg_info *mpci)
 		break;
 	case MT6360_CHG_TYPE_SDPNSTD:
 		mpci->chg_type = NONSTANDARD_CHARGER;
-		if (!delayed_work_pending(&mpci->second_detect_work))
-			schedule_delayed_work(&mpci->second_detect_work,
-					msecs_to_jiffies(0));
+		if (!delayed_work_pending(&mpci->bc12_retry_work) && mpci->bc12_retry_count<5)
+			schedule_delayed_work(&mpci->bc12_retry_work,
+					msecs_to_jiffies(mpci->bc12_retry_count*100));
 		break;
 	case MT6360_CHG_TYPE_CDP:
 		mpci->chg_type = CHARGING_HOST;
@@ -2513,7 +2535,8 @@ static irqreturn_t mt6360_pmu_chrdet_ext_evt_handler(int irq, void *data)
 		mpci->rerun_apsd = false;
 		dev_info(mpci->dev, "%s: clear attach & rerun_apsd.\n", __func__);
 		cancel_delayed_work_sync(&mpci->get_hvdcp_work);
-		cancel_delayed_work_sync(&mpci->second_detect_work);
+		cancel_delayed_work_sync(&mpci->bc12_retry_work);
+		mpci->bc12_retry_count = 0;
 	}
 
 	if (mpci->pwr_rdy == pwr_rdy)
@@ -3146,7 +3169,8 @@ static int mt6360_pmu_chg_probe(struct platform_device *pdev)
 	}
 	INIT_WORK(&mpci->pe_work, mt6360_trigger_pep_work_handler);
 	INIT_DELAYED_WORK(&mpci->get_hvdcp_work, mt6360_get_hvdcp_work);
-	INIT_DELAYED_WORK(&mpci->second_detect_work, mt6360_second_detect_work);
+	INIT_DELAYED_WORK(&mpci->bc12_retry_work, mt6360_bc12_retry_work);
+	mpci->bc12_retry_count = 0;
 	/* register fg bat oc notify */
 	if (pdata->batoc_notify)
 		register_battery_oc_notify(&mt6360_recv_batoc_callback,
@@ -3158,6 +3182,7 @@ static int mt6360_pmu_chg_probe(struct platform_device *pdev)
 #endif /* CONFIG_MT6360_PMU_CHARGER_TYPE_DETECT && !CONFIG_TCPC_CLASS */
 	//Extb HONGMI-84911,wangbin,wt.ADD.20210514,add charger info.
 	hardwareinfo_set_prop(HARDWARE_CHARGER_IC_INFO, "MT6360_PMU_CHARGER");
+	schedule_delayed_work(&mpci->get_hvdcp_work, msecs_to_jiffies(15000));
 	dev_info(&pdev->dev, "%s: successfully probed\n", __func__);
 	return 0;
 err_shipping_mode_attr:

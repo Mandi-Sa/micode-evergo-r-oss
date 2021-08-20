@@ -340,6 +340,7 @@ static struct device_attribute power_supply_attrs[] = {
 	POWER_SUPPLY_ATTR(typec_cc_orientation),
 	POWER_SUPPLY_ATTR(resistance_id),
 	/* -Bug653766,chenrui1.wt,ADD,20210508,add battery node */
+	POWER_SUPPLY_ATTR(boot_complete),
 	// Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 	POWER_SUPPLY_ATTR(apdo_max),
 	//Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type

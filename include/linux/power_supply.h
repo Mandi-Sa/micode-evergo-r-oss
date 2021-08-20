@@ -213,6 +213,7 @@ enum power_supply_property {
 	POWER_SUPPLY_PROP_TYPEC_POLARITY,
 	POWER_SUPPLY_PROP_RESISTANCE_ID,
 	/* -Bug653766,chenrui1.wt,MODIFY,20210514,add battery node */
+	POWER_SUPPLY_PROP_BOOT_COMPLETE,
 	// Extb HOMGMI-84843,chenrui1.wt,ADD,20210512,add adpo_max node
 	POWER_SUPPLY_PROP_APDO_MAX,
 	//Extb HONGMI-84990,wangbin,wt.ADD,20210518,add quick_charge_type
