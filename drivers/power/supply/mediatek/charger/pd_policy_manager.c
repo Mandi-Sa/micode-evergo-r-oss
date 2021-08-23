@@ -56,6 +56,7 @@
 #define BAT_CURR_4500MA       4400
 #define BAT_CURR_4000MA       3900
 #define BAT_CURR_3900MA       3800
+#define BAT_CURR_3800MA       3700
 #define BAT_CURR_3500MA       3500
 #define BAT_CURR_3000MA       3000
 #define BAT_CURR_2800MA       2800
@@ -962,7 +963,7 @@ static int battery_sw_jeita(struct usbpd_pm *pdpm)
 			step_vbat = bat_step(pdpm, BAT_CURR_3900MA);
 
 		if (bat_temp <= CHG_BAT_TEMP_15)
-			step_vbat = bat_step(pdpm, BAT_CURR_3900MA);
+			step_vbat = bat_step(pdpm, BAT_CURR_3800MA);
 
 		if (!pdpm->pd_authen) {
 			if (pdpm->cp.vbat_volt <= CHG_CUR_VOLT2)
