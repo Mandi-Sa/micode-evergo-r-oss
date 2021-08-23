@@ -49,12 +49,13 @@
 #define BAT_TEMP_420          420
 #define BAT_TEMP_430          430
 #define BAT_TEMP_440          440
+#define BAT_TEMP_460          460
 #define BAT_CURR_6000MA       5800
-#define BAT_CURR_5400MA       5400
-#define BAT_CURR_5000MA       5000
-#define BAT_CURR_4500MA       4500
-#define BAT_CURR_4000MA       4000
-#define BAT_CURR_3900MA       3900
+#define BAT_CURR_5400MA       5300
+#define BAT_CURR_5000MA       4900
+#define BAT_CURR_4500MA       4400
+#define BAT_CURR_4000MA       3900
+#define BAT_CURR_3900MA       3800
 #define BAT_CURR_3500MA       3500
 #define BAT_CURR_3000MA       3000
 #define BAT_CURR_2800MA       2800
@@ -123,6 +124,13 @@ static struct usbpd_pm *__pdpm;
 
 static int fc2_taper_timer;
 static int ibus_lmt_change_timer;
+
+int pdpm_is_charge_pump_enable(void)
+{
+	if(__pdpm)
+		return __pdpm->is_cp_ok;
+	return 0;
+}
 
 /*******************************PD API******************************/
 static inline int check_typec_attached_snk(struct tcpc_device *tcpc)
@@ -319,8 +327,15 @@ static int usbpd_pm_set_swchg_cap(struct usbpd_pm *pdpm, u32 aicr)
 static int usbpd_pm_enable_sw(struct usbpd_pm *pdpm, bool en)
 {
 	int ret;
+	bool val = en;
 
 	pr_info("en = %d\n", en);
+	ret = charger_dev_is_powerpath_enabled(pdpm->sw_chg, &val);
+	if (ret < 0) {
+		pr_err("en power path fail(%d)\n", ret);
+		return ret;
+	}
+
 	if (en) {
 		ret = charger_dev_enable(pdpm->sw_chg, true);
 		if (ret < 0) {
@@ -332,7 +347,7 @@ static int usbpd_pm_enable_sw(struct usbpd_pm *pdpm, bool en)
 		if (ret < 0) {
 			pr_err("set_ichg fail(%d)\n", ret);
 		return ret;
-	}
+		}
 	}
 
 	pdpm->sw.charge_enabled = en;
@@ -956,21 +971,29 @@ static int battery_sw_jeita(struct usbpd_pm *pdpm)
 				step_temp = -pm_config.fc2_steps;
 			step_vbat = min(step_vbat, step_temp);
 		}
-
-		if (get_jeita_lcd_on_off()) {
-			step_therm = bat_step(pdpm, therm_curr);
-			step_ibat = bat_lcdon_temp(pdpm, bat_temp);
+		if(pdpm->therm_flag) {
+			if (get_jeita_lcd_on_off()) {
+				step_therm = bat_step(pdpm, therm_curr);
+				step_ibat = bat_lcdon_temp(pdpm, bat_temp);
+			} else {
+				step_ibat = bat_lcdoff_temp(pdpm, bat_temp);
+				step_therm = bat_step(pdpm, therm_curr);
+			}
+			step_ibat = min(step_therm, step_ibat);
 		} else {
-			step_ibat = bat_lcdoff_temp(pdpm, bat_temp);
 			step_therm = bat_step(pdpm, therm_curr);
+			if(get_jeita_lcd_on_off()) {
+				step_ibat = bat_step(pdpm, BAT_CURR_3000MA);
+				step_ibat = min(step_therm, step_ibat);
+			} else {
+				step_ibat = step_therm;
+			}
 		}
-
-		step_ibat = min(step_therm, step_ibat);
 	} else {
 		pdpm->pps_temp_flag = false;
 	}
-	pr_err(">>>>temp %d pdpm->cp.ibus_curr %d step_ibat %d, step_vbat %d, lcd_on %d,  pd_authen %d, therm_curr %d\n",
-		bat_temp, pdpm->cp.ibus_curr, step_ibat, step_vbat, get_jeita_lcd_on_off(), pdpm->pd_authen, therm_curr);
+	pr_err(">>>>temp %d pdpm->cp.ibus_curr %d step_ibat %d, step_vbat %d, lcd_on %d,  pd_authen %d, therm_curr %d, therm_flag %d\n",
+		bat_temp, pdpm->cp.ibus_curr, step_ibat, step_vbat, get_jeita_lcd_on_off(), pdpm->pd_authen, therm_curr, pdpm->therm_flag);
 	return min(step_vbat, step_ibat);
 }
 /* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
@@ -1193,7 +1216,7 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 					pdpm->cp.vbat_volt);
 		//	usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_EXIT);
 		/* +Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
-		} else if ((bat_temp >= CHG_BAT_TEMP_MAX)
+		} else if ((bat_temp >= BAT_TEMP_460)
 			|| bat_temp <= CHG_BAT_TEMP_MIN
 			|| get_charging_call_state()) {
 			pr_notice("temp is %d, high or low, waiting...\n", bat_temp);
@@ -1214,8 +1237,9 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 
 	case PD_PM_STATE_FC2_ENTRY:
 		if (pm_config.fc2_disable_sw) {
-			usbpd_pm_enable_sw(pdpm, false);
 			usbpd_pm_set_swchg_cap(pdpm, 3000);
+			usbpd_pm_enable_sw(pdpm, false);
+			pdpm->is_cp_ok = true;
 			if (!pdpm->sw.charge_enabled)
 				usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_ENTRY_1);
 		} else {
@@ -1353,6 +1377,7 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 		break;
 
 	case PD_PM_STATE_FC2_EXIT:
+		pdpm->is_cp_ok = false;
 		/* select default 5V*/
 		usbpd_select_pdo(pdpm,5000,3000);
 		
@@ -1433,6 +1458,7 @@ static void usbpd_pm_disconnect(struct usbpd_pm *pdpm)
     /* +Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
     pdpm->lcdon_curr_step = 0;
     pdpm->lcdoff_curr_step = 0;
+    pdpm->is_cp_ok = false;
     /* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
     pdpm->apdo_selected_pdo = 0;
 	//+Extb HOMGMI-84843,chenrui1.wt,ADD,20210514add adpo_max node
@@ -1540,6 +1566,7 @@ static int usbpd_check_plugout(struct usbpd_pm *pdpm)
 			POWER_SUPPLY_PROP_ONLINE, &val);
 	if (!ret) {
         if (!val.intval) {
+            pdpm->is_cp_ok = false;
             usbpd_pm_enable_cp(pdpm, false);
             usbpd_pm_check_cp_enabled(pdpm);
             if (pm_config.cp_sec_enable) {
@@ -1628,6 +1655,8 @@ static int __init usbpd_pm_init(void)
 		pr_err("register tcpc notifier fail\n");
 		return ret;
 	}
+
+	pdpm->therm_flag = false;
 
 	pdpm->nb.notifier_call = usbpd_psy_notifier_cb;
 	power_supply_reg_notifier(&pdpm->nb);
