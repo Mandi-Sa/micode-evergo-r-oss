@@ -791,6 +791,23 @@ static ssize_t err_state_show(struct device *dev, struct device_attribute *attr,
 }
 static DEVICE_ATTR_RO(err_state);
 
+static ssize_t err_reason_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	struct ufs_hba *hba = NULL;
+	struct scsi_device *sdev = NULL;
+	int count = 0;
+	int i = 0;
+
+	send_ufs_hba_data(&hba, &sdev);
+
+	while (i < UFS_ERR_MAX)
+		count += snprintf(buf + count, PAGE_SIZE, "%d ", hba->ufs_stats.err_stats[i++]);
+	count += snprintf(buf + count, PAGE_SIZE, "\n");
+
+	return count;
+}
+static DEVICE_ATTR_RO(err_reason);
+
 static ssize_t req_stats_show(struct device *dev,
 			struct device_attribute *attr, char *buf)
 {
@@ -895,6 +912,7 @@ static struct attribute *ufshcd_sysfs[] = {
 	&dev_attr_hr.attr,
 	&dev_attr_tag_stats.attr,
 	&dev_attr_err_state.attr,
+	&dev_attr_err_reason.attr,
 	&dev_attr_req_stats.attr,
 	NULL,
 };
