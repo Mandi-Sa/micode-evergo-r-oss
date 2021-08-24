@@ -2577,8 +2577,8 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 	NVT_LOG("end\n");
 
 	ts->panel_tp_flag = 1;
+	init_completion(&ts->drm_tp_lcd);
 	nvt_irq_enable(true);
-
 	return 0;
 
 #if defined(CONFIG_FB)
@@ -2892,7 +2892,7 @@ static int32_t nvt_ts_suspend(struct device *dev)
 	buf[1] = 0x11;
 	CTP_SPI_WRITE(ts->client, buf, 2);
 #endif // WAKEUP_GESTURE
-
+	complete(&ts->drm_tp_lcd);
 	mutex_unlock(&ts->lock);
 
 	/* release all touches */
@@ -2910,7 +2910,7 @@ static int32_t nvt_ts_suspend(struct device *dev)
 #endif
 	input_sync(ts->input_dev);
 
-	msleep(50);
+	//msleep(50);
 
 	NVT_LOG("end\n");
 
@@ -2934,6 +2934,7 @@ static int32_t nvt_ts_resume(struct device *dev)
 	mutex_lock(&ts->lock);
 
 	NVT_LOG("start\n");
+	reinit_completion(&ts->drm_tp_lcd);
 
 	// please make sure display reset(RESX) sequence and mipi dsi cmds sent before this
 #if NVT_TOUCH_SUPPORT_HW_RST

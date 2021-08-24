@@ -261,6 +261,13 @@ static int tianma_unprepare(struct drm_panel *panel)
 		pr_err("nvt : %s ++++ drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data)++++", __func__);
 		pr_err("[XMFP] : %s ++++ blank = DRM_BLANK_POWERDOWN ++++", __func__);
 	}
+
+	if(ts->gesture_enabled){
+		ret = wait_for_completion_timeout(&ts->drm_tp_lcd, msecs_to_jiffies(100));
+	}
+
+	msleep(50);
+
 	tianma_dcs_write_seq_static(ctx, 0x28);
 	usleep_range(20000, 20001);
 	tianma_dcs_write_seq_static(ctx, 0x10);
