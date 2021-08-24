@@ -121,6 +121,7 @@ struct nvt_ts_data {
 #if defined(CONFIG_FB)
 #if defined(CONFIG_DRM_PANEL)
 	struct notifier_block drm_panel_notif;
+	struct work_struct drm_callback_work;
 #elif defined(_MSM_DRM_NOTIFY_H_)
 	struct notifier_block drm_notif;
 #else
@@ -151,6 +152,7 @@ struct nvt_ts_data {
 	uint8_t *rbuf;
 	uint8_t *xbuf;
 	struct mutex xbuf_lock;
+	struct mutex call_back;
 	bool irq_enabled;
 	uint8_t cascade;
 	bool pen_support;
