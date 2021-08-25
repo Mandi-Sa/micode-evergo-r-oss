@@ -258,8 +258,7 @@ static int tianma_unprepare(struct drm_panel *panel)
 
 		drm_panel_notifier_call_chain(panel, DRM_PANEL_EARLY_EVENT_BLANK, &notifier_data);
 		drm_notifier_call_chain(DRM_EVENT_BLANK, &g_notify_data);
-		pr_err("nvt : %s ++++ drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data)++++", __func__);
-		pr_err("[XMFP] : %s ++++ blank = DRM_BLANK_POWERDOWN ++++", __func__);
+		pr_err("[XMFP]-[NVT]: %s ++++ blank = DRM_BLANK_POWERDOWN ++++", __func__);
 	}
 
 	if(ts->gesture_enabled){
@@ -381,14 +380,13 @@ static int tianma_prepare(struct drm_panel *panel)
 		power_status = DRM_PANEL_BLANK_UNBLANK;
 		blank = DRM_BLANK_UNBLANK;
 		notifier_data.data = &power_status;
-        	g_notify_data.data = &blank;
+		g_notify_data.data = &blank;
 		notifier_data.refresh_rate = 60;
 		notifier_data.id = 1;
 
 		drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data);
-        	drm_notifier_call_chain(DRM_EVENT_BLANK, &g_notify_data);
-		pr_err("nvt : %s ++++drm_panel_notifier_call_chain(panel, DRM_PANEL_EVENT_BLANK, &notifier_data); ++++", __func__);
-		pr_err("[XMFP] : %s ++++ blank = DRM_BLANK_UNBLANK ++++", __func__);
+		drm_notifier_call_chain(DRM_EVENT_BLANK, &g_notify_data);
+		pr_err("[XMFP]-[NVT] : %s ++++ blank = DRM_BLANK_UNBLANK ++++", __func__);
 	}
 	pr_info("%s-\n", __func__);
 	return ret;

@@ -180,6 +180,7 @@ struct nvt_ts_data {
 	int gesture_command_delayed;
 	bool dev_pm_suspend;
 	struct completion dev_pm_suspend_completion;
+	int palm_flag;
 #endif
 	int db_wakeup;
 	struct class *ts_tp_class;
