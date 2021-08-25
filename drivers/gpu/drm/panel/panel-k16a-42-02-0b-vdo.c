@@ -273,7 +273,7 @@ static int csot_unprepare(struct drm_panel *panel)
 		}
 	}
 
-	msleep(50);
+	msleep(30);
 
 	csot_dcs_write_seq_static(ctx, 0x28);
 	usleep_range(20000, 20001);
@@ -635,8 +635,14 @@ static int csot_panel_ata_check(struct drm_panel *panel)
 }
 
 static int csot_setbacklight_cmdq(void *dsi, dcs_write_gce cb, void *handle,
-				 unsigned int level)
+				 unsigned int level, struct drm_panel *panel)
 {
+	struct csot *ctx = panel_to_csot(panel);
+	if (!level) {
+		csot_dcs_write_seq_static(ctx, 0xFF, 0x10);
+		csot_dcs_write_seq_static(ctx, 0x22, 0x00);
+		usleep_range(2000, 2001);
+	}
 	lm36273_brightness_set(level);
 	return 0;
 }
