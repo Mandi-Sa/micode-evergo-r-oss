@@ -328,26 +328,28 @@ static int usbpd_pm_set_swchg_cap(struct usbpd_pm *pdpm, u32 aicr)
 static int usbpd_pm_enable_sw(struct usbpd_pm *pdpm, bool en)
 {
 	int ret;
-	bool val = en;
-
 	pr_info("en = %d\n", en);
-	ret = charger_dev_is_powerpath_enabled(pdpm->sw_chg, &val);
-	if (ret < 0) {
-		pr_err("en power path fail(%d)\n", ret);
-		return ret;
-	}
-
 	if (en) {
 		ret = charger_dev_enable(pdpm->sw_chg, true);
 		if (ret < 0) {
 			pr_err("en swchg fail(%d)\n", ret);
 			return ret;
 		}
-	} else {
-		ret = charger_dev_set_charging_current(pdpm->sw_chg, 100000);
+		ret = charger_dev_enable_hz(pdpm->sw_chg, false);
 		if (ret < 0) {
-			pr_err("set_ichg fail(%d)\n", ret);
-		return ret;
+			pr_err("disable hz fail(%d)\n", ret);
+			return ret;
+		}
+	} else {
+		ret = charger_dev_enable_hz(pdpm->sw_chg, true);
+		if (ret < 0) {
+			pr_err("disable hz fail(%d)\n", ret);
+			return ret;
+		}
+		ret = charger_dev_enable(pdpm->sw_chg, false);
+		if (ret < 0) {
+			pr_err("en swchg fail(%d)\n", ret);
+			return ret;
 		}
 	}
 
