@@ -170,15 +170,16 @@ static int panel_ata_check(struct drm_panel *panel)
 
 	return 0;
 }
-
+#if 0
 static int lcm_setbacklight_cmdq(void *dsi, dcs_write_gce cb, void *handle,
 				 unsigned int level)
 {
 	return 0;
 }
+#endif
 
 static struct mtk_panel_funcs ext_funcs = {
-	.set_backlight_cmdq = lcm_setbacklight_cmdq,
+	//.set_backlight_cmdq = lcm_setbacklight_cmdq,
 	.ata_check = panel_ata_check,
 };
 static int lcm_disable(struct drm_panel *panel)

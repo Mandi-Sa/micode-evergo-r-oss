@@ -263,7 +263,7 @@ struct mtk_panel_ctx {
 
 struct mtk_panel_funcs {
 	int (*set_backlight_cmdq)(void *dsi_drv, dcs_write_gce cb,
-		void *handle, unsigned int level);
+		void *handle, unsigned int level, struct drm_panel *panel);
 	int (*set_aod_light_mode)(void *dsi_drv, dcs_write_gce cb,
 		void *handle, unsigned int mode);
 	int (*set_backlight_grp_cmdq)(void *dsi_drv, dcs_grp_write_gce cb,
