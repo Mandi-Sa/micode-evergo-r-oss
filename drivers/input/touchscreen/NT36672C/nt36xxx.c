@@ -1307,9 +1307,15 @@ int32_t nvt_check_palm(uint8_t input_id, uint8_t *data)
 
 	if ((input_id == DATA_PROTOCOL) && (func_type == FUNCPAGE_PALM)) {
 		ret = palm_state;
+		if(ts->palm_flag >= 3){
+			nvt_set_pocket_palm_switch(false);
+			NVT_ERR("packet palm irq can't make device suspend more than 3 times\n");
+		}
+
 		if (palm_state == PACKET_PALM_ON) {
-			NVT_LOG("get packet palm on event.\n");
+			NVT_LOG("get packet palm on event. palm_flag = %d\n", ts->palm_flag);
 			update_palm_sensor_value(1);
+			ts->palm_flag ++;
 		} else if (palm_state == PACKET_PALM_OFF) {
 			NVT_LOG("get packet palm off event.\n");
 			update_palm_sensor_value(0);
@@ -2578,6 +2584,7 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 
 	ts->panel_tp_flag = 1;
 	init_completion(&ts->drm_tp_lcd);
+	ts->palm_flag = 0;
 	nvt_irq_enable(true);
 	return 0;
 
@@ -2959,7 +2966,7 @@ static int32_t nvt_ts_resume(struct device *dev)
 #endif /* #if NVT_TOUCH_ESD_PROTECT */
 
 	bTouchIsAwake = 1;
-
+	ts->palm_flag = 0;
 #ifdef CONFIG_TOUCHSCREEN_XIAOMI_TOUCHFEATURE
 	NVT_LOG("palm_sensor_switch=%d", ts->palm_sensor_switch);
 	if (ts->palm_sensor_switch) {
