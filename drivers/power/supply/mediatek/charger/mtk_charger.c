@@ -1655,6 +1655,7 @@ static int mtk_charger_plug_in(struct charger_manager *info,
 	charger_dev_set_input_current(info->chg1_dev,
 				info->chg1_data.input_current_limit);
 	charger_dev_plug_in(info->chg1_dev);
+	charger_manager_notifier(pinfo, CHARGER_NOTIFY_START_CHARGING);
 	return 0;
 }
 
