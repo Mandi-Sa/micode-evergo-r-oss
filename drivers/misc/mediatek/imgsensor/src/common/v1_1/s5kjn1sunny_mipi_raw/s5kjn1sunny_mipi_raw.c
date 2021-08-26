@@ -752,6 +752,8 @@ static kal_uint16 set_gain(kal_uint16 gain)
 {
 
 	kal_uint16 reg_gain;
+	if((imgsensor.sensor_mode == IMGSENSOR_MODE_SLIM_VIDEO) || (imgsensor.sensor_mode == IMGSENSOR_MODE_HIGH_SPEED_VIDEO))
+		gain = gain / 4;
 
 	LOG_INF("set_gain %d\n", gain);
 	if (gain < BASEGAIN || gain > 64 * BASEGAIN) {
@@ -4262,7 +4264,7 @@ slim_video(MSDK_SENSOR_EXPOSURE_WINDOW_STRUCT *
 {
 	LOG_INF("hs_video start\n");
 	spin_lock(&imgsensor_drv_lock);
-	imgsensor.sensor_mode = IMGSENSOR_MODE_HIGH_SPEED_VIDEO;
+	imgsensor.sensor_mode = IMGSENSOR_MODE_SLIM_VIDEO;
 	imgsensor.pclk = imgsensor_info.slim_video.pclk;
 
 	imgsensor.line_length = imgsensor_info.slim_video.linelength;
