@@ -1229,13 +1229,6 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 					pdpm->cp.vbat_volt);
 			usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_ENTRY);
 		}
-
-		//+Bug669735,chenrui1.wt,ADD,20210622,FAMMI test QC failed
-		if (!pdpm->pps_supported) {
-			pr_notice("pps supported is failed\n");
-			usbpd_pm_move_state(pdpm, PD_PM_STATE_FC2_EXIT);
-		}
-		//-Bug669735,chenrui1.wt,ADD,20210622,FAMMI test QC failed
 		break;
 
 	case PD_PM_STATE_FC2_ENTRY:
@@ -1517,7 +1510,6 @@ static void cp_psy_change_work(struct work_struct *work)
 
 static void usb_psy_change_work(struct work_struct *work)
 {
-	int ret = 0;
 	union power_supply_propval propval;
 	/* +Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
 	struct power_supply *batt_verify;
@@ -1538,23 +1530,14 @@ static void usb_psy_change_work(struct work_struct *work)
 	}
 	/* -Bug651592 caijiaqi.wt,20210607,ADD Secret battery */
 
-	pr_err("[SC manager] >> usb change work\n");
-
-	ret = power_supply_get_property(pdpm->usb_psy, 
-					POWER_SUPPLY_PROP_ONLINE,
-					&propval);
-	
-	ret = power_supply_get_property(pdpm->usb_psy,
-					POWER_SUPPLY_PROP_REAL_TYPE,
-					&propval);
-
-	pr_err("[SC manager] >> pd_active %d,  propval.intval %d\n",
-			pdpm->pd_active, propval.intval);
+	pr_err("[SC manager] >> usb change work, pdpm->pd_active=%d,"
+			"__pdpm->is_pps_en_unlock=%d\n", pdpm->pd_active,
+			__pdpm->is_pps_en_unlock);
 
 	/* +Bug651592 caijiaqi.wt,20210607,MODIFY Secret battery */
-	if (!pdpm->pd_active && propval.intval && safe_batt_falg)
+	if (!pdpm->pd_active && __pdpm->is_pps_en_unlock && safe_batt_falg)
 		usbpd_pd_contact(pdpm, true);
-	else if (pdpm->pd_active && !propval.intval)
+	else if (pdpm->pd_active && !__pdpm->is_pps_en_unlock)
 		usbpd_pd_contact(pdpm, false);
 
 	pdpm->psy_change_running = false;
