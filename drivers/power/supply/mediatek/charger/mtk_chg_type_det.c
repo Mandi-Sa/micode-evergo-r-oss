@@ -344,7 +344,7 @@ int mt_get_quick_charge_type(struct mt_charger *mtk_chg)
 
 	if (charger_manager_pd_is_online()){
 		pr_err("%s:chg_type=%d,apdo_max=%d, plugin=%d\n",__func__,mtk_chg->chg_type,mtk_chg->apdo_max,mtk_chg->cti->plugin);
-		if (mtk_chg->apdo_max >= 33 && mtk_chg->cti->plugin){
+		if (mtk_chg->cti->plugin && mtk_chg->chg_type != STANDARD_HOST){
 			mtk_chg->chg_type = PPS_CHARGER;
 		}
 	}
@@ -352,7 +352,10 @@ int mt_get_quick_charge_type(struct mt_charger *mtk_chg)
 	while (adapter_cap[i].adap_type != 0) {
 		if (mtk_chg->chg_type == adapter_cap[i].adap_type) {
 			pr_info("%s:adap_type=%d,adap_cap=%d\n", __func__,adapter_cap[i].adap_type,adapter_cap[i].adap_cap);
-			return adapter_cap[i].adap_cap;
+			if (mtk_chg->apdo_max < 33 && mtk_chg->chg_type == PPS_CHARGER)
+				return QUICK_CHARGE_FAST;
+			else
+				return adapter_cap[i].adap_cap;
 		}
 		i++;
 	}

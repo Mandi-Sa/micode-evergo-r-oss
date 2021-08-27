@@ -113,6 +113,7 @@ struct mt6360_pmu_chg_info {
 	struct work_struct pe_work;
 	struct delayed_work get_hvdcp_work;
 	struct delayed_work bc12_retry_work;
+	struct delayed_work delay_report_work;
 	u8 bc12_retry_count;
 	u8 ctd_dischg_status;
 };
@@ -604,6 +605,31 @@ static int mt6360_chgdet_pre_process(struct mt6360_pmu_chg_info *mpci)
 	return __mt6360_enable_usbchgen(mpci, attach);
 }
 
+static void mt6360_delay_report_work(struct work_struct *work)
+{
+	int ret;
+	struct mt6360_pmu_chg_info *mpci = container_of(work,
+			struct mt6360_pmu_chg_info, delay_report_work.work);
+	struct power_supply *chg_psy;
+	union power_supply_propval propval;
+
+	dev_info(mpci->dev, "%s: delay_report_work!\n", __func__);
+	chg_psy = power_supply_get_by_name("charger");
+	if (!chg_psy)
+		return;
+	ret = power_supply_get_property(chg_psy,
+					POWER_SUPPLY_PROP_CHARGE_TYPE,
+					&propval);
+	if (ret < 0)
+		dev_err(mpci->dev,
+			"%s: get psy type failed, ret = %d\n", __func__, ret);
+	ret = power_supply_set_property(chg_psy,
+					POWER_SUPPLY_PROP_CHARGE_TYPE,
+					&propval);
+	if (ret < 0)
+		dev_err(mpci->dev,
+			"%s: set psy type failed, ret = %d\n", __func__, ret);
+}
 static int mt6360_rerun_apsd(struct charger_device *chg_dev, bool en);
 static void mt6360_bc12_retry_work(struct work_struct *work)
 {
@@ -3169,6 +3195,7 @@ static int mt6360_pmu_chg_probe(struct platform_device *pdev)
 	}
 	INIT_WORK(&mpci->pe_work, mt6360_trigger_pep_work_handler);
 	INIT_DELAYED_WORK(&mpci->get_hvdcp_work, mt6360_get_hvdcp_work);
+	INIT_DELAYED_WORK(&mpci->delay_report_work, mt6360_delay_report_work);
 	INIT_DELAYED_WORK(&mpci->bc12_retry_work, mt6360_bc12_retry_work);
 	mpci->bc12_retry_count = 0;
 	/* register fg bat oc notify */
@@ -3183,6 +3210,7 @@ static int mt6360_pmu_chg_probe(struct platform_device *pdev)
 	//Extb HONGMI-84911,wangbin,wt.ADD.20210514,add charger info.
 	hardwareinfo_set_prop(HARDWARE_CHARGER_IC_INFO, "MT6360_PMU_CHARGER");
 	schedule_delayed_work(&mpci->get_hvdcp_work, msecs_to_jiffies(15000));
+	schedule_delayed_work(&mpci->delay_report_work, msecs_to_jiffies(20000));
 	dev_info(&pdev->dev, "%s: successfully probed\n", __func__);
 	return 0;
 err_shipping_mode_attr:
