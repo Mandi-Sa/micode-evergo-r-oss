@@ -5052,6 +5052,7 @@ static kal_uint32 set_max_framerate_by_scenario(enum MSDK_SCENARIO_ID_ENUM
 			LOG_INF("frame_length %d < shutter %d", imgsensor.frame_length, imgsensor.shutter);
 		break;
 	case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
+		mdelay(10);
 		if (framerate == 0)
 			return ERROR_NONE;
 		frameHeight =
