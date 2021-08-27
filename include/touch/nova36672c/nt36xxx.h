@@ -134,6 +134,7 @@ struct nvt_ts_data {
 #elif defined(CONFIG_HAS_EARLYSUSPEND)
 	struct early_suspend early_suspend;
 #endif
+	struct completion tp_to_lcd;//in gestrue , 28 10 should download after 13.
 	uint8_t fw_ver;
 	uint8_t x_num;
 	uint8_t y_num;

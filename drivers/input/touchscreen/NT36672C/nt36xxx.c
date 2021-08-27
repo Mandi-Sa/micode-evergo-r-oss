@@ -2584,6 +2584,7 @@ static int32_t nvt_ts_probe(struct spi_device *client)
 
 	ts->panel_tp_flag = 1;
 	init_completion(&ts->drm_tp_lcd);
+	init_completion(&ts->tp_to_lcd);
 	ts->palm_flag = 0;
 	nvt_irq_enable(true);
 	return 0;
@@ -2756,6 +2757,9 @@ static int32_t nvt_ts_remove(struct spi_device *client)
 	mutex_destroy(&ts->xbuf_lock);
 	mutex_destroy(&ts->lock);
 
+	complete(&ts->drm_tp_lcd);
+	complete(&ts->tp_to_lcd);
+
 	nvt_gpio_deconfig(ts);
 
 	if (ts->pen_support) {
@@ -2834,6 +2838,9 @@ static void nvt_ts_shutdown(struct spi_device *client)
 #if WAKEUP_GESTURE
 	device_init_wakeup(&ts->input_dev->dev, 0);
 #endif
+
+	complete(&ts->drm_tp_lcd);
+	complete(&ts->tp_to_lcd);
 }
 
 /*******************************************************
@@ -2976,7 +2983,7 @@ static int32_t nvt_ts_resume(struct device *dev)
 #endif
 
 	mutex_unlock(&ts->lock);
-
+	complete(&ts->tp_to_lcd);
 	NVT_LOG("end\n");
 
 	return 0;
@@ -3004,6 +3011,7 @@ static void nvt_callback_work(struct work_struct *work)
 			}
 		} else if (drm_event == DRM_PANEL_EVENT_BLANK) {
 			if (drm_blank  == DRM_PANEL_BLANK_UNBLANK) {
+				reinit_completion(&ts->tp_to_lcd);
 				nvt_ts_resume(&ts->client->dev);
 			}else if (drm_blank  == DRM_PANEL_BLANK_POWERDOWN) {
 				nvt_ts_suspend(&ts->client->dev);
