@@ -261,8 +261,16 @@ static int tianma_unprepare(struct drm_panel *panel)
 		pr_err("[XMFP]-[NVT]: %s ++++ blank = DRM_BLANK_POWERDOWN ++++", __func__);
 	}
 
+	ret = wait_for_completion_timeout(&ts->tp_to_lcd, msecs_to_jiffies(800));
+	if(ret == 0){
+		pr_err("[NVT]: %s unprepare wait for compeltion tp_to_lcd timeout\n", __func__);
+	}
+
 	if(ts->gesture_enabled){
-		ret = wait_for_completion_timeout(&ts->drm_tp_lcd, msecs_to_jiffies(100));
+		ret = wait_for_completion_timeout(&ts->drm_tp_lcd, msecs_to_jiffies(150));
+		if(ret == 0){
+			pr_err("[NVT]: %s unprepare wait for compeltion drm_tp_lcd timeout\n", __func__);
+		}
 	}
 
 	msleep(50);
