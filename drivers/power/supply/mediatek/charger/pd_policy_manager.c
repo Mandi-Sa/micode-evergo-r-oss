@@ -51,7 +51,7 @@
 #define BAT_TEMP_440          440
 #define BAT_TEMP_460          460
 #define BAT_CURR_6000MA       5800
-#define BAT_CURR_5400MA       5300
+#define BAT_CURR_5400MA       5200
 #define BAT_CURR_5000MA       4900
 #define BAT_CURR_4500MA       4400
 #define BAT_CURR_4000MA       3900
