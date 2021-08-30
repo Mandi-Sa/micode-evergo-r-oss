@@ -86,6 +86,7 @@ int thermal_mitigation[] = {
 	1000000,1000000,1000000,1000000,
 };
 
+static bool report_full = false;
 static struct charger_manager *pinfo;
 static struct list_head consumer_head = LIST_HEAD_INIT(consumer_head);
 static DEFINE_MUTEX(consumer_mutex);
@@ -1663,6 +1664,7 @@ static int mtk_charger_plug_out(struct charger_manager *info)
 {
 	struct charger_data *pdata1 = &info->chg1_data;
 	struct charger_data *pdata2 = &info->chg2_data;
+	report_full = false;
 
 	chr_err("%s\n", __func__);
 	info->chr_type = CHARGER_UNKNOWN;
@@ -2261,13 +2263,13 @@ static void mtk_dynamic_set_ieoc_and_cv(struct charger_manager *info)
 	batt_id = mtk_get_batt_id();
 	pd_auth = adaptor_pd_authen();
 	batt_temp = battery_get_bat_temperature();
-	if (batt_id == BAT_ID_COS || batt_id == BAT_ID_SWD) {
+	if ((batt_id == BAT_ID_COS || batt_id == BAT_ID_SWD) && !report_full) {
 		if (batt_temp >= 15 && batt_temp <= 35 && pd_auth > 0) {
-			ieoc_ua = (batt_id == BAT_ID_COS) ? 686000 : 735000;
+			ieoc_ua = (batt_id == BAT_ID_COS) ? 750000 : 800000;
 			info->data.battery_cv = 4470000;
 		}
 		else if (batt_temp > 35 && batt_temp <= 48 && pd_auth > 0) {
-			ieoc_ua = (batt_id == BAT_ID_COS) ? 833000 : 784000;
+			ieoc_ua = (batt_id == BAT_ID_COS) ? 900000 : 850000;
 			info->data.battery_cv = 4470000;
 		}
 		else if (batt_temp > 48 && batt_temp <= 60) {
@@ -2277,6 +2279,11 @@ static void mtk_dynamic_set_ieoc_and_cv(struct charger_manager *info)
 		else {
 			ieoc_ua = 200000;
 			info->data.battery_cv = 4450000;
+		}
+		if (battery_get_uisoc() == 100 && pd_auth && batt_temp >= 15) {
+			chr_err("wt_debug : report_full don't set eoc\n");
+			report_full = true;
+			return;
 		}
 		charger_dev_set_eoc_current(info->chg1_dev, ieoc_ua);
 	}
