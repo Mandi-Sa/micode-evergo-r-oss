@@ -48,7 +48,7 @@ static int vsp_vsn_status;
 
 #define PHYSICAL_WIDTH              68785
 #define PHYSICAL_HEIGHT             152856
-
+static int flag_regulator = 0;
 #if HFP_SUPPORT
 static int current_fps = 60;
 #endif
@@ -233,12 +233,45 @@ static int csot_disable(struct drm_panel *panel)
 	return 0;
 }
 
+static int lcd_get_dvdd(struct device *dev)
+{
+	int ret = 0;
+
+	lcd_dvdd_ldo = devm_regulator_get_optional(dev, "lcd_dvdd");
+	if (IS_ERR(lcd_dvdd_ldo)) {	/* handle return value */
+		flag_regulator = 0;
+		ret = PTR_ERR(lcd_dvdd_ldo);
+		pr_err("get lcd_dvdd_ldo fail:%d\n", ret);
+		return ret;
+	}
+	flag_regulator = 1;
+
+	return 0;
+}
+
+static int lcd_enable_dvdd(void)
+{
+	int ret, retval;
+
+	ret = regulator_set_voltage(lcd_dvdd_ldo, 1300000, 1300000);
+	if (ret < 0)
+		pr_err("set voltage lcd_dvdd_ldo fail, ret = %d\n", ret);
+	retval |= ret;
+
+	/* enable regulator */
+	ret = regulator_enable(lcd_dvdd_ldo);
+	if (ret < 0)
+		pr_err("enable regulator lcd_dvdd_ldo fail, ret = %d\n", ret);
+	retval |= ret;
+
+	return retval;
+}
+
 static int csot_unprepare(struct drm_panel *panel)
 {
 
 	struct csot *ctx = panel_to_csot(panel);
 	int ret = 0;
-	int retval = 0;
 	struct drm_panel_notifier notifier_data;
 	int power_status;
 	int blank;
@@ -300,10 +333,20 @@ static int csot_unprepare(struct drm_panel *panel)
 		usleep_range(2000, 2001);
 		vsp_vsn_status = 0;
 	}
-	ret = regulator_disable(lcd_dvdd_ldo);
-	if (ret < 0)
-		pr_err("disable regulator lcd_dvdd_ldo fail, ret = %d\n", ret);
-	retval |= ret;
+
+	if(flag_regulator) {
+		ret = regulator_disable(lcd_dvdd_ldo);
+		if (ret < 0)
+			pr_err("disable regulator lcd_dvdd_ldo fail, ret = %d\n", ret);
+	} else {
+		ret = lcd_get_dvdd(ctx->dev);
+		if (!ret)
+			ret = regulator_disable(lcd_dvdd_ldo);
+		if (ret < 0)
+			pr_err("disable regulator lcd_dvdd_ldo fail, ret = %d\n", ret);
+
+	}
+
 	usleep_range(2000, 2001);
 
 	ctx->pm_gpio = devm_gpiod_get(ctx->dev, "pm-enable", GPIOD_OUT_HIGH);
@@ -320,7 +363,6 @@ static int csot_prepare(struct drm_panel *panel)
 {
 	struct csot *ctx = panel_to_csot(panel);
 	int ret;
-	int retval = 0;
 	int blank;
 	int power_status;
 	struct drm_panel_notifier notifier_data;
@@ -341,16 +383,13 @@ static int csot_prepare(struct drm_panel *panel)
 	//usleep_range(10000, 10001);
 
 	/* set voltage with min & max*/
-	ret = regulator_set_voltage(lcd_dvdd_ldo, 1300000, 1300000);
-	if (ret < 0)
-		pr_err("set voltage lcd_dvdd_ldo fail, ret = %d\n", ret);
-	retval |= ret;
-
-	/* enable regulator */
-	ret = regulator_enable(lcd_dvdd_ldo);
-	if (ret < 0)
-		pr_err("enable regulator lcd_dvdd_ldo fail, ret = %d\n", ret);
-	retval |= ret;
+	if(flag_regulator)
+		lcd_enable_dvdd();
+	else {
+		ret = lcd_get_dvdd(ctx->dev);
+		if (!ret)
+			lcd_enable_dvdd();
+	}
 	usleep_range(2000, 2001);
 
 	ctx->lcm_bl_en_gpio = devm_gpiod_get_index(ctx->dev, "lcm-bl-enable", 0, GPIOD_OUT_HIGH);
@@ -967,12 +1006,12 @@ static int csot_probe(struct mipi_dsi_device *dsi)
 		return ret;
 
 #endif
-	lcd_dvdd_ldo = devm_regulator_get_optional(dev, "lcd_dvdd");
-	ret = regulator_enable(lcd_dvdd_ldo);
-	if (ret < 0)
-		pr_err("enable regulator lcd_dvdd_ldo fail, ret = %d\n", ret);
-
+	if(dev == NULL)
+		pr_err("dev is NULL\n");
+	if (0 == lcd_get_dvdd(dev))
+		lcd_enable_dvdd();
 	pr_info("%s- wt,csot,nt36672c,cphy,vdo,90hz\n", __func__);
+
 	return ret;
 }
 
