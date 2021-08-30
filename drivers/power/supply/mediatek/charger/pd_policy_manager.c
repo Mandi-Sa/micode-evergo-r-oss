@@ -88,6 +88,7 @@ extern int get_jeita_lcd_on_off(void);
 /* -Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 //Extb HONGMI-85045,ADD,wangbin.wt.20210709.add charging call state limit
 extern bool get_charging_call_state(void);
+extern bool is_kernel_power_off_charging(void);
 
 enum {
 	PM_ALGO_RET_OK,
@@ -1642,7 +1643,10 @@ static int __init usbpd_pm_init(void)
 		return ret;
 	}
 
-	pdpm->therm_flag = false;
+	if (is_kernel_power_off_charging())
+		pdpm->therm_flag = true;
+	else
+		pdpm->therm_flag = false;
 
 	pdpm->nb.notifier_call = usbpd_psy_notifier_cb;
 	power_supply_reg_notifier(&pdpm->nb);
