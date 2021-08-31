@@ -397,7 +397,7 @@ page_owner=on loop.max_part=7";
 			compatible = "mediatek,reserve-memory-scp_share";
 			no-map;
 #ifdef CONFIG_MTK_TINYSYS_SCP_LOGGER_SUPPORT
-			size = <0 0x00300000>; /*3 MB share mem size */
+			size = <0 0x00310000>; /*3.1 MB share mem size */
 #else
 			size = <0 0x00180000>;
 #endif
