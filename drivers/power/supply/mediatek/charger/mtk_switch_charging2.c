@@ -70,6 +70,7 @@
 //Extb HONGMI-85045,ADD,wangbin.wt.20210709.add charging call state limit
 extern bool get_charging_call_state(void);
 extern int pdpm_is_charge_pump_enable(void);
+extern bool is_kernel_power_off_charging(void);
 
 static int _uA_to_mA(int uA)
 {
@@ -103,6 +104,28 @@ static void _disable_all_charging(struct charger_manager *info)
 
 	if (pdc_is_ready())
 		pdc_stop();
+}
+
+static int power_off_jeita(struct charger_manager *info)
+{
+	struct charger_data *pdata = NULL;
+	static int bat_temp_is_high = 0;
+
+	pdata = &info->chg1_data;
+	if (info->battery_temp >= 40){
+		pdata->charging_current_limit = 1500000;
+		bat_temp_is_high = 1;
+	} else {
+		if (bat_temp_is_high == 1){
+			if (info->battery_temp >= 37){
+				pdata->charging_current_limit = 1500000;
+			} else {
+				bat_temp_is_high = 0;
+			}
+		}
+	}
+	chr_err("%s,temp=%d,current=%d\n",__func__,info->battery_temp,pdata->charging_current_limit);
+	return pdata->charging_current_limit;
 }
 
 static void swchg_select_charging_current_limit(struct charger_manager *info)
@@ -290,6 +313,9 @@ static void swchg_select_charging_current_limit(struct charger_manager *info)
 		else {
 			/* +Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
 			pdata->charging_current_limit = info->sw_jeita.cc;
+			if (is_kernel_power_off_charging()){
+				pdata->charging_current_limit = power_off_jeita(info);
+			}
 			/* +Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
 		}
 	}
@@ -728,6 +754,9 @@ static int select_pdc_charging_current_limit(struct charger_manager *info)
 			chr_err("USBIF & STAND_HOST skip current check\n");
 		else {
 			pdata->charging_current_limit = info->sw_jeita.cc;
+			if (is_kernel_power_off_charging()){
+				pdata->charging_current_limit = power_off_jeita(info);
+			}
 		}
 	}
 	if (get_charging_call_state()) {
