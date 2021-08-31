@@ -63,7 +63,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.pre = {
 		.pclk = 100000000,
 		.linelength = 1050,
-		.framelength = 3174,
+		.framelength = 3175,
 		.startx = 0,
 		.starty = 0,
 		.grabwindow_width = 4096,
@@ -75,7 +75,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.cap = {
 		.pclk = 100000000,
 		.linelength = 1050,
-		.framelength = 3174,
+		.framelength = 3175,
 		.startx = 0,
 		.starty = 0,
 		.grabwindow_width = 4096,
@@ -88,7 +88,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.cap1 = {
 		 .pclk = 100000000,
 		 .linelength = 1050,
-		 .framelength = 3174,
+		 .framelength = 3175,
 		 .startx = 0,
 		 .starty = 0,
 		 .grabwindow_width = 4096,
@@ -136,7 +136,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	 .custom1 = {
 		.pclk = 100000000,
 		.linelength = 1050,
-		.framelength = 3174,
+		.framelength = 3175,
 		.startx = 0,
 		.starty = 0,
 		.grabwindow_width = 4096,
@@ -474,7 +474,7 @@ static void write_shutter(kal_uint32 shutter)
 	*/
 	//frame_length and shutter should be an even number.
 	shutter = (shutter >> 1) << 1;
-	imgsensor.frame_length = (imgsensor.frame_length >> 1) << 1;
+//	imgsensor.frame_length = (imgsensor.frame_length >> 1) << 1;
 
 	if (imgsensor.autoflicker_en == KAL_TRUE) {
 		realtime_fps = imgsensor.pclk / imgsensor.line_length * 10 /
@@ -486,8 +486,7 @@ static void write_shutter(kal_uint32 shutter)
 			realtime_fps = 146;
 			set_max_framerate(realtime_fps, 0);
 		} else {
-			imgsensor.frame_length =
-			    (imgsensor.frame_length >> 1) << 1;
+			//imgsensor.frame_length =(imgsensor.frame_length >> 1) << 1;
 			write_cmos_sensor(0x3208, 0x00);
 			write_cmos_sensor(0x3840, imgsensor.frame_length >> 16);
 			write_cmos_sensor(0x380e, imgsensor.frame_length >> 8);
@@ -496,7 +495,7 @@ static void write_shutter(kal_uint32 shutter)
 			write_cmos_sensor(0x3208, 0xa0);
 		}
 	} else {
-	    imgsensor.frame_length = (imgsensor.frame_length >> 1) << 1;
+	  //  imgsensor.frame_length = (imgsensor.frame_length >> 1) << 1;
 		write_cmos_sensor(0x3208, 0x00);
 		write_cmos_sensor(0x3840, imgsensor.frame_length >> 16);
 		write_cmos_sensor(0x380e, imgsensor.frame_length >> 8);
@@ -1916,7 +1915,7 @@ kal_uint16 addr_data_pair_preview_OV50C40OFILM[] = {
 	0x380c, 0x04,
 	0x380d, 0x1a,
 	0x380e, 0x0c,
-	0x380f, 0x66,
+	0x380f, 0x67,
 	0x3811, 0x08,
 	0x3814, 0x11,
 	0x3815, 0x11,
@@ -2279,7 +2278,7 @@ kal_uint16 addr_data_pair_capture_15fps_OV50C40OFILM[] = {
 	0x380c, 0x04,
 	0x380d, 0x1a,
 	0x380e, 0x0c,
-	0x380f, 0x66,
+	0x380f, 0x67,
 	0x3811, 0x08,
 	0x3814, 0x11,
 	0x3815, 0x11,
@@ -2464,7 +2463,7 @@ kal_uint16 addr_data_pair_capture_30fps_OV50C40OFILM[] = {
 	0x380c, 0x04,
 	0x380d, 0x1a,
 	0x380e, 0x0c,
-	0x380f, 0x66,
+	0x380f, 0x67,
 	0x3811, 0x08,
 	0x3814, 0x11,
 	0x3815, 0x11,
@@ -4096,7 +4095,7 @@ kal_uint16 addr_data_pair_custom1_OV50C40OFILM[] = {
 	0x380c, 0x04,
 	0x380d, 0x1a,
 	0x380e, 0x0c,
-	0x380f, 0x66,
+	0x380f, 0x67,
 	0x3811, 0x08,
 	0x3814, 0x11,
 	0x3815, 0x11,
