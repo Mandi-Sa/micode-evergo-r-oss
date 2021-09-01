@@ -342,11 +342,9 @@ int mt_get_quick_charge_type(struct mt_charger *mtk_chg)
 {
 	int i = 0;
 
-	if (charger_manager_pd_is_online()){
+	if (charger_manager_pd_is_online() && mtk_chg->cti->plugin){
 		pr_err("%s:chg_type=%d,apdo_max=%d, plugin=%d\n",__func__,mtk_chg->chg_type,mtk_chg->apdo_max,mtk_chg->cti->plugin);
-		if (mtk_chg->cti->plugin && mtk_chg->chg_type != STANDARD_HOST){
-			mtk_chg->chg_type = PPS_CHARGER;
-		}
+		mtk_chg->chg_type = PPS_CHARGER;
 	}
 
 	while (adapter_cap[i].adap_type != 0) {
@@ -405,7 +403,7 @@ static int mt_usb_get_property(struct power_supply *psy,
 	/* +Bug664795,wangbin,wt.ADD,20210604,add real type node*/
 	case POWER_SUPPLY_PROP_REAL_TYPE:
 		//Extb HONGMI-87422,chenrui1.wt,MODIFY,20210708,modify real_type
-		if (charger_manager_pd_is_online() && mtk_chg->chg_type != STANDARD_HOST && mtk_chg->chg_type != CHARGER_UNKNOWN) {
+		if (charger_manager_pd_is_online() && mtk_chg->chg_type != CHARGER_UNKNOWN) {
 			pr_err("[%s]wt_debug, pre_type = %d\n", __func__, mtk_chg->chg_type);
 			mtk_chg->chg_type = PPS_CHARGER;
 		}
