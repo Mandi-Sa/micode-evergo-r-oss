@@ -150,7 +150,8 @@ static enum power_supply_property battery_props[] = {
 	//Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit
 	POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT,
 	POWER_SUPPLY_PROP_CHARGE_CONTROL_LIMIT_MAX,
-
+	//Extb HONGMI-99979,wangbin wt.ADD,20210616,add battery resistance
+	POWER_SUPPLY_PROP_RESISTANCE,
 };
 
 /* weak function */
@@ -716,6 +717,11 @@ static int battery_get_property(struct power_supply *psy,
 		val->intval = charger_manager_get_prop_system_temp_level_max();
 		break;
 	/* -Extb HONGMI-84869,wangbin wt.ADD,20210623,add charge control limit*/
+	/* +Extb HONGMI-99979,wangbin wt.ADD,20210616,add battery resistance*/
+	case POWER_SUPPLY_PROP_RESISTANCE:
+		val->intval = 150000;
+		break;
+	/* -Extb HONGMI-99979,wangbin wt.ADD,20210616,add battery resistance*/
 	default:
 		ret = -EINVAL;
 		break;

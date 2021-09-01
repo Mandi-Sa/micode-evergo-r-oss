@@ -225,6 +225,8 @@ enum power_supply_property {
 	POWER_SUPPLY_PROP_CHARGER_TEMP,
 	//Extb HONGMI-84869,wangbin wt.ADD,20210616,add typec mode
 	POWER_SUPPLY_PROP_TYPEC_MODE,
+	//Extb HONGMI-99979,wangbin wt.ADD,20210616,add battery resistance
+	POWER_SUPPLY_PROP_RESISTANCE,
 	/* Local extensions */
 	POWER_SUPPLY_PROP_USB_HC,
 	POWER_SUPPLY_PROP_USB_OTG,

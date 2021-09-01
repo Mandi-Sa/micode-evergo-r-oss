@@ -131,11 +131,14 @@ int32_t nvt_mp_parse_dt(struct device_node *root, const char *node_compatible);
 
 
 static char *lockdown_infor;
+//static char *sale_tmp_buf;
+extern uint8_t bTouchIsAwake;
 
 #define WT_PROC_TOUCHSCREEN_FOLDER                   "touchscreen"
 #define WT_PROC_CTP_OPENSHORT_TEST_FILE            "ctp_openshort_test"
 #define WT_PROC_CTP_LOCKDOWN_INFO_FILE            "lockdown_info"
 #define WT_PROC_TP_INFO_FILE                                    "tp_info"
+#define WT_PROC_SALE_SELFTEST_INFO_FILE               "tp_selftest"
 
 struct proc_dir_entry *wt_proc_touchscreen_dir;
 
@@ -143,6 +146,7 @@ struct proc_dir_entry *wt_proc_gmnode_file = NULL;
 struct proc_dir_entry *wt_proc_ctp_openshort_test_file = NULL;
 struct proc_dir_entry *wt_proc_ctp_lockdown_info_file = NULL;
 struct proc_dir_entry *wt_proc_tp_info_file = NULL;
+struct proc_dir_entry *wt_proc_sale_selftest_info_file = NULL;
 
 /*******************************************************
 Description:
@@ -1805,7 +1809,6 @@ const struct seq_operations nvt_lockdown_info_ops = {
 	.show   = c_show_lockdown_info
 };
 
-
 /*******************************************************
 Description:
 	Novatek touchscreen /proc/nvt_selftest open function.
@@ -2075,6 +2078,187 @@ static int32_t nvt_selftest_open(struct inode *inode, struct file *file)
 	return seq_open(file, &nvt_selftest_seq_ops);
 }
 
+/******************************************/
+static int32_t nvt_selftest_open_sale()
+{
+	struct device_node *np = ts->client->dev.of_node;
+	unsigned char mpcriteria[32] = {0};	//novatek-mp-criteria-default
+	struct timeval tv;
+
+	TestResult_Short = 0;
+	TestResult_Open = 0;
+	TestResult_FW_Rawdata = 0;
+	TestResult_FWMutual = 0;
+	TestResult_FW_CC = 0;
+	TestResult_Noise = 0;
+	TestResult_FW_DiffMax = 0;
+	TestResult_FW_DiffMin = 0;
+
+	NVT_LOG("++\n");
+
+	if (mutex_lock_interruptible(&ts->lock)) {
+		return -ERESTARTSYS;
+	}
+
+#if NVT_TOUCH_ESD_PROTECT
+	nvt_esd_check_enable(false);
+#endif /* #if NVT_TOUCH_ESD_PROTECT */
+
+	//---Download MP FW---
+	nvt_update_firmware(parnel.MP_UPDATE_FIRMWARE_NAME);
+
+	if (nvt_get_fw_info()) {
+		mutex_unlock(&ts->lock);
+		NVT_ERR("get fw info failed!\n");
+		return -EAGAIN;
+	}
+
+	fw_ver = ts->fw_ver;
+
+	/* Parsing criteria from dts */
+	if(of_property_read_bool(np, "novatek,mp-support-dt")) {
+		/*
+		 * Parsing Criteria by Novatek PID
+		 * The string rule is "novatek-mp-criteria-<nvt_pid>"
+		 * nvt_pid is 2 bytes (show hex).
+		 *
+		 * Ex. nvt_pid = 500A
+		 *     mpcriteria = "novatek-mp-criteria-500A"
+		 */
+		snprintf(mpcriteria, PAGE_SIZE, "novatek-mp-criteria-%04X", ts->nvt_pid);
+
+		if (nvt_mp_parse_dt(np, mpcriteria)) {
+			//---Download Normal FW---
+			nvt_update_firmware(parnel.BOOT_UPDATE_FIRMWARE_NAME);
+			mutex_unlock(&ts->lock);
+			NVT_ERR("mp parse device tree failed!\n");
+			return -EINVAL;
+		}
+	} else {
+		NVT_LOG("Not found novatek,mp-support-dt, use default setting\n");
+		//---Print Test Criteria---
+		nvt_print_criteria();
+	}
+
+	if (nvt_check_fw_reset_state(RESET_STATE_REK)) {
+		mutex_unlock(&ts->lock);
+		NVT_ERR("check fw reset state failed!\n");
+		return -EAGAIN;
+	}
+
+	if (nvt_switch_FreqHopEnDis(FREQ_HOP_DISABLE)) {
+		mutex_unlock(&ts->lock);
+		NVT_ERR("switch frequency hopping disable failed!\n");
+		return -EAGAIN;
+	}
+
+	if (nvt_check_fw_reset_state(RESET_STATE_NORMAL_RUN)) {
+		mutex_unlock(&ts->lock);
+		NVT_ERR("check fw reset state failed!\n");
+		return -EAGAIN;
+	}
+
+	msleep(100);
+
+	//---Enter Test Mode---
+	if (nvt_clear_fw_status()) {
+		mutex_unlock(&ts->lock);
+		NVT_ERR("clear fw status failed!\n");
+		return -EAGAIN;
+	}
+
+	nvt_change_mode(MP_MODE_CC);
+
+	if (nvt_check_fw_status()) {
+		mutex_unlock(&ts->lock);
+		NVT_ERR("check fw status failed!\n");
+		return -EAGAIN;
+	}
+
+	//---FW Rawdata Test---
+	if (nvt_read_baseline(RawData_FWMutual) != 0) {
+		TestResult_FWMutual = 1;
+	} else {
+		TestResult_FWMutual = RawDataTest_SinglePoint_Sub(RawData_FWMutual, RecordResult_FWMutual, X_Channel, Y_Channel,
+												PS_Config_Lmt_FW_Rawdata_P, PS_Config_Lmt_FW_Rawdata_N);
+	}
+	if (nvt_read_CC(RawData_FW_CC) != 0) {
+		TestResult_FW_CC = 1;
+	} else {
+		TestResult_FW_CC = RawDataTest_SinglePoint_Sub(RawData_FW_CC, RecordResult_FW_CC, X_Channel, Y_Channel,
+											PS_Config_Lmt_FW_CC_P, PS_Config_Lmt_FW_CC_N);
+	}
+
+	if ((TestResult_FWMutual == 1) || (TestResult_FW_CC == 1)) {
+		TestResult_FW_Rawdata = 1;
+	} else {
+		if ((TestResult_FWMutual == -1) || (TestResult_FW_CC == -1))
+			TestResult_FW_Rawdata = -1;
+		else
+			TestResult_FW_Rawdata = 0;
+	}
+
+	//---Leave Test Mode---
+	nvt_change_mode(NORMAL_MODE);
+
+	//---Noise Test---
+	if (nvt_read_fw_noise(RawData_Diff) != 0) {
+		TestResult_Noise = 1;	// 1: ERROR
+		TestResult_FW_DiffMax = 1;
+		TestResult_FW_DiffMin = 1;
+		if (ts->pen_support) {
+			TestResult_Pen_Noise = 1;
+			TestResult_PenTipX_DiffMax = 1;
+			TestResult_PenTipX_DiffMin = 1;
+			TestResult_PenTipY_DiffMax = 1;
+			TestResult_PenTipY_DiffMin = 1;
+			TestResult_PenRingX_DiffMax = 1;
+			TestResult_PenRingX_DiffMin = 1;
+			TestResult_PenRingY_DiffMax = 1;
+			TestResult_PenRingY_DiffMin = 1;
+		} /* if (ts->pen_support) */
+	} else {
+		TestResult_FW_DiffMax = RawDataTest_SinglePoint_Sub(RawData_Diff_Max, RecordResult_FW_DiffMax, X_Channel, Y_Channel,
+											PS_Config_Lmt_FW_Diff_P, PS_Config_Lmt_FW_Diff_N);
+
+		TestResult_FW_DiffMin = RawDataTest_SinglePoint_Sub(RawData_Diff_Min, RecordResult_FW_DiffMin, X_Channel, Y_Channel,
+											PS_Config_Lmt_FW_Diff_P, PS_Config_Lmt_FW_Diff_N);
+
+		if ((TestResult_FW_DiffMax == -1) || (TestResult_FW_DiffMin == -1))
+			TestResult_Noise = -1;
+		else
+			TestResult_Noise = 0;
+	}
+
+	//--Short Test---
+	if (nvt_read_fw_short(RawData_Short) != 0) {
+		TestResult_Short = 1; // 1:ERROR
+	} else {
+		//---Self Test Check --- // 0:PASS, -1:FAIL
+		TestResult_Short = RawDataTest_SinglePoint_Sub(RawData_Short, RecordResult_Short, X_Channel, Y_Channel,
+										PS_Config_Lmt_Short_Rawdata_P, PS_Config_Lmt_Short_Rawdata_N);
+	}
+
+	//---Open Test---
+	if (nvt_read_fw_open(RawData_Open) != 0) {
+		TestResult_Open = 1;    // 1:ERROR
+	} else {
+		//---Self Test Check --- // 0:PASS, -1:FAIL
+		TestResult_Open = RawDataTest_SinglePoint_Sub(RawData_Open, RecordResult_Open, X_Channel, Y_Channel,
+											PS_Config_Lmt_Open_Rawdata_P, PS_Config_Lmt_Open_Rawdata_N);
+	}
+
+	//---Download Normal FW---
+	nvt_update_firmware(parnel.BOOT_UPDATE_FIRMWARE_NAME);
+
+	mutex_unlock(&ts->lock);
+
+	NVT_LOG("--\n");
+	return 0;
+}
+
+/*****************************************/
+
 static int32_t wt_proc_tp_info_open(struct inode *inode, struct file *file)
 {
 	NVT_LOG("-----%s-------\n", __func__);
@@ -2110,6 +2294,185 @@ static const struct file_operations nvt_lockdown_info_fops = {
 	.release = seq_release,
 };
 
+
+/*for xiaomi sale function*/
+char *sale_tmp_buf;
+static ssize_t nvt_sale_selftest_proc_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos)
+{
+	static int finished;
+	int32_t len = 0;
+	int32_t cnt = 0;
+	char tmp_buf_value[64];
+	char	*tmp_buf;
+	//int ret;
+	/*
+	* We return 0 to indicate end of file, that we have
+	* no more information. Otherwise, processes will
+	* continue to read from us in an endless loop.
+	*/
+
+	NVT_LOG("++\n");
+
+	if (finished) {
+		NVT_LOG("read END\n");
+		finished = 0;
+		return 0;
+	}
+	finished = 1;
+
+	if (!bTouchIsAwake) {
+		NVT_LOG("Touch is already suspend\n");
+		cnt = snprintf(tmp_buf_value, sizeof(tmp_buf_value), "0: TP is suspend\n");
+		if (copy_to_user(buf, tmp_buf_value, sizeof(tmp_buf_value))) {
+			NVT_ERR("copy_to_user() error!\n");
+		}
+		buf += cnt;
+		len += cnt;
+		return len;
+	}
+
+	if(sale_tmp_buf == NULL){
+		cnt = snprintf(tmp_buf_value, sizeof(tmp_buf_value), "0: useless\n");
+		NVT_LOG("++ please write the right value first 1\n");
+		if (copy_to_user(buf, tmp_buf_value, sizeof(tmp_buf_value))) {
+			NVT_ERR("copy_to_user() error!\n");
+		}
+		NVT_LOG("++ please write the right value first 2 \n");
+		buf += cnt;
+		len += cnt;
+		return len;
+	}
+	tmp_buf = sale_tmp_buf;
+	NVT_LOG("++ tmp_buf = %s\n", tmp_buf);
+
+	if (mutex_lock_interruptible(&ts->lock)) {
+		return -ERESTARTSYS;
+	}
+
+#if NVT_TOUCH_ESD_PROTECT
+	nvt_esd_check_enable(false);
+#endif /* #if NVT_TOUCH_ESD_PROTECT */
+	if(!strcmp(tmp_buf, "i2c")){
+//to do
+		if(nvt_get_fw_info()){
+			cnt = snprintf(tmp_buf_value, sizeof(tmp_buf_value), "1:failed\n");
+		}else
+//do end
+			cnt = snprintf(tmp_buf_value, sizeof(tmp_buf_value), "2:success\n");
+		NVT_ERR("The read value is I2c\n");
+	} else if(!strcmp(tmp_buf, "open")){
+//to do
+		if(!TestResult_Open)
+//do end
+			cnt = snprintf(tmp_buf_value, sizeof(tmp_buf_value), "2:success\n");
+		else
+			cnt = snprintf(tmp_buf_value, sizeof(tmp_buf_value), "1:failed\n");
+		NVT_ERR("The read value is open\n");
+	}else if(!strcmp(tmp_buf, "short")){
+//to do
+		if(!TestResult_Short)
+//do end
+			cnt = snprintf(tmp_buf_value, sizeof(tmp_buf_value), "2:success\n");
+		else
+			cnt = snprintf(tmp_buf_value, sizeof(tmp_buf_value), "1:failed\n");
+		NVT_ERR("The read value is short\n");
+	} else{
+		cnt = snprintf(tmp_buf_value, sizeof(tmp_buf_value), "0: useless\n");
+		NVT_ERR("The read value is not the right value\n");
+	}
+
+	mutex_unlock(&ts->lock);
+
+	if (copy_to_user(buf, tmp_buf_value, sizeof(tmp_buf_value))) {
+		NVT_ERR("copy_to_user() error!\n");
+		sale_tmp_buf = NULL;
+		return -EFAULT;
+	}
+
+	buf += cnt;
+	len += cnt;
+
+	sale_tmp_buf = NULL;
+	NVT_LOG("--\n");
+	return len;
+}
+
+static ssize_t nvt_sale_selftest_proc_write(struct file *filp, const char __user *buf, size_t count, loff_t *f_pos)
+{
+	int32_t ret;
+
+	char *tmp_buf;
+	char sale_self[16] = {0};
+
+	char *cmd1 = "i2c";
+	char *cmd2 = "open";
+	char *cmd3 = "short";
+	char *unknow = "none";
+
+	NVT_LOG("++ count = %zu, cmd1 = %s, cmd2 = %s, cmd3 = %s\n", count, cmd1, cmd2, cmd3);
+
+	if (!bTouchIsAwake) {
+		NVT_LOG("Touch is already suspend\n");
+		ret = count;
+		return ret;
+	}
+
+	tmp_buf = kzalloc((count+16), GFP_KERNEL);
+	if (!tmp_buf) {
+		NVT_ERR("Allocate tmp_buf fail!\n");
+		ret = -ENOMEM;
+		goto out;
+	}
+	if (copy_from_user(tmp_buf, buf, count)) {
+		NVT_ERR("copy_from_user() error!\n");
+		ret =  -EFAULT;
+		goto out;
+	}
+
+	if (count == 0 || count > 6) {
+		NVT_ERR("Invalid value! count = %zu\n", count);
+		ret = -EINVAL;
+		goto out;
+	}
+
+	ret = sscanf(tmp_buf, "%s", sale_self);
+	NVT_ERR("The write value is %s\n", sale_self);
+
+	if(!(strcmp(cmd1, sale_self))){
+		sale_tmp_buf = cmd1;
+		NVT_ERR("The write value is i2c\n");
+	} else if(!(strcmp(cmd2, sale_self))){
+		sale_tmp_buf = cmd2;
+		NVT_ERR("The write value is open\n");
+		nvt_selftest_open_sale();
+	}else if(!(strcmp(cmd3, sale_self))){
+		sale_tmp_buf = cmd3;
+		NVT_ERR("The write value is short\n");
+		nvt_selftest_open_sale();
+	}else{
+		sale_tmp_buf = unknow;
+	}
+
+	if(sale_tmp_buf == NULL)
+		NVT_ERR("++The write value is not right++\n");
+
+	ret = count;
+
+	NVT_LOG("end of nvt_sale_selftest_proc_write\n");
+	NVT_LOG("--\n");
+	return ret;
+out:
+	if (tmp_buf)
+		kfree(tmp_buf);
+	NVT_LOG("--\n");
+	return ret;
+}
+
+static const struct file_operations nvt_sale_selftest_fops = {
+	.owner = THIS_MODULE,
+	.read = nvt_sale_selftest_proc_read,
+	.write = nvt_sale_selftest_proc_write,
+};
 #ifdef CONFIG_OF
 /*******************************************************
 Description:
@@ -2465,6 +2828,12 @@ int32_t nvt_mp_proc_init(void)
 		}
 	}
 
+	wt_proc_sale_selftest_info_file = proc_create(WT_PROC_SALE_SELFTEST_INFO_FILE, 0664, NULL, &nvt_sale_selftest_fops);
+	if(wt_proc_sale_selftest_info_file == NULL){
+		NVT_ERR("create /proc/tp_info failed\n");
+	}else{
+		NVT_ERR("create /proc/tp_info success\n");
+	}
 
 	NVT_proc_selftest_entry = proc_create("nvt_selftest", 0444, NULL, &nvt_selftest_fops);
 	if (NVT_proc_selftest_entry == NULL) {
