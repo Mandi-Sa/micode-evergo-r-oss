@@ -1505,6 +1505,26 @@ simtray {
 	msdc1_ins:msdc1_ins{
 	};
 
+	/*+chk88849, guodandan.wt, modify, 20210907, modify for usb_eye.*/
+	usb_phy_init:usb_phy_init {
+		compatible = "mediatek,phy_tuning";
+		u2_vrt_ref = <5>;
+		u2_term_ref = <5>;
+		u2_enhance = <3>;
+		status = "okay";
+	};
+	/*-chk88849, guodandan.wt, modify, 20210907, modify for usb_eye.*/
+
+	/*+chk88849, guodandan.wt, modify, 20210907, modify for host usb_eye.*/
+	usb_host_init:usb_host_init {
+		compatible = "mediatek,host_tuning";
+		u2_vrt_ref = <4>;
+		u2_term_ref = <4>;
+		u2_enhance = <3>;
+		status = "okay";
+	};
+	/*-chk88849, guodandan.wt, modify, 20210907, modify for host usb_eye.*/
+
 	md_ccif0@1020a000 {
 		compatible = "mediatek,md_ccif0";
 		reg = <0 0x1020a000 0 0x1000>;
