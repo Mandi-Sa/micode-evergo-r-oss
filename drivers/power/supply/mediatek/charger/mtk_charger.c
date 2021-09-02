@@ -2283,7 +2283,6 @@ static void mtk_dynamic_set_ieoc_and_cv(struct charger_manager *info)
 		if (battery_get_uisoc() == 100 && pd_auth && batt_temp >= 15) {
 			chr_err("wt_debug : report_full don't set eoc\n");
 			report_full = true;
-			return;
 		}
 		charger_dev_set_eoc_current(info->chg1_dev, ieoc_ua);
 	}
