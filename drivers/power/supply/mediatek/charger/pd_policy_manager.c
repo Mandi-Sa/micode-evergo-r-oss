@@ -51,6 +51,7 @@
 #define BAT_TEMP_440          440
 #define BAT_TEMP_460          460
 #define BAT_CURR_6000MA       5800
+#define BAT_CURR_5700MA       5700
 #define BAT_CURR_5400MA       5200
 #define BAT_CURR_5000MA       5300
 #define BAT_CURR_4500MA       4400
@@ -958,9 +959,12 @@ static int battery_sw_jeita(struct usbpd_pm *pdpm)
 	therm_curr = charger_manager_get_thermal_mitigation_current() / 1000;
 	if (bat_temp >= CHG_BAT_TEMP_MIN && bat_temp <= CHG_BAT_TEMP_MAX) {
 		pdpm->pps_temp_flag = true;
-		if (pdpm->cp.vbat_volt < CHG_CUR_VOLT)
-			step_vbat = bat_step(pdpm, BAT_CURR_6000MA);
-		else if (pdpm->cp.vbat_volt >= CHG_CUR_VOLT && pdpm->cp.vbat_volt < CHG_CUR_VOLT2)
+		if (pdpm->cp.vbat_volt < CHG_CUR_VOLT) {
+			if (pdpm->therm_flag) {
+				step_vbat = bat_step(pdpm, BAT_CURR_5700MA);
+			else
+				step_vbat = bat_step(pdpm, BAT_CURR_6000MA);
+		} else if (pdpm->cp.vbat_volt >= CHG_CUR_VOLT && pdpm->cp.vbat_volt < CHG_CUR_VOLT2)
 			step_vbat = bat_step(pdpm, BAT_CURR_5400MA);
 		else
 			step_vbat = bat_step(pdpm, BAT_CURR_3900MA);
