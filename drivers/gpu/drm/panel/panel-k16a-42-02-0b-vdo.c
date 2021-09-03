@@ -205,9 +205,8 @@ static void csot_panel_init(struct csot *ctx)
 	csot_dcs_write_seq_static(ctx, 0x9C, 0x11);
 	csot_dcs_write_seq_static(ctx, 0x9D, 0x11);
 
+	csot_dcs_write_seq_static(ctx, 0xFF, 0x10);
 	csot_dcs_write_seq_static(ctx, 0x35, 0x00);
-
-	csot_dcs_write_seq_static(ctx, 0xFF, 0x10);;
 
 	csot_dcs_write_seq_static(ctx, 0x11);
 	usleep_range(70000, 70001);
@@ -544,7 +543,10 @@ static struct mtk_panel_params ext_params = {
 		.switch_en = 1,
 		.pll_clk = 532,
 		.hbp = 28,
+		.hfp = HFP,
+		.vfp = VFP_60HZ,
 		.data_rate = 1064,
+		.vfp_lp_dyn = VFP_50HZ,
 	},
 
 };
@@ -584,7 +586,10 @@ static struct mtk_panel_params ext_params_90hz = {
 		.switch_en = 1,
 		.pll_clk = 532,
 		.hbp = 28,
+		.hfp = HFP,
+		.vfp = VFP_90HZ,
 		.data_rate = 1064,
+		.vfp_lp_dyn = VFP_50HZ,
 	},
 
 };
@@ -623,7 +628,10 @@ static struct mtk_panel_params ext_params_50hz = {
 		.switch_en = 1,
 		.pll_clk = 532,
 		.hbp = 28,
+		.hfp = HFP,
+		.vfp = VFP_50HZ,
 		.data_rate = 1064,
+		.vfp_lp_dyn = VFP_50HZ,
 	},
 
 };
