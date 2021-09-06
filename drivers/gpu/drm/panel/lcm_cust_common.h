@@ -41,6 +41,7 @@
 #define BL_HBM_L1 1533/* 22.1mA for exponential mapping*/
 #define BL_HBM_L2 1622/* 23.6mA for exponential mapping*/
 #define BL_HBM_L3 1726/* 25.0mA for exponential mapping*/
+#define BL_HBM_L3_2 1750
 
 int _lcm_i2c_write_bytes(unsigned char addr, unsigned char value);
 int lm36273_bl_bias_conf(void);

@@ -12,6 +12,7 @@
 #include <linux/delay.h>
 
 #include "lcm_cust_common.h"
+#include "linux/hardware_info.h"
 
 #define LOG_TAG "LCM_COMMON"
 
@@ -20,6 +21,7 @@
 
 #define LCM_I2C_ID_NAME "I2C_LCD_BIAS"
 
+extern char Lcm_name[HARDWARE_MAX_ITEM_LONGTH];
 
 static struct i2c_client *_lcm_i2c_client;
 struct lm36273_reg {
@@ -118,8 +120,13 @@ int hbm_brightness_set(int level)
 		g_lm36273_led.hbm_status = 2;
 		break;
 	case DISPPARAM_LCD_HBM_L3_ON:
-		_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, BL_HBM_L3 & 0x7);
-		_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, BL_HBM_L3 >> 3);
+		if (!strncmp(Lcm_name, "k16a_36_02_0a_vdo", 17)) {
+			_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, BL_HBM_L3_2 & 0x7);
+			_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, BL_HBM_L3_2 >> 3);
+		} else {
+			_lcm_i2c_write_bytes(LP36273_DISP_BB_LSB, BL_HBM_L3 & 0x7);
+			_lcm_i2c_write_bytes(LP36273_DISP_BB_MSB, BL_HBM_L3 >> 3);
+		}
 		g_lm36273_led.hbm_status = 3;
 		break;
 	case DISPPARAM_LCD_HBM_OFF:
@@ -148,6 +155,7 @@ int lm36273_brightness_set(int level)
           	if (g_lm36273_led.level == 0) {
                   	hbm_brightness_set(g_lm36273_led.hbm_status);
           		_lcm_i2c_write_bytes(LP36273_DISP_BL_ENABLE, 0x17);
+          		_lcm_i2c_write_bytes(LP36273_DISP_BC2, 0xcd);
                 }
 		return 0;
 	}
