@@ -1305,7 +1305,7 @@ int32_t nvt_check_palm(uint8_t input_id, uint8_t *data)
 	uint8_t func_type = data[2];
 	uint8_t palm_state = data[3];
 
-	if ((input_id == DATA_PROTOCOL) && (func_type == FUNCPAGE_PALM)) {
+	if ((input_id == DATA_PROTOCOL) && (func_type == FUNCPAGE_PALM)&& bTouchIsAwake) {
 		ret = palm_state;
 		if(ts->palm_flag >= 3){
 			nvt_set_pocket_palm_switch(false);
