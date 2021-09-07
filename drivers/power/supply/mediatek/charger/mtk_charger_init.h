@@ -55,7 +55,7 @@
 #define TEMP_T0_THRES_PLUS_X_DEGREE  0
 #define TEMP_NEG_10_THRES 0
 /* +Extb HONGMI-85045,ADD,wangbin.wt.20210623.add sw jeita*/
-#define TEMP_LCD_OFF_T7  60
+#define TEMP_LCD_OFF_T7  58
 #define TEMP_LCD_OFF_T6  50
 #define TEMP_LCD_OFF_T5  47
 #define TEMP_LCD_OFF_T4  46
@@ -65,7 +65,7 @@
 #define TEMP_LCD_OFF_T0  0
 #define TEMP_LCD_OFF_NEG_10  -10
 
-#define TEMP_LCD_ON_T9  60
+#define TEMP_LCD_ON_T9  58
 #define TEMP_LCD_ON_T8  45
 #define TEMP_LCD_ON_T7  44
 #define TEMP_LCD_ON_T6  41
