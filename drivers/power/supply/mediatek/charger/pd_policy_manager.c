@@ -72,8 +72,8 @@
 #define CHG_CUR_VOLT2         4100
 #define CHG_CUR_VOLT3         4100
 #else
-#define CHG_CUR_VOLT          4250
-#define CHG_CUR_VOLT2         4450
+#define CHG_CUR_VOLT          4240
+#define CHG_CUR_VOLT2         4440
 #define CHG_CUR_VOLT3         4470
 #endif
 /* -HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
