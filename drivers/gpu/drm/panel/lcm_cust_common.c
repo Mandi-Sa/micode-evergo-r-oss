@@ -33,6 +33,7 @@ struct lm36273_led {
 	struct mutex lock;
 	int level;
 	int hbm_status;
+	int cur_level;
 };
 static struct lm36273_led g_lm36273_led;
 
@@ -176,6 +177,7 @@ int lm36273_brightness_set(int level)
 
 	pr_info("%s backlight = %d, temp_level = %d\n", __func__, level, temp_level);
 	g_lm36273_led.level = temp_level;
+	g_lm36273_led.cur_level = level;
 	mutex_unlock(&g_lm36273_led.lock);
 	return 0;
 }
@@ -188,6 +190,14 @@ int hbm_brightness_get(void)
 	return hbm_status;
 }
 EXPORT_SYMBOL(hbm_brightness_get);
+
+int lcm_get_cur_level(void)
+{
+	int cur_level;
+	cur_level = g_lm36273_led.cur_level;
+	return cur_level;
+}
+EXPORT_SYMBOL(lcm_get_cur_level);
 
 unsigned int panel_white_point_x;
 unsigned int panel_white_point_y;
