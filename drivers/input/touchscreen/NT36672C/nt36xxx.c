@@ -1276,14 +1276,16 @@ static void nvt_switch_mode_work(struct work_struct *work)
 	unsigned char value = ms->mode;
 	char ch[64] = {0x0,};
 
+	mutex_lock(&ts->lock);
 	if (value >= INPUT_EVENT_WAKUP_MODE_OFF && value <= INPUT_EVENT_WAKUP_MODE_ON) {
 		data->gesture_enabled = value - INPUT_EVENT_WAKUP_MODE_OFF;
 		snprintf(ch, sizeof(ch), "%s", data->gesture_enabled ? "enabled" : "disabled");
+		NVT_LOG("support touch mode, value is  %d\n", value);
 		//update_hw_monitor_info(HWMON_CONPONENT_NAME, HWMON_KEY_DBCLICK_SWITCH, ch);
 	} else {
 		NVT_ERR("Does not support touch mode %d\n", value);
 	}
-
+	mutex_unlock(&ts->lock);
 	if (ms != NULL) {
 		kfree(ms);
 		ms = NULL;
@@ -2863,8 +2865,10 @@ static int32_t nvt_ts_suspend(struct device *dev)
 	}
 
 #if WAKEUP_GESTURE
-	if(ts->gesture_enabled == false)
+	if(ts->gesture_enabled == false){
 		nvt_irq_enable(false);
+		NVT_LOG("%s: try to shutdown tp irq\n", __func__);
+	}
 #endif
 
 #if NVT_TOUCH_ESD_PROTECT
@@ -2962,8 +2966,10 @@ static int32_t nvt_ts_resume(struct device *dev)
 	}
 
 #if WAKEUP_GESTURE
-	if(ts->gesture_enabled ==false)
+	if ((ts->gesture_enabled ==false)||( ! ts->irq_enabled)) {
 		nvt_irq_enable(true);
+		NVT_LOG("%s: try to open tp irq\n", __func__);
+	}
 #endif
 
 #if NVT_TOUCH_ESD_PROTECT
