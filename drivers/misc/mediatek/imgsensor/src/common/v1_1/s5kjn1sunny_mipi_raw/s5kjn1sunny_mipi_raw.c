@@ -752,8 +752,6 @@ static kal_uint16 set_gain(kal_uint16 gain)
 {
 
 	kal_uint16 reg_gain;
-	if((imgsensor.sensor_mode == IMGSENSOR_MODE_SLIM_VIDEO) || (imgsensor.sensor_mode == IMGSENSOR_MODE_HIGH_SPEED_VIDEO))
-		gain = gain / 4;
 
 	LOG_INF("set_gain %d\n", gain);
 	if (gain < BASEGAIN || gain > 64 * BASEGAIN) {
@@ -4746,10 +4744,12 @@ feature_control(MSDK_SENSOR_FEATURE_ENUM feature_id,
 		break;
 	case SENSOR_FEATURE_GET_BINNING_TYPE:
 		switch (*(feature_data + 1)) {
-		case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
-		case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
 		case MSDK_SCENARIO_ID_HIGH_SPEED_VIDEO:
 		case MSDK_SCENARIO_ID_SLIM_VIDEO:
+			*feature_return_para_32 = 4; /*BINNING_AVERAGED*/
+			break;
+		case MSDK_SCENARIO_ID_CAMERA_CAPTURE_JPEG:
+		case MSDK_SCENARIO_ID_VIDEO_PREVIEW:
 		case MSDK_SCENARIO_ID_CAMERA_PREVIEW:
 		case MSDK_SCENARIO_ID_CUSTOM1:
 		default:
