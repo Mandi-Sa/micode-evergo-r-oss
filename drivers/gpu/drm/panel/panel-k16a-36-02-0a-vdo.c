@@ -278,6 +278,7 @@ static int tianma_unprepare(struct drm_panel *panel)
 	usleep_range(20000, 20001);
 	tianma_dcs_write_seq_static(ctx, 0x10);
 	usleep_range(100000, 100001);
+	pr_err("nvt %s: 28 10 download\n", __func__);
 
 	//ctx->reset_gpio = devm_gpiod_get(ctx->dev, "reset", GPIOD_OUT_HIGH);
 	//gpiod_set_value(ctx->reset_gpio, 0);
