@@ -673,16 +673,27 @@ static int panel_ata_check(struct drm_panel *panel)
 	return 1;
 }
 
+static int last_level;
+
 static int tianma_setbacklight_cmdq(void *dsi, dcs_write_gce cb, void *handle,
-				 unsigned int level, struct drm_panel *panel)
+				 unsigned int level)
 {
-	struct tianma *ctx = panel_to_tianma(panel);
+	char bl_tb0[] = {0xff, 0x10};
+	char bl_tb1[] = {0x22, 0x00};
+	char bl_tb2[] = {0x13, 0x00};
+
 	if (!level) {
-		tianma_dcs_write_seq_static(ctx, 0xFF, 0x10);
-		tianma_dcs_write_seq_static(ctx, 0x22, 0x00);
+		cb(dsi, handle, bl_tb0, ARRAY_SIZE(bl_tb0));
+		cb(dsi, handle, bl_tb1, ARRAY_SIZE(bl_tb1));
 		usleep_range(2000, 2001);
 	}
+	if (!last_level) {
+		cb(dsi, handle, bl_tb0, ARRAY_SIZE(bl_tb0));
+		cb(dsi, handle, bl_tb2, ARRAY_SIZE(bl_tb2));
+	}
 	lm36273_brightness_set(level);
+	last_level = level;
+
 	return 0;
 }
 
