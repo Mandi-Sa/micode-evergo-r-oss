@@ -5291,8 +5291,7 @@ static int mtk_dsi_io_cmd(struct mtk_ddp_comp *comp, struct cmdq_pkt *handle,
 			&& panel_ext->funcs->set_backlight_cmdq)
 			panel_ext->funcs->set_backlight_cmdq(dsi,
 					mipi_dsi_dcs_write_gce,
-					handle, *(int *)params,
-					dsi->panel);
+					handle, *(int *)params);
 	}
 		break;
 	case DSI_SET_BL_AOD:
