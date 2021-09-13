@@ -401,13 +401,21 @@ static void usbpd_check_pca_chg_swchg(struct usbpd_pm *pdpm)
 
 static void usbpd_check_charger_psy(struct usbpd_pm *pdpm)
 {
-	if (!pdpm->usb_psy) { 
+	if (!pdpm->usb_psy) {
 		pdpm->usb_psy = power_supply_get_by_name("charger");
 		if (!pdpm->usb_psy)
 			pr_err("usb psy not found!\n");
 	}
 }
 
+static void usbpd_check_battery_psy(struct usbpd_pm *pdpm)
+{
+	if (!pdpm->battery_psy) {
+		pdpm->battery_psy = power_supply_get_by_name("battery");
+		if (!pdpm->battery_psy)
+			pr_err("battery psy not found!\n");
+	}
+}
 //+ Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
 static void usbpd_check_apdo_psy(struct usbpd_pm *pdpm)
 {
@@ -469,19 +477,21 @@ static void usbpd_pm_update_cp_status(struct usbpd_pm *pdpm)
 		pdpm->cp.vbat_volt = val.intval;
 
 	ret = power_supply_get_property(pdpm->cp_psy,
-			POWER_SUPPLY_PROP_SC_BATTERY_CURRENT, &val);
+			POWER_SUPPLY_PROP_SC_BUS_CURRENT, &val);
 	if (!ret)
-		pdpm->cp.ibat_curr = val.intval;
+		pdpm->cp.ibus_curr = val.intval;
 
 	ret = power_supply_get_property(pdpm->cp_psy,
 			POWER_SUPPLY_PROP_SC_BUS_VOLTAGE, &val);
 	if (!ret)
 		pdpm->cp.vbus_volt = val.intval; 
 
-	ret = power_supply_get_property(pdpm->cp_psy,
-			POWER_SUPPLY_PROP_SC_BUS_CURRENT, &val);
-	if (!ret)
-		pdpm->cp.ibus_curr = val.intval;
+	ret = power_supply_get_property(pdpm->battery_psy,
+			POWER_SUPPLY_PROP_CURRENT_NOW, &val);
+	if (!ret) {
+		pdpm->cp.battery_curr = val.intval/1000;
+		pdpm->cp.ibat_curr = pdpm->cp.battery_curr;
+	}
 
 	ret = power_supply_get_property(pdpm->cp_psy,
 			POWER_SUPPLY_PROP_SC_VBUS_ERROR_STATUS, &val);
@@ -750,11 +760,17 @@ static int bat_step(struct usbpd_pm *pdpm, int cur) {
 	pr_err("[%s] curr = %d, direct_charge = %d, pdpm->pd_authen %d\n",
 		__func__, cur, pdpm->cp.direct_charge, pdpm->pd_authen);
 
+#if 0
 	if (pdpm->cp.ibat_curr < cur)
 		step = pm_config.fc2_steps;
 	else if (pdpm->cp.ibat_curr > cur + BAT_CURR_100MA)
 		step = -pm_config.fc2_steps;
-
+#else
+	if (pdpm->cp.battery_curr < cur)
+		step = pm_config.fc2_steps;
+	else if (pdpm->cp.battery_curr > cur + BAT_CURR_100MA)
+		step = -pm_config.fc2_steps;
+#endif
 	return step;
 }
 
@@ -961,7 +977,7 @@ static int battery_sw_jeita(struct usbpd_pm *pdpm)
 		pdpm->pps_temp_flag = true;
 		if (pdpm->cp.vbat_volt < CHG_CUR_VOLT) {
 			if (pdpm->therm_flag)
-				step_vbat = bat_step(pdpm, BAT_CURR_5700MA);
+				step_vbat = bat_step(pdpm, BAT_CURR_6000MA);
 			else
 				step_vbat = bat_step(pdpm, BAT_CURR_6000MA);
 		} else if (pdpm->cp.vbat_volt >= CHG_CUR_VOLT && pdpm->cp.vbat_volt < CHG_CUR_VOLT2)
@@ -1043,6 +1059,7 @@ static int usbpd_pm_fc2_charge_algo(struct usbpd_pm *pdpm)
 
 //	pr_err("[%s] direct_charge = %d", __func__, pdpm->cp.direct_charge);
 	/* battery charge current loop*/
+#if 0
 	if(!pdpm->cp.direct_charge){
 		if (pdpm->cp.ibat_curr < pm_config.bat_curr_lp_lmt )
 			step_ibat = pm_config.fc2_steps;
@@ -1055,7 +1072,20 @@ static int usbpd_pm_fc2_charge_algo(struct usbpd_pm *pdpm)
 		else if (pdpm->cp.ibat_curr > (pm_config.bat_curr_lp_lmt + 100) >> 1)
 			step_ibat = -pm_config.fc2_steps;
 	}
-
+#else
+	if(!pdpm->cp.direct_charge){
+		if (pdpm->cp.battery_curr < pm_config.bat_curr_lp_lmt )
+			step_ibat = pm_config.fc2_steps;
+		else if (pdpm->cp.battery_curr > pm_config.bat_curr_lp_lmt + 100)
+			step_ibat = -pm_config.fc2_steps;
+	}
+	else{
+		if (pdpm->cp.battery_curr < (pm_config.bat_curr_lp_lmt >> 1))
+			step_ibat = pm_config.fc2_steps;
+		else if (pdpm->cp.battery_curr > (pm_config.bat_curr_lp_lmt + 100) >> 1)
+			step_ibat = -pm_config.fc2_steps;
+	}
+#endif
 	/* Bug651592 caijiaqi.wt,20210609,ADD BATTERY CURRENT jeita */
 	step_ibat = battery_sw_jeita(pdpm);
 
@@ -1210,7 +1240,7 @@ static int usbpd_pm_sm(struct usbpd_pm *pdpm)
 	/* -Bug651592 caijiaqi.wt,20210709,ADD BATTERY CURRENT jeita */
 	pr_err(">>>>>>>>>>>state phase :%d\n", pdpm->state);
 	pr_err(">>>>>vbus_vol %d    vbat_vol %d   vout %d\n", pdpm->cp.vbus_volt, pdpm->cp.vbat_volt, pdpm->cp.vout_volt);
-	pr_err(">>>>>ibus_curr %d    ibat_curr %d\n", pdpm->cp.ibus_curr + pdpm->cp_sec.ibus_curr, pdpm->cp.ibat_curr);
+	pr_err(">>>>>ibus_curr %d    ibat_curr %d mt6360_ibat_curr %d\n", pdpm->cp.ibus_curr + pdpm->cp_sec.ibus_curr, pdpm->cp.ibat_curr,pdpm->cp.battery_curr);
 	switch (pdpm->state) {
 	case PD_PM_STATE_ENTRY:
 		stop_sw = false;
@@ -1586,6 +1616,7 @@ static int usbpd_psy_notifier_cb(struct notifier_block *nb,
 		usbpd_check_cp_sec_psy(pdpm);
 	}
 	usbpd_check_charger_psy(pdpm);
+	usbpd_check_battery_psy(pdpm);
 	usbpd_check_tcpc(pdpm);
 	usbpd_check_pca_chg_swchg(pdpm);
 
@@ -1633,6 +1664,7 @@ static int __init usbpd_pm_init(void)
 	//Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
 	usbpd_check_apdo_psy(pdpm);
 	usbpd_check_charger_psy(pdpm);
+	usbpd_check_battery_psy(pdpm);
 	usbpd_check_tcpc(pdpm);
 	usbpd_check_pca_chg_swchg(pdpm);
 

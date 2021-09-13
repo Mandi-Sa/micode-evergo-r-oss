@@ -116,6 +116,7 @@ struct cp_device {
 	int  vbus_volt;
 	int  ibat_curr;
 	int  ibus_curr;
+	int  battery_curr;
 
 	int vbus_error_low;
 	int vbus_error_high;
@@ -178,6 +179,7 @@ struct usbpd_pm {
 	struct power_supply *cp_psy;
 	struct power_supply *cp_sec_psy;
 	struct power_supply *usb_psy;
+	struct power_supply *battery_psy;
 	//Extb HOMGMI-84843,chenrui1.wt,ADD,20210514,add adpo_max node
 	struct power_supply *apdo_psy;
 };
