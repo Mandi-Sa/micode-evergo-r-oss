@@ -2160,6 +2160,12 @@ static int32_t nvt_selftest_open_sale()
 
 	msleep(100);
 
+	snprintf(short_test_file, CSV_FILE_NAME_LEN, "%s.csv",SHORT_TEST_CSV_FILE);
+	snprintf(open_test_file, CSV_FILE_NAME_LEN, "%s.csv",OPEN_TEST_CSV_FILE);
+	snprintf(fw_rawdata_file, CSV_FILE_NAME_LEN, "%s.csv",FW_RAWDATA_CSV_FILE);
+	snprintf(fw_cc_file, CSV_FILE_NAME_LEN, "%s.csv",FW_CC_CSV_FILE);
+	snprintf(noise_test_file, CSV_FILE_NAME_LEN, "%s.csv",NOISE_TEST_CSV_FILE);
+
 	//---Enter Test Mode---
 	if (nvt_clear_fw_status()) {
 		mutex_unlock(&ts->lock);
@@ -2828,7 +2834,7 @@ int32_t nvt_mp_proc_init(void)
 		}
 	}
 
-	wt_proc_sale_selftest_info_file = proc_create(WT_PROC_SALE_SELFTEST_INFO_FILE, 0664, NULL, &nvt_sale_selftest_fops);
+	wt_proc_sale_selftest_info_file = proc_create(WT_PROC_SALE_SELFTEST_INFO_FILE, 0777, NULL, &nvt_sale_selftest_fops);
 	if(wt_proc_sale_selftest_info_file == NULL){
 		NVT_ERR("create /proc/tp_info failed\n");
 	}else{
