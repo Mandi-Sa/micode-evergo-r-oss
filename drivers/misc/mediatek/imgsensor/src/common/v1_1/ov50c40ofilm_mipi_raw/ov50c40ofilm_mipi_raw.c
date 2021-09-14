@@ -63,7 +63,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.pre = {
 		.pclk = 100000000,
 		.linelength = 1050,
-		.framelength = 3175,
+		.framelength = 3174,
 		.startx = 0,
 		.starty = 0,
 		.grabwindow_width = 4096,
@@ -75,7 +75,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.cap = {
 		.pclk = 100000000,
 		.linelength = 1050,
-		.framelength = 3175,
+		.framelength = 3174,
 		.startx = 0,
 		.starty = 0,
 		.grabwindow_width = 4096,
@@ -88,7 +88,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	.cap1 = {
 		 .pclk = 100000000,
 		 .linelength = 1050,
-		 .framelength = 3175,
+		 .framelength = 3174,
 		 .startx = 0,
 		 .starty = 0,
 		 .grabwindow_width = 4096,
@@ -136,7 +136,7 @@ static struct imgsensor_info_struct imgsensor_info = {
 	 .custom1 = {
 		.pclk = 100000000,
 		.linelength = 1050,
-		.framelength = 3175,
+		.framelength = 3174,
 		.startx = 0,
 		.starty = 0,
 		.grabwindow_width = 4096,
@@ -451,6 +451,11 @@ static void set_max_framerate(UINT16 framerate, kal_bool min_framelength_en)
 static void write_shutter(kal_uint32 shutter)
 {
 	kal_uint16 realtime_fps = 0;
+	kal_uint32 reg_shutter, reg_frame_length;
+	reg_shutter = ((read_cmos_sensor(0x3500) << 16) |
+		(read_cmos_sensor(0x3501) << 8) | read_cmos_sensor(0x3502));
+	reg_frame_length = ((read_cmos_sensor(0x3840) << 16) |
+		(read_cmos_sensor(0x380e) << 8) | read_cmos_sensor(0x380f));
 
 	imgsensor.current_ae_effective_frame = 2;
 
@@ -474,7 +479,10 @@ static void write_shutter(kal_uint32 shutter)
 	*/
 	//frame_length and shutter should be an even number.
 	shutter = (shutter >> 1) << 1;
-//	imgsensor.frame_length = (imgsensor.frame_length >> 1) << 1;
+	imgsensor.frame_length = (imgsensor.frame_length >> 1) << 1;
+
+	if(((reg_shutter - 1) <= imgsensor.frame_length) && (imgsensor.frame_length <= (reg_shutter + 7)))
+		imgsensor.frame_length = reg_shutter + 8;
 
 	if (imgsensor.autoflicker_en == KAL_TRUE) {
 		realtime_fps = imgsensor.pclk / imgsensor.line_length * 10 /
@@ -486,7 +494,7 @@ static void write_shutter(kal_uint32 shutter)
 			realtime_fps = 146;
 			set_max_framerate(realtime_fps, 0);
 		} else {
-			//imgsensor.frame_length =(imgsensor.frame_length >> 1) << 1;
+			imgsensor.frame_length =(imgsensor.frame_length >> 1) << 1;
 			write_cmos_sensor(0x3208, 0x00);
 			write_cmos_sensor(0x3840, imgsensor.frame_length >> 16);
 			write_cmos_sensor(0x380e, imgsensor.frame_length >> 8);
@@ -495,7 +503,7 @@ static void write_shutter(kal_uint32 shutter)
 			write_cmos_sensor(0x3208, 0xa0);
 		}
 	} else {
-	  //  imgsensor.frame_length = (imgsensor.frame_length >> 1) << 1;
+		imgsensor.frame_length = (imgsensor.frame_length >> 1) << 1;
 		write_cmos_sensor(0x3208, 0x00);
 		write_cmos_sensor(0x3840, imgsensor.frame_length >> 16);
 		write_cmos_sensor(0x380e, imgsensor.frame_length >> 8);
@@ -505,12 +513,12 @@ static void write_shutter(kal_uint32 shutter)
 	}
 
 	/*Warning : shutter must be even. Odd might happen Unexpected Results */
-	write_cmos_sensor(0x3208, 0x00);
+	write_cmos_sensor(0x3208, 0x01);
 	write_cmos_sensor(0x3500, (shutter >> 16) & 0xFF);
 	write_cmos_sensor(0x3501, (shutter >> 8) & 0xFF);
 	write_cmos_sensor(0x3502, (shutter)  & 0xFF);
-	write_cmos_sensor(0x3208, 0x10);
-	write_cmos_sensor(0x3208, 0xa0);
+	write_cmos_sensor(0x3208, 0x11);
+	write_cmos_sensor(0x3208, 0xa1);
 	LOG_DBG("shutter =%d, framelength =%d, realtime_fps =%d\n",
 		shutter, imgsensor.frame_length, realtime_fps);
 }
@@ -543,6 +551,13 @@ static void set_shutter_frame_length(kal_uint16 shutter, kal_uint16 frame_length
 	unsigned long flags;
 	kal_int32 dummy_line = 0;
 	kal_uint16 realtime_fps = 0;
+
+	kal_uint32 reg_shutter, reg_frame_length;
+	reg_shutter = ((read_cmos_sensor(0x3500) << 16) |
+		(read_cmos_sensor(0x3501) << 8) | read_cmos_sensor(0x3502));
+	reg_frame_length = ((read_cmos_sensor(0x3840) << 16) |
+		(read_cmos_sensor(0x380e) << 8) | read_cmos_sensor(0x380f));
+
 	spin_lock_irqsave(&imgsensor_drv_lock, flags);
 	imgsensor.shutter = shutter;
 	spin_unlock_irqrestore(&imgsensor_drv_lock, flags);
@@ -566,6 +581,10 @@ static void set_shutter_frame_length(kal_uint16 shutter, kal_uint16 frame_length
 		(shutter > (imgsensor_info.max_frame_length -
 		imgsensor_info.margin)) ? (imgsensor_info.max_frame_length -
 		imgsensor_info.margin) : shutter;
+
+	if(((reg_shutter - 1) <= imgsensor.frame_length) && (imgsensor.frame_length <= (reg_shutter + 7)))
+		imgsensor.frame_length = reg_shutter + 8;
+
 
 	if (imgsensor.autoflicker_en == KAL_TRUE) {
 		realtime_fps = imgsensor.pclk /
@@ -595,12 +614,12 @@ static void set_shutter_frame_length(kal_uint16 shutter, kal_uint16 frame_length
 		write_cmos_sensor(0x3208, 0xa0);
 	}
 	/*Warning : shutter must be even. Odd might happen Unexpected Results */
-	write_cmos_sensor(0x3208, 0x00);
+	write_cmos_sensor(0x3208, 0x01);
 	write_cmos_sensor(0x3500, (shutter >> 16) & 0xFF);
 	write_cmos_sensor(0x3501, (shutter >> 8) & 0xFF);
 	write_cmos_sensor(0x3502, (shutter)  & 0xFF);
-	write_cmos_sensor(0x3208, 0x10);
-	write_cmos_sensor(0x3208, 0xa0);
+	write_cmos_sensor(0x3208, 0x11);
+	write_cmos_sensor(0x3208, 0xa1);
 	LOG_DBG("shutter =%d, framelength =%d, realtime_fps =%d\n",
 		shutter, imgsensor.frame_length, realtime_fps);
 }
@@ -1872,7 +1891,7 @@ static void sensor_init(void)
 
 #if MULTI_WRITE
 kal_uint16 addr_data_pair_preview_OV50C40OFILM[] = {
-	0x0100, 0x00,
+	//0x0100, 0x00,
 	0x0304, 0x01,
 	0x0305, 0x40,
 	0x3501, 0x0c,
@@ -1915,7 +1934,7 @@ kal_uint16 addr_data_pair_preview_OV50C40OFILM[] = {
 	0x380c, 0x04,
 	0x380d, 0x1a,
 	0x380e, 0x0c,
-	0x380f, 0x67,
+	0x380f, 0x66,
 	0x3811, 0x08,
 	0x3814, 0x11,
 	0x3815, 0x11,
@@ -2052,8 +2071,8 @@ kal_uint16 addr_data_pair_preview_OV50C40OFILM[] = {
 	0x5d0e, 0x02,
 	0x5d0f, 0x02,
 	0x5d10, 0x06,
-	0x5d11, 0x06,			
-	0x0100, 0x01,
+	0x5d11, 0x06,
+	//0x0100, 0x01,
 };
 #endif
 
@@ -2235,7 +2254,7 @@ static void preview_setting(void)
 
 #if MULTI_WRITE
 kal_uint16 addr_data_pair_capture_15fps_OV50C40OFILM[] = {
-	0x0100, 0x00,
+	//0x0100, 0x00,
 	0x0304, 0x01,
 	0x0305, 0x40,
 	0x3501, 0x0c,
@@ -2278,7 +2297,7 @@ kal_uint16 addr_data_pair_capture_15fps_OV50C40OFILM[] = {
 	0x380c, 0x04,
 	0x380d, 0x1a,
 	0x380e, 0x0c,
-	0x380f, 0x67,
+	0x380f, 0x66,
 	0x3811, 0x08,
 	0x3814, 0x11,
 	0x3815, 0x11,
@@ -2416,11 +2435,11 @@ kal_uint16 addr_data_pair_capture_15fps_OV50C40OFILM[] = {
 	0x5d0f, 0x02,
 	0x5d10, 0x06,
 	0x5d11, 0x06,
-	0x0100, 0x01,
+//	0x0100, 0x01,
 };
 
 kal_uint16 addr_data_pair_capture_30fps_OV50C40OFILM[] = {
-	0x0100, 0x00,
+//	0x0100, 0x00,
 	0x0304, 0x01,
 	0x0305, 0x40,
 	0x3501, 0x0c,
@@ -2463,7 +2482,7 @@ kal_uint16 addr_data_pair_capture_30fps_OV50C40OFILM[] = {
 	0x380c, 0x04,
 	0x380d, 0x1a,
 	0x380e, 0x0c,
-	0x380f, 0x67,
+	0x380f, 0x66,
 	0x3811, 0x08,
 	0x3814, 0x11,
 	0x3815, 0x11,
@@ -2601,7 +2620,7 @@ kal_uint16 addr_data_pair_capture_30fps_OV50C40OFILM[] = {
 	0x5d0f, 0x02,
 	0x5d10, 0x06,
 	0x5d11, 0x06,
-	0x0100, 0x01,
+	//0x0100, 0x01,
 };
 #endif
 
@@ -2962,7 +2981,7 @@ static void capture_setting(kal_uint16 currefps)
 
 #if MULTI_WRITE
 kal_uint16 addr_data_pair_video_OV50C40OFILM[] = {
-	0x0100, 0x00,
+	//0x0100, 0x00,
 	0x0304, 0x01,
 	0x0305, 0x40,
 	0x3501, 0x0c,
@@ -3143,7 +3162,7 @@ kal_uint16 addr_data_pair_video_OV50C40OFILM[] = {
 	0x5d0f, 0x02,
 	0x5d10, 0x06,
 	0x5d11, 0x06,
-	0x0100, 0x01,
+//	0x0100, 0x01,
 };
 #endif
 
@@ -3325,7 +3344,7 @@ static void normal_video_setting(kal_uint16 currefps)
 
 #if MULTI_WRITE
 kal_uint16 addr_data_pair_hs_video_OV50C40OFILM[] = {
-	0x0100, 0x00,
+	//0x0100, 0x00,
 	0x0304, 0x01,
 	0x0305, 0x40,
 	0x3501, 0x04,
@@ -3506,7 +3525,7 @@ kal_uint16 addr_data_pair_hs_video_OV50C40OFILM[] = {
 	0x5d0f, 0x00,
 	0x5d10, 0x02,
 	0x5d11, 0x02,
-	0x0100, 0x01,
+//	0x0100, 0x01,
 
 };
 #endif
@@ -3689,7 +3708,7 @@ static void hs_video_setting(void)
 
 #if MULTI_WRITE
 kal_uint16 addr_data_pair_slim_video_OV50C40OFILM[] = {
-	0x0100, 0x00,
+//	0x0100, 0x00,
 	0x0304, 0x01,
 	0x0305, 0x30,
 	0x3501, 0x05,
@@ -3869,7 +3888,7 @@ kal_uint16 addr_data_pair_slim_video_OV50C40OFILM[] = {
 	0x5d0f, 0x00,
 	0x5d10, 0x02,
 	0x5d11, 0x02,
-	0x0100, 0x01,
+//	0x0100, 0x01,
 
 };
 #endif
@@ -4052,7 +4071,7 @@ static void slim_video_setting(void)
 }
 #if MULTI_WRITE
 kal_uint16 addr_data_pair_custom1_OV50C40OFILM[] = {
-	0x0100, 0x00,
+//	0x0100, 0x00,
 	0x0304, 0x01,
 	0x0305, 0x40,
 	0x3501, 0x0c,
@@ -4095,7 +4114,7 @@ kal_uint16 addr_data_pair_custom1_OV50C40OFILM[] = {
 	0x380c, 0x04,
 	0x380d, 0x1a,
 	0x380e, 0x0c,
-	0x380f, 0x67,
+	0x380f, 0x66,
 	0x3811, 0x08,
 	0x3814, 0x11,
 	0x3815, 0x11,
@@ -4233,7 +4252,7 @@ kal_uint16 addr_data_pair_custom1_OV50C40OFILM[] = {
 	0x5d0f, 0x02,
 	0x5d10, 0x06,
 	0x5d11, 0x06,
-	0x0100, 0x01,
+//	0x0100, 0x01,
 
 };
 #endif
