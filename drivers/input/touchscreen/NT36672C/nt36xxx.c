@@ -200,6 +200,59 @@ const struct mtk_chip_config spi_ctrdata = {
 
 uint8_t bTouchIsAwake = 0;
 
+#if NVT_TOUCH_VDD_TP_RECOVERY
+void nvt_bootloader_reset_locked(void)
+{
+	mutex_lock(&ts->lock);
+
+	NVT_LOG("start\n");
+	//---reset cmds to SWRST_N8_ADDR---
+
+	nvt_write_addr(SWRST_N8_ADDR, 0x69);
+	mutex_unlock(&ts->lock);
+	mdelay(5);  //wait tBRST2FR after Bootload RST
+	NVT_LOG("end\n");
+}
+
+EXPORT_SYMBOL(nvt_bootloader_reset_locked);
+
+int32_t nvt_esd_vdd_tp_recovery(void)
+{
+	int32_t ret = 0;
+	uint8_t buf[8] = {0};
+
+	mutex_lock(&ts->lock);
+
+	NVT_LOG("%s: run VDD_TP recovery\n", __func__);
+
+	// 5 SPI cmds
+	nvt_write_addr(0x3F302, 0x1F);
+	nvt_write_addr(0x3F344, 0x02);
+	nvt_write_addr(0x3F50E, 0x0A);
+	nvt_write_addr(0x3F384, 0x00);
+	nvt_write_addr(0x3F380, 0x01);
+	nvt_write_addr(0x3F020, 0xAA);
+	nvt_set_page(0x3F020);
+	buf[0] = 0x20;
+	buf[1] = 0x00;
+	ret = CTP_SPI_READ(ts->client, buf, 2);
+	NVT_ERR("%s: read 0x3F020 before bootloader reset = 0x%02X\n", __func__, buf[1]);
+	nvt_bootloader_reset();
+	nvt_set_page(0x3F020);
+	buf[0] = 0x20;
+	buf[1] = 0x00;
+	ret = CTP_SPI_READ(ts->client, buf, 2);
+	NVT_ERR("%s: read 0x3F020 after bootloader reset = 0x%02X\n", __func__, buf[1]);
+	nvt_set_page(ts->mmap->EVENT_BUF_ADDR);
+	mutex_unlock(&ts->lock);
+	return ret;
+
+}
+
+EXPORT_SYMBOL(nvt_esd_vdd_tp_recovery);
+
+#endif /* NVT_TOUCH_VDD_TP_RECOVERY */
+
 /*******************************************************
 Description:
 	Novatek touchscreen irq enable/disable function.
@@ -1246,6 +1299,10 @@ void nvt_esd_check_enable(uint8_t enable)
 	esd_check = enable;
 }
 
+#if NVT_TOUCH_ESD_DISP_RECOVERY
+extern bool g_trigger_disp_esd_recovery;
+#endif /* NVT_TOUCH_ESD_DISP_RECOVERY */
+
 static void nvt_esd_check_func(struct work_struct *work)
 {
 	unsigned int timer = jiffies_to_msecs(jiffies - irq_timer);
@@ -1253,6 +1310,9 @@ static void nvt_esd_check_func(struct work_struct *work)
 	//NVT_LOG("esd_check = %d (retry %d)\n", esd_check, esd_retry);	//DEBUG
 
 	if ((timer > NVT_TOUCH_ESD_CHECK_PERIOD) && esd_check) {
+#if NVT_TOUCH_ESD_DISP_RECOVERY
+		if (esd_retry < 2) {
+#endif /* NVT_TOUCH_ESD_DISP_RECOVERY */
 		mutex_lock(&ts->lock);
 		NVT_ERR("do ESD recovery, timer = %d, retry = %d\n", timer, esd_retry);
 		/* do esd recovery, reload fw */
@@ -1262,6 +1322,14 @@ static void nvt_esd_check_func(struct work_struct *work)
 		irq_timer = jiffies;
 		/* update esd_retry counter */
 		esd_retry++;
+#if NVT_TOUCH_ESD_DISP_RECOVERY
+		} else { // esd_retry >= 2
+			NVT_ERR("esd_retry=%d, set g_trigger_disp_esd_recovery true!\n", esd_retry);
+			nvt_esd_check_enable(false);
+			esd_retry = 0;
+			g_trigger_disp_esd_recovery = true;
+		}
+#endif /* NVT_TOUCH_ESD_DISP_RECOVERY */
 	}
 
 	queue_delayed_work(nvt_esd_check_wq, &nvt_esd_check_work,
@@ -1309,9 +1377,9 @@ int32_t nvt_check_palm(uint8_t input_id, uint8_t *data)
 
 	if ((input_id == DATA_PROTOCOL) && (func_type == FUNCPAGE_PALM)&& bTouchIsAwake) {
 		ret = palm_state;
-		if(ts->palm_flag >= 3){
-			nvt_set_pocket_palm_switch(false);
-			NVT_ERR("packet palm irq can't make device suspend more than 3 times\n");
+		if (ts->palm_flag >= 10) {
+			//nvt_set_pocket_palm_switch(false);
+			NVT_ERR("packet palm irq can't make device suspend more than 10 times\n");
 		}
 
 		if (palm_state == PACKET_PALM_ON) {
@@ -1320,7 +1388,10 @@ int32_t nvt_check_palm(uint8_t input_id, uint8_t *data)
 			ts->palm_flag ++;
 		} else if (palm_state == PACKET_PALM_OFF) {
 			NVT_LOG("get packet palm off event.\n");
+			//if (ts->palm_flag < 3) {
 			update_palm_sensor_value(0);
+			//NVT_LOG("palm off report time =%d\n", ts->palm_flag);
+			//}
 		} else {
 			NVT_ERR("invalid palm state %d!\n", palm_state);
 			ret = -1;
@@ -2946,6 +3017,11 @@ static int32_t nvt_ts_resume(struct device *dev)
 {
 	if (bTouchIsAwake) {
 		NVT_LOG("Touch is already resume\n");
+#if NVT_TOUCH_WDT_RECOVERY
+		mutex_lock(&ts->lock);
+		nvt_update_firmware(parnel.BOOT_UPDATE_FIRMWARE_NAME);
+		mutex_unlock(&ts->lock);
+#endif /* #if NVT_TOUCH_WDT_RECOVERY */
 		return 0;
 	}
 

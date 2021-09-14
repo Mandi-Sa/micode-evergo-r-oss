@@ -41,6 +41,8 @@
 #define ESD_TRY_CNT 5
 #define ESD_CHECK_PERIOD 3000 /* ms */
 
+bool g_trigger_disp_esd_recovery = false;
+
 static atomic_t is_panel_dead;
 
 /* pinctrl implementation */
@@ -529,7 +531,7 @@ static int mtk_drm_esd_check_worker_kthread(void *data)
 		do {
 			ret = mtk_drm_esd_check(crtc);
 
-			if (!ret) /* success */
+			if ((!ret)||(!g_trigger_disp_esd_recovery)) /* success */
 				break;
 
 			DDPPR_ERR(
@@ -552,6 +554,7 @@ static int mtk_drm_esd_check_worker_kthread(void *data)
 			DDPINFO("[ESD] esd recovery success\n");
 			recovery_flg = 0;
 			atomic_set(&is_panel_dead, 0);
+			g_trigger_disp_esd_recovery = false;
 		}
 		mtk_drm_trace_end();
 		DDP_MUTEX_UNLOCK(&mtk_crtc->lock, __func__, __LINE__);

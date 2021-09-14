@@ -54,6 +54,10 @@ static int current_fps = 60;
 #endif
 //static char bl_tb0[] = { 0x51, 0xff };
 
+extern bool g_trigger_disp_esd_recovery;
+extern void nvt_bootloader_reset_locked(void);
+extern int32_t nvt_esd_vdd_tp_recovery(void);
+
 struct csot {
 	struct device *dev;
 	struct drm_panel panel;
@@ -163,6 +167,18 @@ static void csot_panel_init(struct csot *ctx)
 	usleep_range(10 * 1000, 15 * 1000);
 	devm_gpiod_put(ctx->dev, ctx->reset_gpio);
 	pr_info("%s+\n", __func__);
+	//add novatek vdd tp recovery workround.
+	if(g_trigger_disp_esd_recovery) {
+		nvt_bootloader_reset_locked();
+		csot_dcs_write_seq_static(ctx, 0xFF, 0xC0);
+		csot_dcs_write_seq_static(ctx, 0x4B, 0x00);
+		msleep(1000);
+		nvt_esd_vdd_tp_recovery();
+		msleep(1000);
+		csot_dcs_write_seq_static(ctx, 0xFF, 0xC0);
+		csot_dcs_write_seq_static(ctx, 0x4B, 0x0E);
+		msleep(50);
+	}
 #if HFP_SUPPORT
 	pr_info("%s, fps:%d\n", __func__, current_fps);
 	csot_dcs_write_seq_static(ctx, 0xFF, 0x25);
