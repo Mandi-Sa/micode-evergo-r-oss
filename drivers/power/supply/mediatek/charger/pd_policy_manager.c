@@ -16,7 +16,7 @@
 #ifdef CONFIG_MTK_DISABLE_TEMP_PROTECT
 #define BATT_MAX_CHG_VOLT		4100
 #else
-#define BATT_MAX_CHG_VOLT		4470
+#define BATT_MAX_CHG_VOLT		4460
 #endif
 /* -HONGMI-88979,wangbin wt.ADD,20210804,add cv set to  4.1v in dis-temp version*/
 
@@ -52,11 +52,11 @@
 #define BAT_TEMP_460          460
 #define BAT_CURR_6000MA       5800
 #define BAT_CURR_5700MA       5700
-#define BAT_CURR_5400MA       5200
+#define BAT_CURR_5400MA       5050
 #define BAT_CURR_5000MA       5300
 #define BAT_CURR_4500MA       4400
 #define BAT_CURR_4000MA       3900
-#define BAT_CURR_3900MA       3750
+#define BAT_CURR_3900MA       3600
 #define BAT_CURR_3800MA       3700
 #define BAT_CURR_3500MA       3500
 #define BAT_CURR_3000MA       3000
