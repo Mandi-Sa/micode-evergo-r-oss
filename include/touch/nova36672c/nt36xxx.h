@@ -112,6 +112,9 @@ extern const uint16_t gesture_key_array[];
 #define NVT_TOUCH_ESD_CHECK_PERIOD 1500	/* ms */
 #define NVT_TOUCH_WDT_RECOVERY 1
 
+#define NVT_TOUCH_ESD_DISP_RECOVERY 1
+#define NVT_TOUCH_VDD_TP_RECOVERY 1
+
 #define CHECK_PEN_DATA_CHECKSUM 0
 
 struct nvt_ts_data {
@@ -223,6 +226,12 @@ typedef enum {
 	NVTWRITE = 0,
 	NVTREAD  = 1
 } NVT_SPI_RW;
+
+#if NVT_TOUCH_ESD_DISP_RECOVERY
+#define ILM_CRC_FLAG        0x01
+#define DLM_CRC_FLAG        0x02
+#define CRC_DONE            0x04
+#endif /* NVT_TOUCH_ESD_DISP_RECOVERY */
 
 struct nvt_mode_switch {
 	struct nvt_ts_data *ts_data;
