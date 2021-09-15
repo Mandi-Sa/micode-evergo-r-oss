@@ -531,7 +531,7 @@ static int mtk_drm_esd_check_worker_kthread(void *data)
 		do {
 			ret = mtk_drm_esd_check(crtc);
 
-			if ((!ret)||(!g_trigger_disp_esd_recovery)) /* success */
+			if ((!ret)&&(!g_trigger_disp_esd_recovery)) /* success */
 				break;
 
 			DDPPR_ERR(
