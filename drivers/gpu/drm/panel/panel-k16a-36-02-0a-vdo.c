@@ -168,7 +168,7 @@ static void tianma_panel_init(struct tianma *ctx)
 	devm_gpiod_put(ctx->dev, ctx->reset_gpio);
 	pr_info("%s+\n", __func__);
 	//add novatek vdd tp recovery workround.
-	if(g_trigger_disp_esd_recovery) {
+	if (get_panel_dead_status()) {
 		nvt_bootloader_reset_locked();
 		tianma_dcs_write_seq_static(ctx, 0xFF, 0xC0);
 		tianma_dcs_write_seq_static(ctx, 0x4B, 0x00);
