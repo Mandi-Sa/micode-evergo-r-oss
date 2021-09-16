@@ -709,7 +709,7 @@ static int csot_setbacklight_cmdq(void *dsi, dcs_write_gce cb, void *handle,
 	if (!level) {
 		cb(dsi, handle, bl_tb0, ARRAY_SIZE(bl_tb0));
 		cb(dsi, handle, bl_tb1, ARRAY_SIZE(bl_tb1));
-		usleep_range(2000, 2001);
+		usleep_range(30000, 30010);
 	}
 	if (!last_level) {
 		cb(dsi, handle, bl_tb0, ARRAY_SIZE(bl_tb0));
