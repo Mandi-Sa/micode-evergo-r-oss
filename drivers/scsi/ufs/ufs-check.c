@@ -44,7 +44,7 @@ static bool ufshcd_get_hwlevel()
 			strncpy(hwlevel,dr_mr,len);
 	}
 
-	if ((strncmp(hwlevel, "P2.1", strlen("P2.1")) == 0) || (strncmp(hwlevel, "MP", strlen("MP")) == 0))
+	if ((strncmp(hwlevel, "P2", strlen("P2")) == 0) || (strncmp(hwlevel, "P2.1", strlen("P2.1")) == 0) || (strncmp(hwlevel, "MP", strlen("MP")) == 0))
 		return true;
 
 	return false;
@@ -105,6 +105,7 @@ int check_wb_hpb_size(struct ufs_hba *hba)
 
 void check_hpb_and_tw_provsion(struct ufs_hba *hba)
 {
+#ifdef CONFIG_FACTORY_BUILD
 	struct device *dev = hba->dev;
 	struct device_node *np = dev->of_node;
 
@@ -117,4 +118,5 @@ void check_hpb_and_tw_provsion(struct ufs_hba *hba)
 		dev_err(hba->dev, "%s: disabled wb\n", __func__);
 	else
 		check_if_bug_on();
+#endif
 }
