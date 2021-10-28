@@ -165,35 +165,6 @@ enum uic_link_state {
 #define ufshcd_set_link_hibern8(hba) ((hba)->uic_link_state = \
 				    UIC_LINK_HIBERN8_STATE)
 
-/* BSP.Memory - 2020.12.5 - add memory error para - start */
-enum {
-	/* errors which require the host controller reset for recovery */
-	UFS_ERR_HIBERN8_EXIT,
-	UFS_ERR_VOPS_SUSPEND,
-	UFS_ERR_EH,
-	UFS_ERR_CLEAR_PEND_XFER_TM,
-	UFS_ERR_INT_FATAL_ERRORS,
-	UFS_ERR_INT_UIC_ERROR,
-	UFS_ERR_CRYPTO_ENGINE,
-
-	/* other errors */
-	UFS_ERR_HIBERN8_ENTER,
-	UFS_ERR_RESUME,
-	UFS_ERR_SUSPEND,
-	UFS_ERR_LINKSTARTUP,
-	UFS_ERR_POWER_MODE_CHANGE,
-	UFS_ERR_TASK_ABORT,
-
-	/* MI errors*/
-	UFS_ERR_UIC_CMD,
-	UFS_ERR_DEV_CMD,
-	UFS_ERR_PWR_CTRL,
-	UFS_ERR_RSP_STATUS,
-	UFS_ERR_ERR_HANDLER,
-
-	UFS_ERR_MAX,
-};
-
 /*
  * UFS Power management levels.
  * Each level is in increasing order of power savings.
@@ -261,13 +232,12 @@ struct ufshcd_lrb {
 	u8 crypto_key_slot;
 	u64 data_unit_num;
 
-	ktime_t issue_time_stamp;
-	ktime_t compl_time_stamp;
 	/*
 	 * Use sched_clock instead of ktime_get to align with
 	 * kernel log timestamp and command history.
 	 */
 	/* MTK PATCH */
+	u64 issue_time_stamp;
 	u64 complete_time_stamp; /* only in memory dump */
 	bool req_abort_skip;
 
@@ -580,33 +550,6 @@ struct ufs_event_hist {
 	ktime_t tstamp[UFS_EVENT_HIST_LENGTH];
 };
 
-
-/* tag stats statistics types */
-enum ts_types {
-	TS_NOT_SUPPORTED	= -1,
-	TS_TAG			= 0,
-	TS_READ			= 1,
-	TS_WRITE		= 2,
-	TS_URGENT_READ		= 3,
-	TS_URGENT_WRITE		= 4,
-	TS_FLUSH		= 5,
-	TS_NUM_STATS		= 6,
-};
-
-/**
- * struct ufshcd_req_stat - statistics for request handling times (in usec)
- * @min: shortest time measured
- * @max: longest time measured
- * @sum: sum of all the handling times measured (used for average calculation)
- * @count: number of measurements taken
- */
-struct ufshcd_req_stat {
-	u64 min;
-	u64 max;
-	u64 sum;
-	u64 count;
-};
-
 /**
  * struct ufs_stats - keeps usage/err statistics
  * @hibern8_exit_cnt: Counter to keep track of number of exits,
@@ -628,24 +571,9 @@ struct ufshcd_req_stat {
  * @task_abort: tracks task abort events
  */
 struct ufs_stats {
-	bool enabled;
-	u64 **tag_stats;
-	int q_depth;
-	int err_stats[UFS_ERR_MAX];
-	struct ufshcd_req_stat req_stats[TS_NUM_STATS];
-	bool req_stats_enabled;
-	int query_stats_arr[UPIU_QUERY_OPCODE_MAX][MAX_QUERY_IDN];
 	u32 hibern8_exit_cnt;
 	ktime_t last_hibern8_exit_tstamp;
-	u32 power_mode_change_cnt;
-	u32 pa_err_cnt_total;
-	u32 pa_err_cnt[UFS_EC_PA_MAX];
-	u32 dl_err_cnt_total;
-	u32 dl_err_cnt[UFS_EC_DL_MAX];
-	u32 dme_err_cnt;
 	struct ufs_event_hist event[UFS_EVT_CNT];
-	/*mi ufs feature*/
-	bool err_state;
 };
 
 /* UFSHCD states */
@@ -682,13 +610,6 @@ enum ufs_crypto_state {
 	UFS_CRYPTO_HW_FBE_ENCRYPTED   = (1 << 3),
 };
 
-#ifdef CONFIG_UFS_CHECK
-typedef struct {
-	int total_gb;
-	int hpb_gb;
-	int wb_gb;
-} check_wb_hpb_t;
-#endif
 /**
  * struct ufs_hba - per adapter private structure
  * @mmio_base: UFSHCI base register address
@@ -807,7 +728,6 @@ struct ufs_hba {
 	size_t sg_entry_size;
 	unsigned int irq;
 	bool is_irq_enabled;
-	bool crash_on_err;
 
 	/* Interrupt aggregation support is broken */
 	#define UFSHCD_QUIRK_BROKEN_INTR_AGGR			UFS_BIT(0)
@@ -948,9 +868,6 @@ struct ufs_hba {
 
 	/* Number of lanes available (1 or 2) for Rx/Tx */
 	u32 lanes_per_direction;
-	/* Bitmask for enabling debug prints */
-	u32 ufshcd_dbg_print;
-
 	struct ufs_pa_layer_attr pwr_info;
 	struct ufs_pwr_mode_info max_pwr_info;
 
@@ -1042,9 +959,6 @@ struct ufs_hba {
 
 #if defined(CONFIG_SCSI_SKHPB)
 	struct scsi_device *sdev_ufs_lu[UFS_UPIU_MAX_GENERAL_LUN];
-#endif
-#ifdef CONFIG_UFS_CHECK
-	check_wb_hpb_t check;
 #endif
 
 #ifdef CONFIG_SCSI_UFS_CRYPTO
@@ -1292,11 +1206,6 @@ static inline bool ufshcd_is_hs_mode(struct ufs_pa_layer_attr *pwr_info)
 		pwr_info->pwr_tx == FASTAUTO_MODE);
 }
 
-static inline void ufshcd_init_req_stats(struct ufs_hba *hba)
-{
-	memset(hba->ufs_stats.req_stats, 0, sizeof(hba->ufs_stats.req_stats));
-}
-/* BSP.Memory - 2020.12.5 - add memory error para - end */
 /* Expose Query-Request API */
 int ufshcd_query_flag(struct ufs_hba *hba, enum query_opcode opcode,
 	enum flag_idn idn, bool *flag_res);

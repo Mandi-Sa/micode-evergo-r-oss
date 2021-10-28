@@ -111,10 +111,6 @@ struct ufstw_dev_info {
 
 	/* from Geometry Descriptor */
 	u8 tw_number_lu;
-#ifdef CONFIG_UFS_CHECK
-	u32 seg_size;
-	u8 unit_size;
-#endif
 };
 
 struct ufstw_lu {
