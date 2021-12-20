@@ -12,7 +12,7 @@
  *
  */
 
-#define KMSG_COMPONENT "ExtM"
+#define KMSG_COMPONENT "zram"
 #define pr_fmt(fmt) KMSG_COMPONENT ": " fmt
 
 #include <linux/module.h>
@@ -291,7 +291,7 @@ static ssize_t idle_store(struct device *dev,
 {
 	struct zram *zram = dev_to_zram(dev);
 	unsigned long nr_pages = zram->disksize >> PAGE_SHIFT;
-	int index, mark_nr = 0;
+	int index;
 
 	if (!sysfs_streq(buf, "all"))
 		return -EINVAL;
@@ -309,21 +309,17 @@ static ssize_t idle_store(struct device *dev,
 		 */
 		zram_slot_lock(zram, index);
 		if (zram_allocated(zram, index) &&
-				!zram_test_flag(zram, index, ZRAM_UNDER_WB)) {
-			if (!zram_test_flag(zram, index, ZRAM_IDLE))
-				mark_nr++;
+				!zram_test_flag(zram, index, ZRAM_UNDER_WB))
 			zram_set_flag(zram, index, ZRAM_IDLE);
-		}
 		zram_slot_unlock(zram, index);
 	}
 
 	up_read(&zram->init_lock);
 
-	pr_info("Mark IDLE finished. Mark %d pages\n", mark_nr);
 	return len;
 }
 
-#if defined(CONFIG_ZRAM_WRITEBACK) || defined(CONFIG_RTMM)
+#ifdef CONFIG_ZRAM_WRITEBACK
 static ssize_t writeback_limit_enable_store(struct device *dev,
 		struct device_attribute *attr, const char *buf, size_t len)
 {
@@ -621,7 +617,7 @@ static ssize_t writeback_store(struct device *dev,
 	struct page *page;
 	ssize_t ret;
 	int mode;
-	unsigned long blk_idx = 0, wb_pages_nr = 0;
+	unsigned long blk_idx = 0;
 
 	if (sysfs_streq(buf, "idle"))
 		mode = IDLE_WRITEBACK;
@@ -743,7 +739,6 @@ static ssize_t writeback_store(struct device *dev,
 		zram_clear_flag(zram, index, ZRAM_UNDER_WB);
 		zram_set_flag(zram, index, ZRAM_WB);
 		zram_set_element(zram, index, blk_idx);
-		wb_pages_nr++;
 		blk_idx = 0;
 		atomic64_inc(&zram->stats.pages_stored);
 		spin_lock(&zram->wb_limit_lock);
@@ -761,7 +756,6 @@ next:
 release_init_lock:
 	up_read(&zram->init_lock);
 
-	pr_info("Flush finished. Mode %d, flush %lu pages\n", mode, wb_pages_nr);
 	return ret;
 }
 
@@ -1075,7 +1069,7 @@ static ssize_t mm_stat_show(struct device *dev,
 	return ret;
 }
 
-#if defined(CONFIG_ZRAM_WRITEBACK) || defined(CONFIG_RTMM)
+#ifdef CONFIG_ZRAM_WRITEBACK
 #define FOUR_K(x) ((x) * (1 << (PAGE_SHIFT - 12)))
 static ssize_t bd_stat_show(struct device *dev,
 		struct device_attribute *attr, char *buf)
@@ -1115,7 +1109,7 @@ static ssize_t debug_stat_show(struct device *dev,
 
 static DEVICE_ATTR_RO(io_stat);
 static DEVICE_ATTR_RO(mm_stat);
-#if defined(CONFIG_ZRAM_WRITEBACK) || defined(CONFIG_RTMM)
+#ifdef CONFIG_ZRAM_WRITEBACK
 static DEVICE_ATTR_RO(bd_stat);
 #endif
 static DEVICE_ATTR_RO(debug_stat);
@@ -1825,7 +1819,7 @@ static DEVICE_ATTR_WO(mem_used_max);
 static DEVICE_ATTR_WO(idle);
 static DEVICE_ATTR_RW(max_comp_streams);
 static DEVICE_ATTR_RW(comp_algorithm);
-#if defined(CONFIG_ZRAM_WRITEBACK) || defined(CONFIG_RTMM)
+#ifdef CONFIG_ZRAM_WRITEBACK
 static DEVICE_ATTR_RW(backing_dev);
 static DEVICE_ATTR_WO(writeback);
 static DEVICE_ATTR_RW(writeback_limit);
@@ -1842,7 +1836,7 @@ static struct attribute *zram_disk_attrs[] = {
 	&dev_attr_idle.attr,
 	&dev_attr_max_comp_streams.attr,
 	&dev_attr_comp_algorithm.attr,
-#if defined(CONFIG_ZRAM_WRITEBACK) || defined(CONFIG_RTMM)
+#ifdef CONFIG_ZRAM_WRITEBACK
 	&dev_attr_backing_dev.attr,
 	&dev_attr_writeback.attr,
 	&dev_attr_writeback_limit.attr,
@@ -1850,7 +1844,7 @@ static struct attribute *zram_disk_attrs[] = {
 #endif
 	&dev_attr_io_stat.attr,
 	&dev_attr_mm_stat.attr,
-#if defined(CONFIG_ZRAM_WRITEBACK) || defined(CONFIG_RTMM)
+#ifdef CONFIG_ZRAM_WRITEBACK
 	&dev_attr_bd_stat.attr,
 #endif
 	&dev_attr_debug_stat.attr,
@@ -1886,7 +1880,7 @@ static int zram_add(void)
 	device_id = ret;
 
 	init_rwsem(&zram->init_lock);
-#if defined(CONFIG_ZRAM_WRITEBACK) || defined(CONFIG_RTMM)
+#ifdef CONFIG_ZRAM_WRITEBACK
 	spin_lock_init(&zram->wb_limit_lock);
 #endif
 	queue = blk_alloc_queue(GFP_KERNEL);
