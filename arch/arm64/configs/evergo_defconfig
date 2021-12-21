@@ -468,6 +468,6 @@ CONFIG_BLK_WBT=y
 CONFIG_BLK_WBT_SQ=y
 # REQ 84802,chenhengshi.wt,2021/6/21,allow evergo setenforce 0
 CONFIG_SECURITY_SELINUX_DEVELOP=y
-CONFIG_RTMM=y
 # HONGMI-84979,wangchenjun.wt,20210629,add proc/cpumaxfreq
 CONFIG_CPUMAXFREQ=y
+
