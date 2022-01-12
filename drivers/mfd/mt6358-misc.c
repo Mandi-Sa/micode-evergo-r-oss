@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2018 MediaTek, Inc.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * Author: Wilma Wu <wilma.wu@mediatek.com>
  *
  * This software is licensed under the terms of the GNU General Public

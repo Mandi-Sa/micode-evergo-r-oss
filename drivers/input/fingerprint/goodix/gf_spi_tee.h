@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013-2016, Shenzhen Huiding Technology Co., Ltd.
+ * Copyright (C) 2021 XiaoMi, Inc.
  * All Rights Reserved.
  */
 #ifndef __GF_SPI_TEE_H
